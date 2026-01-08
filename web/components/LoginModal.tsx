@@ -71,6 +71,11 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     // Validation errors
     const [errors, setErrors] = useState<Record<string, string>>({});
 
+    // Submission state
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitSuccess, setSubmitSuccess] = useState(false);
+    const [submitError, setSubmitError] = useState('');
+
     // Validation functions
     const validateEmail = (email: string): string => {
         if (!email) return 'Email is required';
@@ -140,6 +145,142 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         const error = validator(value);
         setErrors(prev => ({ ...prev, [field]: error }));
     };
+
+    // Handle Request Access form submission
+    const handleRequestAccessSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        // Validate all fields
+        const nameError = validateName(formValues.fullName);
+        const emailError = validateEmail(formValues.email);
+        const ageError = validateAge(formValues.age);
+        const phoneError = validatePhone(formValues.contactNumber);
+        const authKeyError = validateAuthKey(formValues.authKey, selectedKeyType);
+
+        if (nameError || emailError || ageError || phoneError || authKeyError) {
+            setErrors({
+                fullName: nameError,
+                email: emailError,
+                age: ageError,
+                contactNumber: phoneError,
+                authKey: authKeyError,
+            });
+            return;
+        }
+
+        setIsSubmitting(true);
+        setSubmitError('');
+        setSubmitSuccess(false);
+
+        try {
+            const response = await fetch('/api/access-request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fullName: formValues.fullName,
+                    email: formValues.email,
+                    age: formValues.age,
+                    countryCode: selectedCountry.code,
+                    contactNumber: formValues.contactNumber,
+                    authKeyType: selectedKeyType.name,
+                    authKey: formValues.authKey,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to submit request');
+            }
+
+            setSubmitSuccess(true);
+            // Reset form after successful submission
+            setFormValues(prev => ({
+                ...prev,
+                fullName: '',
+                email: '',
+                authKey: '',
+                age: '',
+                contactNumber: '',
+            }));
+            setErrors({});
+        } catch (error) {
+            setSubmitError(error instanceof Error ? error.message : 'An error occurred');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Handle Continue (login) form submission
+    const handleLoginSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        const emailError = validateEmail(formValues.continueEmail);
+        const authKeyError = validateAuthKey(formValues.continueAuthKey, selectedKeyType);
+
+        if (emailError || authKeyError) {
+            setErrors({
+                continueEmail: emailError,
+                continueAuthKey: authKeyError,
+            });
+            return;
+        }
+
+        setIsSubmitting(true);
+        setSubmitError('');
+        setSubmitSuccess(false);
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: formValues.continueEmail,
+                    authKey: formValues.continueAuthKey,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Login failed');
+            }
+
+            setSubmitSuccess(true);
+            // Redirect to dashboard after successful login
+            setTimeout(() => {
+                window.location.href = '/dashboard';
+            }, 1500);
+        } catch (error) {
+            setSubmitError(error instanceof Error ? error.message : 'An error occurred');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+
+    // Reset form when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            // Clear all form values
+            setFormValues({
+                fullName: '',
+                email: '',
+                authKey: '',
+                age: '',
+                contactNumber: '',
+                continueEmail: '',
+                continueAuthKey: '',
+                newAuthKey: '',
+                confirmAuthKey: '',
+            });
+            // Clear all errors
+            setErrors({});
+            // Reset to default selections
+            setSelectedCountry(countries[0]);
+            setSelectedKeyType(keyTypes[0]);
+        }
+    }, [isOpen]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -231,7 +372,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
                                 {/* Request Access Form - For New Users */}
                                 {isNewUser ? (
-                                    <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+                                    <form className="space-y-5" onSubmit={handleRequestAccessSubmit}>
                                         {/* Name */}
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] uppercase tracking-[0.2em] text-white/40 ml-1">Full Name</label>
@@ -418,23 +559,65 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                             </div>
                                         </div>
 
+                                        {/* Success Message */}
+                                        {submitSuccess && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="p-4 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 text-sm text-center"
+                                            >
+                                                ✉️ Verification email sent! Check your inbox to activate your account.
+                                            </motion.div>
+                                        )}
+
+                                        {/* Error Message */}
+                                        {submitError && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm text-center"
+                                            >
+                                                ❌ {submitError}
+                                            </motion.div>
+                                        )}
+
                                         <button
-                                            className="w-full mt-4 py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-white text-xs uppercase tracking-[0.4em] font-light transition-all active:scale-[0.98] duration-300"
+                                            type="submit"
+                                            disabled={isSubmitting}
+                                            className="w-full mt-4 py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-white text-xs uppercase tracking-[0.4em] font-light transition-all active:scale-[0.98] duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                         >
-                                            Request Access
+                                            {isSubmitting ? (
+                                                <>
+                                                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    <span>Submitting...</span>
+                                                </>
+                                            ) : (
+                                                'Request Access'
+                                            )}
                                         </button>
                                     </form>
                                 ) : (
                                     /* Continue Form - For Existing Users */
-                                    <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+                                    <form className="space-y-5" onSubmit={handleLoginSubmit}>
                                         {/* Email */}
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] uppercase tracking-[0.2em] text-white/40 ml-1">Email Address</label>
                                             <input
                                                 type="email"
+                                                value={formValues.continueEmail}
+                                                onChange={(e) => handleFieldChange('continueEmail', e.target.value)}
+                                                onBlur={(e) => handleFieldBlur('continueEmail', e.target.value, validateEmail)}
                                                 placeholder="name@example.com"
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors tracking-wide text-sm font-light"
+                                                className={`w-full bg-white/5 border ${errors.continueEmail ? 'border-red-500/50' : 'border-white/10'} rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none ${errors.continueEmail ? 'focus:border-red-500' : 'focus:border-white/30'} transition-colors tracking-wide text-sm font-light`}
                                             />
+                                            {errors.continueEmail && (
+                                                <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-[10px] text-red-400 ml-1 mt-1">
+                                                    {errors.continueEmail}
+                                                </motion.div>
+                                            )}
                                         </div>
 
                                         {/* Authentication Key */}
@@ -486,13 +669,21 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                                 </div>
 
                                                 <input
-                                                    type={selectedKeyType.type === 'number' ? 'password' : 'password'}
+                                                    type="password"
+                                                    value={formValues.continueAuthKey}
+                                                    onChange={(e) => handleFieldChange('continueAuthKey', e.target.value)}
+                                                    onBlur={(e) => handleFieldBlur('continueAuthKey', e.target.value, (val) => validateAuthKey(val, selectedKeyType))}
                                                     placeholder={selectedKeyType.placeholder}
                                                     maxLength={selectedKeyType.maxLength}
                                                     pattern={selectedKeyType.pattern}
-                                                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors tracking-wide text-sm font-light"
+                                                    className={`flex-1 bg-white/5 border ${errors.continueAuthKey ? 'border-red-500/50' : 'border-white/10'} rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none ${errors.continueAuthKey ? 'focus:border-red-500' : 'focus:border-white/30'} transition-colors tracking-wide text-sm font-light`}
                                                 />
                                             </div>
+                                            {errors.continueAuthKey && (
+                                                <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-[10px] text-red-400 ml-1 mt-1">
+                                                    {errors.continueAuthKey}
+                                                </motion.div>
+                                            )}
                                         </div>
 
                                         {/* Forgot Authentication Key Link */}
@@ -511,10 +702,44 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                             </button>
                                         </div>
 
+                                        {/* Success Message */}
+                                        {submitSuccess && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="p-4 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 text-sm text-center"
+                                            >
+                                                ✅ Login successful! Redirecting...
+                                            </motion.div>
+                                        )}
+
+                                        {/* Error Message */}
+                                        {submitError && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm text-center"
+                                            >
+                                                ❌ {submitError}
+                                            </motion.div>
+                                        )}
+
                                         <button
-                                            className="w-full mt-4 py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-white text-xs uppercase tracking-[0.4em] font-light transition-all active:scale-[0.98] duration-300"
+                                            type="submit"
+                                            disabled={isSubmitting}
+                                            className="w-full mt-4 py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-white text-xs uppercase tracking-[0.4em] font-light transition-all active:scale-[0.98] duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                         >
-                                            Continue
+                                            {isSubmitting ? (
+                                                <>
+                                                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    <span>Logging in...</span>
+                                                </>
+                                            ) : (
+                                                'Continue'
+                                            )}
                                         </button>
                                     </form>
                                 )}
