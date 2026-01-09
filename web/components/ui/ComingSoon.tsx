@@ -19,9 +19,9 @@ export default function ComingSoon({
             <div
                 className="relative p-12 rounded-3xl overflow-hidden group"
                 style={{
-                    background: 'rgba(245, 235, 211, 0.01)',
-                    border: '1px solid rgba(245, 235, 211, 0.1)',
-                    boxShadow: '0 0 50px 0 rgba(245, 235, 211, 0.05), inset 0 0 20px 0 rgba(245, 235, 211, 0.02)',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    boxShadow: '0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02)',
                     backdropFilter: 'blur(10px)',
                     WebkitBackdropFilter: 'blur(10px)',
                 }}
@@ -40,19 +40,19 @@ export default function ComingSoon({
                     <div
                         className="p-6 rounded-full"
                         style={{
-                            background: 'rgba(245, 235, 211, 0.03)',
-                            border: '1px solid rgba(245, 235, 211, 0.15)',
-                            boxShadow: '0 0 30px 0 rgba(245, 235, 211, 0.05)',
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            boxShadow: '0 0 30px 0 rgba(255, 255, 255, 0.05)',
                         }}
                     >
-                        <Icon strokeWidth={1.5} className="w-12 h-12 text-[#f5ebd3]/80" />
+                        <Icon strokeWidth={1.5} className="w-12 h-12 text-white/80" />
                     </div>
 
                     <div className="space-y-2">
-                        <h2 className="text-2xl font-light tracking-widest text-[#f5ebd3]">
+                        <h2 className="text-2xl font-light tracking-widest text-white/90">
                             {title}
                         </h2>
-                        <p className="text-[#f5ebd3]/50 font-light tracking-wide max-w-sm">
+                        <p className="text-white/50 font-light tracking-wide max-w-sm">
                             {description}
                         </p>
                     </div>

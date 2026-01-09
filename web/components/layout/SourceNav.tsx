@@ -28,11 +28,11 @@ export default function SourceNav() {
         fetchUser();
     }, []);
 
-    // Warm Glow Color: #f5ebd3 (RGB: 245, 235, 211)
+    // White Glow Color (matching Sidebar)
     const glassStyle = {
-        background: 'rgba(245, 235, 211, 0.01)',
-        border: '1px solid rgba(245, 235, 211, 0.15)',
-        boxShadow: '0 0 50px 0 rgba(245, 235, 211, 0.08), inset 0 0 20px 0 rgba(245, 235, 211, 0.03)',
+        background: 'rgba(255, 255, 255, 0.03)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02)',
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',
     };
@@ -58,6 +58,11 @@ export default function SourceNav() {
     else if (pathname.includes('/help')) subSection = 'Help Center';
     else if (pathname.includes('/settings')) subSection = 'Settings';
     else if (pathname.includes('/upgrade')) subSection = 'Upgrade';
+    // Business-specific routes
+    else if (pathname.includes('/business/ventures')) subSection = 'Ventures';
+    else if (pathname.includes('/business/cash-flow')) subSection = 'Cash Flow';
+    else if (pathname.includes('/business/statements')) subSection = 'Statements';
+    else if (pathname.includes('/business/dashboard')) subSection = 'Dashboard';
 
     return (
         <>
@@ -78,7 +83,7 @@ export default function SourceNav() {
                 <div className="relative z-10 flex items-center gap-2 text-xs font-light tracking-wider px-5 py-2">
                     <button
                         onClick={() => setActiveSource('Home')}
-                        className="text-[#f5ebd3] hover:text-[#f5ebd3]/80 transition-colors duration-200 outline-none"
+                        className="text-white/90 hover:text-white/70 transition-colors duration-200 outline-none"
                     >
                         Home
                     </button>
@@ -93,15 +98,15 @@ export default function SourceNav() {
                             >
                                 {activeSource !== 'Home' && (
                                     <>
-                                        <ChevronRight className="w-3 h-3 text-[#f5ebd3]/40" />
-                                        <span className="text-[#f5ebd3]/60">{activeSource}</span>
+                                        <ChevronRight className="w-3 h-3 text-white/40" />
+                                        <span className="text-white/60">{activeSource}</span>
                                     </>
                                 )}
 
                                 {subSection && (
                                     <>
-                                        <ChevronRight className="w-3 h-3 text-[#f5ebd3]/40" />
-                                        <span className="text-[#f5ebd3]/60 text-nowrap">{subSection}</span>
+                                        <ChevronRight className="w-3 h-3 text-white/40" />
+                                        <span className="text-white/60 text-nowrap">{subSection}</span>
                                     </>
                                 )}
                             </motion.div>
@@ -127,12 +132,12 @@ export default function SourceNav() {
 
                     <div className="relative z-10 flex items-center gap-3 px-5 py-2">
 
-                        <UserCircle strokeWidth={1.5} className="relative z-10 w-8 h-8 text-[#f5ebd3]/80" />
+                        <UserCircle strokeWidth={1.5} className="relative z-10 w-8 h-8 text-white/80" />
                         <div className="relative z-10 flex flex-col items-end leading-tight">
-                            <span className="text-[#f5ebd3] text-xs font-light tracking-wide">
+                            <span className="text-white/90 text-xs font-light tracking-wide">
                                 {userProfile.name}
                             </span>
-                            <span className="text-[#f5ebd3]/50 text-xs font-light tracking-wider">
+                            <span className="text-white/50 text-xs font-light tracking-wider">
                                 {userProfile.email}
                             </span>
                         </div>
@@ -162,13 +167,13 @@ export default function SourceNav() {
                                 key={source}
                                 className="rounded-full overflow-hidden transition-all duration-300"
                                 style={{
-                                    background: isActive ? 'rgba(245, 235, 211, 0.05)' : 'transparent',
-                                    border: isActive ? '1px solid rgba(245, 235, 211, 0.1)' : '1px solid transparent',
+                                    background: isActive ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
+                                    border: isActive ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid transparent',
                                 }}
                             >
                                 <button
                                     onClick={() => setActiveSource(source)}
-                                    className={`relative z-10 px-5 py-2 text-xs font-light tracking-wider transition-colors duration-300 outline-none ${isActive ? 'text-[#f5ebd3]' : 'text-[#f5ebd3]/60 hover:text-[#f5ebd3] hover:bg-[rgba(245,235,211,0.05)]'
+                                    className={`relative z-10 px-5 py-2 text-xs font-light tracking-wider transition-colors duration-300 outline-none ${isActive ? 'text-white/90' : 'text-white/60 hover:text-white/90 hover:bg-[rgba(255,255,255,0.05)]'
                                         }`}
                                 >
                                     {source}

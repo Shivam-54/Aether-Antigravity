@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ArrowLeftRight, Settings, LogOut, FileText, PieChart, Sparkles, HelpCircle, Crown } from 'lucide-react';
+import { LayoutDashboard, ArrowLeftRight, Settings, LogOut, FileText, PieChart, Sparkles, HelpCircle, Crown, Calendar, TrendingUp, Wallet, Activity, Binary } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,25 +21,60 @@ export default function Sidebar() {
         router.push('/');
     };
 
-    // Context-Adaptive Labels
-    const contextLabels: Record<string, { Portfolio: string; Transactions: string; Reports: string }> = {
-        'Home': { Portfolio: 'All Assets', Transactions: 'Global Activity', Reports: 'System Reports' },
-        'Real Estate': { Portfolio: 'Properties', Transactions: 'Rental / Sale', Reports: 'Valuation & Docs' },
-        'Crypto': { Portfolio: 'Wallets', Transactions: 'On-chain Activity', Reports: 'Holdings' },
-        'Shares': { Portfolio: 'Holdings', Transactions: 'Market Activity', Reports: 'Performance' },
-        'Bonds': { Portfolio: 'Fixed Income', Transactions: 'Yield Analysis', Reports: 'Maturity Schedule' },
-        'Business': { Portfolio: 'Ventures', Transactions: 'Cash Flow', Reports: 'Statements' },
+    // Dynamic Navigation Logic
+    const getNavItems = () => {
+        if (activeSource === 'Bonds') {
+            return [
+                { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+                { name: 'Fixed Income', path: '/dashboard/fixed-income', icon: FileText },
+                { name: 'Maturity Schedule', path: '/dashboard/maturity', icon: Calendar },
+                { name: 'Bond Allocation', path: '/dashboard/allocation', icon: PieChart },
+                { name: 'Yield Analysis', path: '/dashboard/yield', icon: TrendingUp },
+                { name: 'AI Insights', path: '/dashboard/ai-insights', icon: Sparkles },
+            ];
+        }
+
+        if (activeSource === 'Crypto') {
+            return [
+                { name: 'Dashboard', path: '/dashboard/crypto', icon: LayoutDashboard },
+                { name: 'Holdings', path: '/dashboard/crypto/holdings', icon: PieChart },
+                { name: 'On-Chain Activity', path: '/dashboard/crypto/activity', icon: Activity },
+                { name: 'Wallets', path: '/dashboard/crypto/wallets', icon: Wallet },
+                { name: 'AI Insights', path: '/dashboard/crypto/insights', icon: Sparkles },
+            ];
+        }
+
+        if (activeSource === 'Business') {
+            return [
+                { name: 'Dashboard', path: '/dashboard/business/dashboard', icon: LayoutDashboard },
+                { name: 'Ventures', path: '/dashboard/business/ventures', icon: Binary },
+                { name: 'Cash Flow', path: '/dashboard/business/cash-flow', icon: ArrowLeftRight },
+                { name: 'Statements', path: '/dashboard/business/statements', icon: FileText },
+                { name: 'AI Insights', path: '/dashboard/business/ai-insights', icon: Sparkles },
+            ];
+        }
+
+        // Default Context Labels for other sources
+        const contextLabels: Record<string, { Portfolio: string; Transactions: string; Reports: string }> = {
+            'Home': { Portfolio: 'All Assets', Transactions: 'Global Activity', Reports: 'System Reports' },
+            'Real Estate': { Portfolio: 'Properties', Transactions: 'Rental / Sale', Reports: 'Valuation & Docs' },
+            'Crypto': { Portfolio: 'Wallets', Transactions: 'On-chain Activity', Reports: 'Holdings' },
+            'Shares': { Portfolio: 'Holdings', Transactions: 'Market Activity', Reports: 'Performance' },
+            'Business': { Portfolio: 'Ventures', Transactions: 'Cash Flow', Reports: 'Statements' },
+        };
+
+        const currentLabels = contextLabels[activeSource] || contextLabels['Home'];
+
+        return [
+            { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+            { name: currentLabels.Portfolio, path: '/dashboard/portfolio', icon: PieChart },
+            { name: currentLabels.Transactions, path: '/dashboard/transactions', icon: ArrowLeftRight },
+            { name: currentLabels.Reports, path: '/dashboard/reports', icon: FileText },
+            { name: 'AI Insights', path: '/dashboard/ai-insights', icon: Sparkles },
+        ];
     };
 
-    const currentLabels = contextLabels[activeSource] || contextLabels['Home'];
-
-    const navItems = [
-        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard }, // Dashboard is immutable
-        { name: currentLabels.Portfolio, path: '/dashboard/portfolio', icon: PieChart },
-        { name: currentLabels.Transactions, path: '/dashboard/transactions', icon: ArrowLeftRight },
-        { name: currentLabels.Reports, path: '/dashboard/reports', icon: FileText },
-        { name: 'AI Insights', path: '/dashboard/ai-insights', icon: Sparkles },
-    ];
+    const navItems = getNavItems();
 
     const bottomItems = [
         { name: 'Upgrade', path: '/dashboard/upgrade', icon: Crown },
