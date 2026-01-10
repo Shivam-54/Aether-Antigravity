@@ -43,7 +43,7 @@ export default function SourceNav() {
         'Real Estate': { Portfolio: 'Properties', Transactions: 'Rental / Sale', Reports: 'Valuation & Docs' },
         'Crypto': { Portfolio: 'Wallets', Transactions: 'On-chain Activity', Reports: 'Holdings' },
         'Shares': { Portfolio: 'Holdings', Transactions: 'Market Activity', Reports: 'Performance' },
-        'Bonds': { Portfolio: 'Fixed Income', Transactions: 'Yield Analysis', Reports: 'Maturity Schedule' },
+        'Bonds': { Portfolio: 'Holdings', Transactions: 'Yield Analysis', Reports: 'Maturity Schedule' },
         'Business': { Portfolio: 'Ventures', Transactions: 'Cash Flow', Reports: 'Statements' },
     };
 

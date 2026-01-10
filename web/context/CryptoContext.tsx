@@ -55,6 +55,7 @@ interface CryptoContextType {
     metrics: CryptoMetrics;
     loading: boolean;
     refreshData: () => Promise<void>;
+    addCrypto: (crypto: CryptoAsset) => Promise<void>;
 }
 
 // --- Mock Data ---
@@ -211,6 +212,42 @@ export function CryptoProvider({ children }: { children: ReactNode }) {
     const [metrics, setMetrics] = useState<CryptoMetrics>(mockMetrics);
     const [loading, setLoading] = useState(true);
 
+    const addCrypto = async (crypto: CryptoAsset) => {
+        // Optimistic Update
+        setHoldings(prev => [...prev, crypto]);
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { data, error } = await supabase
+                .from('assets')
+                .insert({
+                    user_id: user.id,
+                    type: 'CRYPTO',
+                    name: crypto.name,
+                    value: crypto.quantity * crypto.current_price,
+                    quantity: crypto.quantity,
+                    cost_basis: crypto.quantity * crypto.purchase_price_avg,
+                    meta: {
+                        symbol: crypto.symbol,
+                        network: crypto.network,
+                    }
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            if (data) {
+                setHoldings(prev => prev.map(c => c.id === crypto.id ? { ...c, id: data.id } : c));
+            }
+
+        } catch (err) {
+            console.error('Error saving crypto to DB:', err);
+        }
+    };
+
     const refreshData = async () => {
         try {
             setLoading(true);
@@ -234,7 +271,7 @@ export function CryptoProvider({ children }: { children: ReactNode }) {
     }, []);
 
     return (
-        <CryptoContext.Provider value={{ holdings, transactions, wallets, metrics, loading, refreshData }}>
+        <CryptoContext.Provider value={{ holdings, transactions, wallets, metrics, loading, refreshData, addCrypto }}>
             {children}
         </CryptoContext.Provider>
     );

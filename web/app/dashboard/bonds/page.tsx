@@ -1,14 +1,16 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSource } from '@/context/SourceContext';
 import { useBonds } from '@/context/BondsContext';
-import { Calendar, TrendingUp, DollarSign, Activity } from 'lucide-react';
+import { Calendar, TrendingUp, DollarSign, Activity, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
+import AddBondModal from '@/components/bonds/AddBondModal';
 
 export default function BondsPage() {
     const { setActiveSource } = useSource();
-    const { bonds, metrics, loading } = useBonds();
+    const { bonds, metrics, loading, addBond } = useBonds();
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
     useEffect(() => {
         setActiveSource('Bonds');
@@ -27,8 +29,8 @@ export default function BondsPage() {
         <div className="max-w-7xl mx-auto p-8 w-full space-y-8">
             {/* Header */}
             <header>
-                <h1 className="text-3xl font-light text-white tracking-tight">Bonds & Fixed Income</h1>
-                <p className="text-sm text-white/40">Manage your fixed income securities and government bonds.</p>
+                <h1 className="text-3xl font-light text-white tracking-tight">Bonds Holdings</h1>
+                <p className="text-sm text-white/40">Manage your bond portfolio and fixed income securities.</p>
             </header>
 
             {/* Metrics Grid */}
@@ -57,9 +59,18 @@ export default function BondsPage() {
 
             {/* Holdings Table */}
             <div className="rounded-3xl border border-white/5 bg-white/[0.02] backdrop-blur-sm overflow-hidden">
-                <div className="p-6 border-b border-white/5">
-                    <h2 className="text-lg font-light text-white">Bond Holdings</h2>
-                    <p className="text-sm text-white/40">Detailed breakdown of your bond portfolio</p>
+                <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                    <div>
+                        <h2 className="text-lg font-light text-white">Bond Holdings</h2>
+                        <p className="text-sm text-white/40">Detailed breakdown of your bond portfolio</p>
+                    </div>
+                    <button
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/15 transition-colors flex items-center gap-2 text-sm"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Add Bond
+                    </button>
                 </div>
 
                 {bonds.length === 0 ? (
@@ -136,6 +147,13 @@ export default function BondsPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Add Bond Modal */}
+            <AddBondModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onAdd={addBond}
+            />
         </div>
     );
 }

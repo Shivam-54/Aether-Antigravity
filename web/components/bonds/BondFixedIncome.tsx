@@ -1,7 +1,11 @@
 'use client';
 
+import { useState } from 'react';
+import { useBonds } from '@/context/BondsContext';
 import { Bond } from '@/types/bonds';
+import { Plus } from 'lucide-react';
 import { Bar } from 'react-chartjs-2';
+import AddBondModal from '@/components/bonds/AddBondModal';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -26,6 +30,13 @@ interface BondFixedIncomeProps {
 }
 
 export default function BondFixedIncome({ bonds }: BondFixedIncomeProps) {
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    const handleBondAdded = () => {
+        setRefreshKey(prev => prev + 1); // Trigger parent refresh
+        setIsAddModalOpen(false);
+    };
     // Data Processing: Income by Type
     const incomeByType = bonds.reduce((acc, bond) => {
         const annualIncome = bond.faceValue * (bond.couponRate / 100);
@@ -80,11 +91,20 @@ export default function BondFixedIncome({ bonds }: BondFixedIncomeProps) {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700">
-            <div>
-                <h1 className="text-3xl font-light tracking-wide text-white/90 mb-2">Fixed Income Analysis</h1>
-                <p className="text-white/50 font-light tracking-wide">
-                    Breakdown of recurring capital inflows
-                </p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-light tracking-wide text-white/90 mb-2">Holdings</h1>
+                    <p className="text-white/50 font-light tracking-wide">
+                        Breakdown of recurring capital inflows
+                    </p>
+                </div>
+                <button
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/15 transition-colors flex items-center gap-2 text-sm"
+                >
+                    <Plus className="w-4 h-4" />
+                    Add Bond
+                </button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -131,6 +151,13 @@ export default function BondFixedIncome({ bonds }: BondFixedIncomeProps) {
                     </div>
                 </div>
             </div>
+
+            {/* Add Bond Modal */}
+            <AddBondModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onAdd={handleBondAdded}
+            />
         </div>
     );
 }

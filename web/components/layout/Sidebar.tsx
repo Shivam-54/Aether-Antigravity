@@ -26,7 +26,7 @@ export default function Sidebar() {
         if (activeSource === 'Bonds') {
             return [
                 { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-                { name: 'Fixed Income', path: '/dashboard/fixed-income', icon: FileText },
+                { name: 'Holdings', path: '/dashboard/fixed-income', icon: FileText },
                 { name: 'Maturity Schedule', path: '/dashboard/maturity', icon: Calendar },
                 { name: 'Bond Allocation', path: '/dashboard/allocation', icon: PieChart },
                 { name: 'Yield Analysis', path: '/dashboard/yield', icon: TrendingUp },
@@ -63,13 +63,18 @@ export default function Sidebar() {
             'Business': { Portfolio: 'Ventures', Transactions: 'Cash Flow', Reports: 'Statements' },
         };
 
+        const contextRoutes: Record<string, { Portfolio: string; Transactions: string; Reports: string }> = {
+            'Shares': { Portfolio: '/dashboard/shares/holdings', Transactions: '/dashboard/transactions', Reports: '/dashboard/reports' },
+        };
+
         const currentLabels = contextLabels[activeSource] || contextLabels['Home'];
+        const currentRoutes = contextRoutes[activeSource];
 
         return [
             { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-            { name: currentLabels.Portfolio, path: '/dashboard/portfolio', icon: PieChart },
-            { name: currentLabels.Transactions, path: '/dashboard/transactions', icon: ArrowLeftRight },
-            { name: currentLabels.Reports, path: '/dashboard/reports', icon: FileText },
+            { name: currentLabels.Portfolio, path: currentRoutes?.Portfolio || '/dashboard/portfolio', icon: PieChart },
+            { name: currentLabels.Transactions, path: currentRoutes?.Transactions || '/dashboard/transactions', icon: ArrowLeftRight },
+            { name: currentLabels.Reports, path: currentRoutes?.Reports || '/dashboard/reports', icon: FileText },
             { name: 'AI Insights', path: '/dashboard/ai-insights', icon: Sparkles },
         ];
     };

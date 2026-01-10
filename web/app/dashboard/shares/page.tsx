@@ -1,16 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useSource } from '@/context/SourceContext';
 import { useShares } from '@/context/SharesContext';
-import { TrendingUp, TrendingDown, Activity, DollarSign, Plus } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity, DollarSign } from 'lucide-react';
 import { motion } from 'framer-motion';
-import AddShareModal from '@/components/shares/AddShareModal';
 
 export default function SharesPage() {
     const { setActiveSource } = useSource();
-    const { shares, transactions, loading, addShare } = useShares();
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const { shares, transactions, loading } = useShares();
 
     useEffect(() => {
         setActiveSource('Shares');
@@ -63,18 +61,9 @@ export default function SharesPage() {
 
             {/* Holdings Table */}
             <div className="rounded-3xl border border-white/5 bg-white/[0.02] backdrop-blur-sm overflow-hidden">
-                <div className="p-6 border-b border-white/5 flex items-center justify-between">
-                    <div>
-                        <h2 className="text-lg font-light text-white">Portfolio Holdings</h2>
-                        <p className="text-sm text-white/40">Detailed breakdown of your stock holdings</p>
-                    </div>
-                    <button
-                        onClick={() => setIsAddModalOpen(true)}
-                        className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/15 transition-colors flex items-center gap-2 text-sm"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Add Share
-                    </button>
+                <div className="p-6 border-b border-white/5">
+                    <h2 className="text-lg font-light text-white">Portfolio Holdings</h2>
+                    <p className="text-sm text-white/40">Detailed breakdown of your stock holdings</p>
                 </div>
 
                 {shares.length === 0 ? (
@@ -133,13 +122,6 @@ export default function SharesPage() {
                     })}
                 </div>
             </div>
-
-            {/* Add Share Modal */}
-            <AddShareModal
-                isOpen={isAddModalOpen}
-                onClose={() => setIsAddModalOpen(false)}
-                onAdd={addShare}
-            />
         </div>
     );
 }
