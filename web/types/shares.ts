@@ -18,6 +18,11 @@ export interface Share {
     gainLossPercent: number;
     acquisitionDate: string;
     holdingDuration: HoldingDuration;
+    status: 'active' | 'sold';
+    saleDate?: string;
+    salePrice?: number;
+    saleTotalValue?: number;
+    profitLoss?: number;
 }
 
 export interface ShareTransaction {

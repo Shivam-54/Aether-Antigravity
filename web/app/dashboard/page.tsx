@@ -9,8 +9,13 @@ import PortfolioOverview from '@/components/realestate/PortfolioOverview';
 // Shares Components
 import SharesDashboard from '@/components/shares/SharesDashboard';
 
+import CryptoDashboard from '@/components/crypto/CryptoDashboard';
+
 // Bonds Components
 import BondsDashboard from '@/components/bonds/BondsDashboard';
+
+// Business Components
+import BusinessDashboard from '@/components/business/BusinessDashboard';
 
 // Mock Data
 import {
@@ -18,10 +23,7 @@ import {
     mockProperties,
 } from '@/lib/mockData/realEstateData';
 
-import {
-    mockShares,
-    mockSharePerformance,
-} from '@/lib/mockData/sharesData';
+
 
 import { mockBonds, mockBondMetrics } from '@/lib/mockData/bondsData';
 
@@ -50,10 +52,10 @@ export default function DashboardPage() {
 
             case 'Crypto':
                 return (
-                    <div className="flex items-center justify-center h-full">
-                        <p className="text-white/50 text-lg font-light tracking-wide">
-                            Crypto module coming soon...
-                        </p>
+                    <div className="w-full h-full overflow-y-auto px-12 py-8">
+                        <div className="max-w-[1600px] mx-auto">
+                            <CryptoDashboard />
+                        </div>
                     </div>
                 );
 
@@ -62,9 +64,7 @@ export default function DashboardPage() {
                     <div className="w-full h-full overflow-y-auto px-12 py-8">
                         <div className="max-w-[1600px] mx-auto">
                             {/* Shares Dashboard - Main Overview */}
-                            <SharesDashboard
-                                performanceData={mockSharePerformance}
-                            />
+                            <SharesDashboard />
                         </div>
                     </div>
                 );
@@ -80,10 +80,10 @@ export default function DashboardPage() {
 
             case 'Business':
                 return (
-                    <div className="flex items-center justify-center h-full">
-                        <p className="text-white/50 text-lg font-light tracking-wide">
-                            Business module coming soon...
-                        </p>
+                    <div className="w-full h-full overflow-y-auto px-12 py-8">
+                        <div className="max-w-[1600px] mx-auto">
+                            <BusinessDashboard />
+                        </div>
                     </div>
                 );
 

@@ -6,7 +6,6 @@ import AIAssistant from '@/components/realestate/AIAssistant';
 import SharesAI from '@/components/shares/SharesAI';
 import BondsAIInsights from '@/components/bonds/BondsAIInsights';
 import { mockAIInsights } from '@/lib/mockData/realEstateData';
-import { mockShareAIInsights } from '@/lib/mockData/sharesData';
 
 export default function AIInsightsPage() {
     const { activeSource } = useSource();
@@ -41,7 +40,7 @@ export default function AIInsightsPage() {
                     <div className="w-full h-full overflow-y-auto px-12 py-8">
                         <div className="max-w-[1600px] mx-auto">
                             {/* AI Insights for Shares */}
-                            <SharesAI insights={mockShareAIInsights} />
+                            <SharesAI />
                         </div>
                     </div>
                 );

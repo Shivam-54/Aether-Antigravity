@@ -13,7 +13,7 @@ import {
     Legend,
     Filler
 } from 'chart.js';
-import { SharePerformance, Share } from '@/types/shares';
+import { Share } from '@/types/shares';
 import { TrendingUp, TrendingDown, Wallet, Package } from 'lucide-react';
 
 ChartJS.register(
@@ -29,13 +29,9 @@ ChartJS.register(
 
 import { useShares } from '@/context/SharesContext';
 
-interface SharesDashboardProps {
-    performanceData: SharePerformance[];
-}
-
 type TimeRange = '1M' | '3M' | '6M' | '1Y';
 
-export default function SharesDashboard({ performanceData }: SharesDashboardProps) {
+export default function SharesDashboard() {
     const { shares } = useShares();
     const [timeRange, setTimeRange] = useState<TimeRange>('1Y');
 
@@ -43,24 +39,17 @@ export default function SharesDashboard({ performanceData }: SharesDashboardProp
     const totalShareValue = shares.reduce((sum, s) => sum + s.totalValue, 0);
     const totalInvested = shares.reduce((sum, s) => sum + s.totalInvested, 0);
     const totalGainLoss = totalShareValue - totalInvested;
-    const totalGainLossPercent = (totalGainLoss / totalInvested) * 100;
-    const avgReturn = shares.reduce((sum, s) => sum + s.gainLossPercent, 0) / shares.length;
+    const totalGainLossPercent = totalInvested > 0 ? (totalGainLoss / totalInvested) * 100 : 0;
+    const avgReturn = shares.length > 0 ? shares.reduce((sum, s) => sum + s.gainLossPercent, 0) / shares.length : 0;
     const totalHoldings = shares.length;
 
-    // Filter data based on time range
-    const getFilteredData = () => {
-        const months = timeRange === '1M' ? 1 : timeRange === '3M' ? 3 : timeRange === '6M' ? 6 : 12;
-        return performanceData.slice(-months);
-    };
-
-    const filteredData = getFilteredData();
-
+    // Placeholder for real performance data - mostly empty/flat for now until history API is added
     const chartData = {
-        labels: filteredData.map(d => d.month),
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
         datasets: [
             {
                 label: 'Portfolio Value',
-                data: filteredData.map(d => d.value),
+                data: Array(12).fill(0), // Placeholder empty data
                 borderColor: 'rgba(255, 255, 255, 0.8)',
                 backgroundColor: 'rgba(255, 255, 255, 0.05)',
                 borderWidth: 2,
@@ -106,7 +95,7 @@ export default function SharesDashboard({ performanceData }: SharesDashboardProp
                     color: 'rgba(255, 255, 255, 0.4)',
                     font: {
                         size: 11,
-                        weight: '300' as const,
+                        weight: 'normal' as const,
                     },
                 },
                 border: {
@@ -122,7 +111,7 @@ export default function SharesDashboard({ performanceData }: SharesDashboardProp
                     color: 'rgba(255, 255, 255, 0.4)',
                     font: {
                         size: 11,
-                        weight: '300' as const,
+                        weight: 'normal' as const,
                     },
                     callback: function (value: any) {
                         return '₹' + (value / 100000).toFixed(0) + 'L';
@@ -174,6 +163,7 @@ export default function SharesDashboard({ performanceData }: SharesDashboardProp
 
     return (
         <div className="space-y-8">
+
             {/* Portfolio Performance Graph */}
             <div
                 className="relative p-8 rounded-3xl overflow-hidden"

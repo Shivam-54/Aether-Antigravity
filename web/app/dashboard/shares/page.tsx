@@ -18,9 +18,10 @@ export default function SharesPage() {
         return <div className="p-8 text-white/50">Loading shares data...</div>;
     }
 
-    // Calculate metrics from shares data
-    const totalInvested = shares.reduce((sum, share) => sum + share.totalInvested, 0);
-    const totalValue = shares.reduce((sum, share) => sum + share.totalValue, 0);
+    // Calculate metrics from ACTIVE shares only
+    const activeShares = shares.filter(s => s.status === 'active');
+    const totalInvested = activeShares.reduce((sum, share) => sum + share.totalInvested, 0);
+    const totalValue = activeShares.reduce((sum, share) => sum + share.totalValue, 0);
     const totalGainLoss = totalValue - totalInvested;
     const totalGainLossPercent = totalInvested > 0 ? (totalGainLoss / totalInvested) * 100 : 0;
 
@@ -55,7 +56,7 @@ export default function SharesPage() {
                 <MetricCard
                     icon={<Activity className="w-5 h-5" />}
                     label="Holdings"
-                    value={shares.length.toString()}
+                    value={activeShares.length.toString()}
                 />
             </div>
 
@@ -66,8 +67,8 @@ export default function SharesPage() {
                     <p className="text-sm text-white/40">Detailed breakdown of your stock holdings</p>
                 </div>
 
-                {shares.length === 0 ? (
-                    <div className="p-8 text-center text-white/50">No shares found.</div>
+                {activeShares.length === 0 ? (
+                    <div className="p-8 text-center text-white/50">No active shares found.</div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
@@ -83,7 +84,7 @@ export default function SharesPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
-                                {shares.map((share) => (
+                                {activeShares.map((share) => (
                                     <ShareRow key={share.id} share={share} />
                                 ))}
                             </tbody>

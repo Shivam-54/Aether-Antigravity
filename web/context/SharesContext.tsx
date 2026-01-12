@@ -4,7 +4,7 @@ import { createContext, useContext, useState, ReactNode, useEffect, useCallback 
 import { Share, ShareTransaction, TransactionType, OrderType, TransactionStatus } from '@/types/shares';
 import { createClient } from '@/lib/supabase/client';
 import { Asset } from '@/types/wealth';
-import { mockShares, mockShareTransactions } from '@/lib/mockData/sharesData';
+// Mock data removed
 
 interface SharesContextType {
     shares: Share[];
@@ -13,13 +13,14 @@ interface SharesContextType {
     addShare: (share: Share) => Promise<void>;
     updateShare: (id: string, updates: Partial<Share>) => Promise<void>;
     deleteShare: (id: string) => Promise<void>;
+    sellShare: (id: string, salePrice: number, saleDate: string) => Promise<void>;
 }
 
 const SharesContext = createContext<SharesContextType | undefined>(undefined);
 
 export function SharesProvider({ children }: { children: ReactNode }) {
     const [shares, setShares] = useState<Share[]>([]);
-    const [transactions, setTransactions] = useState<ShareTransaction[]>(mockShareTransactions);
+    const [transactions, setTransactions] = useState<ShareTransaction[]>([]);
     const [loading, setLoading] = useState(true);
     const supabase = createClient();
 
@@ -32,8 +33,8 @@ export function SharesProvider({ children }: { children: ReactNode }) {
                 .eq('type', 'SHARE');
 
             if (error) {
-                console.warn('Error fetching shares (falling back to mock):', error);
-                setShares(mockShares);
+                console.warn('Error fetching shares:', error);
+                setShares([]); // Set to empty array on error, do not fallback to mock
                 return;
             }
 
@@ -51,48 +52,20 @@ export function SharesProvider({ children }: { children: ReactNode }) {
                     gainLoss: asset.value - (Number(asset.cost_basis) || 0),
                     gainLossPercent: asset.cost_basis ? ((asset.value - Number(asset.cost_basis)) / Number(asset.cost_basis)) * 100 : 0,
                     acquisitionDate: asset.created_at,
-                    holdingDuration: asset.meta?.holdingDuration || 'Short'
+                    holdingDuration: asset.meta?.holdingDuration || 'Short',
+                    status: asset.meta?.status || 'active',
+                    saleDate: asset.meta?.saleDate,
+                    salePrice: asset.meta?.salePrice,
+                    saleTotalValue: asset.meta?.saleTotalValue,
+                    profitLoss: asset.meta?.profitLoss
                 }));
                 setShares(mappedShares);
-                if (typeof window !== 'undefined') {
-                    localStorage.setItem('seeded_SHARES', 'true');
-                }
             } else {
-                const hasSeeded = typeof window !== 'undefined' ? localStorage.getItem('seeded_SHARES') : false;
-
-                if (!hasSeeded) {
-                    setShares(mockShares);
-                    const seedDB = async () => {
-                        const { data: { user } } = await supabase.auth.getUser();
-                        if (!user) return;
-
-                        for (const share of mockShares) {
-                            await supabase.from('assets').insert({
-                                user_id: user.id,
-                                type: 'SHARE',
-                                name: share.companyName,
-                                value: share.totalValue,
-                                quantity: share.quantity,
-                                cost_basis: share.totalInvested,
-                                meta: {
-                                    symbol: share.symbol,
-                                    sector: share.sector,
-                                    holdingDuration: share.holdingDuration
-                                }
-                            });
-                        }
-                        if (typeof window !== 'undefined') {
-                            localStorage.setItem('seeded_SHARES', 'true');
-                        }
-                    };
-                    seedDB();
-                } else {
-                    setShares([]);
-                }
+                setShares([]); // Explicitly set empty if no data
             }
         } catch (err) {
             console.error('Unexpected error fetching shares:', err);
-            setShares(mockShares);
+            setShares([]);
         } finally {
             setLoading(false);
         }
@@ -123,7 +96,8 @@ export function SharesProvider({ children }: { children: ReactNode }) {
                     meta: {
                         symbol: share.symbol,
                         sector: share.sector,
-                        holdingDuration: share.holdingDuration
+                        holdingDuration: share.holdingDuration,
+                        status: share.status || 'active'
                     }
                 })
                 .select()
@@ -159,7 +133,12 @@ export function SharesProvider({ children }: { children: ReactNode }) {
                     meta: {
                         symbol: merged.symbol,
                         sector: merged.sector,
-                        holdingDuration: merged.holdingDuration
+                        holdingDuration: merged.holdingDuration,
+                        status: merged.status,
+                        saleDate: merged.saleDate,
+                        salePrice: merged.salePrice,
+                        saleTotalValue: merged.saleTotalValue,
+                        profitLoss: merged.profitLoss
                     }
                 })
                 .eq('id', id);
@@ -188,6 +167,86 @@ export function SharesProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const sellShare = async (id: string, salePrice: number, saleDate: string) => {
+        const share = shares.find(s => s.id === id);
+        if (!share) return;
+
+        const saleTotalValue = share.quantity * salePrice;
+        const profitLoss = saleTotalValue - share.totalInvested;
+
+        // Create sell transaction record
+        const sellTransaction: ShareTransaction = {
+            id: `tx-sell-${Date.now()}`,
+            shareId: id,
+            type: 'Sell',
+            quantity: share.quantity,
+            executionPrice: salePrice,
+            date: saleDate
+        };
+
+        // Optimistic Update - add transaction and update share
+        setTransactions(prev => [sellTransaction, ...prev]);
+        setShares(prev => prev.map(s =>
+            s.id === id
+                ? {
+                    ...s,
+                    status: 'sold' as const,
+                    saleDate,
+                    salePrice,
+                    saleTotalValue,
+                    profitLoss
+                }
+                : s
+        ));
+
+        try {
+            // Get user ID from Supabase
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                console.error('No user found');
+                return;
+            }
+
+            // Save sell transaction to database
+            const { error: txError } = await supabase
+                .from('transactions')
+                .insert({
+                    user_id: user.id,
+                    asset_id: id,
+                    type: 'sell',
+                    amount: saleTotalValue,
+                    quantity: share.quantity,
+                    price: salePrice,
+                    date: saleDate,
+                    source: 'Shares'
+                });
+
+            if (txError) console.error('Error creating sell transaction:', txError);
+
+            // Update share status in database
+            const { error } = await supabase
+                .from('assets')
+                .update({
+                    meta: {
+                        symbol: share.symbol,
+                        sector: share.sector,
+                        holdingDuration: share.holdingDuration,
+                        status: 'sold',
+                        saleDate,
+                        salePrice,
+                        saleTotalValue,
+                        profitLoss
+                    }
+                })
+                .eq('id', id);
+
+            if (error) console.error('Error marking share as sold in DB:', error);
+
+        } catch (err) {
+            console.error('Unexpected error selling share:', err);
+        }
+    };
+
     return (
         <SharesContext.Provider value={{
             shares,
@@ -195,7 +254,8 @@ export function SharesProvider({ children }: { children: ReactNode }) {
             loading,
             addShare,
             updateShare,
-            deleteShare
+            deleteShare,
+            sellShare
         }}>
             {children}
         </SharesContext.Provider>

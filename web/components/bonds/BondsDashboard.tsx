@@ -33,10 +33,10 @@ export default function BondsDashboard() {
     const { bonds, metrics } = useBonds();
 
     // Calculations
-    const totalValue = bonds.reduce((sum, b) => sum + b.currentPrice, 0);
+    const totalValue = bonds.reduce((sum, b) => sum + (b.currentPrice || 0), 0);
     const annualIncome = bonds.reduce((sum, b) => sum + (b.faceValue * (b.couponRate / 100)), 0);
     const avgYield = bonds.length > 0
-        ? bonds.reduce((sum, b) => sum + b.yieldToMaturity, 0) / bonds.length
+        ? bonds.reduce((sum, b) => sum + (b.yieldToMaturity || 0), 0) / bonds.length
         : 0;
 
     // Find next maturing bond
@@ -138,34 +138,6 @@ export default function BondsDashboard() {
                 </p>
             </div>
 
-            {/* Metrics Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <MetricCard
-                    icon={Wallet}
-                    label="Total Bond Value"
-                    value={`₹${(totalValue / 10000000).toFixed(2)} Cr`}
-                    subtext="Current Market Value"
-                />
-                <MetricCard
-                    icon={Calendar}
-                    label="Annual Fixed Income"
-                    value={`₹${(annualIncome / 100000).toFixed(2)} L`}
-                    subtext="Projected Interest"
-                />
-                <MetricCard
-                    icon={TrendingUp}
-                    label="Average Yield"
-                    value={`${avgYield.toFixed(2)}%`}
-                    subtext="Yield to Maturity"
-                />
-                <MetricCard
-                    icon={PieChart}
-                    label="Next Maturity"
-                    value={nextMaturity ? new Date(nextMaturity.maturityDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : 'None'}
-                    subtext={nextMaturity ? nextMaturity.ticker : '-'}
-                />
-            </div>
-
             {/* Main Chart */}
             <div
                 className="relative p-8 rounded-3xl overflow-hidden h-[400px]"
@@ -193,6 +165,34 @@ export default function BondsDashboard() {
                 <div className="h-[300px] w-full">
                     <Line data={chartData} options={chartOptions} />
                 </div>
+            </div>
+
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <MetricCard
+                    icon={Wallet}
+                    label="Total Bond Value"
+                    value={`₹${(totalValue / 10000000).toFixed(2)} Cr`}
+                    subtext="Current Market Value"
+                />
+                <MetricCard
+                    icon={Calendar}
+                    label="Annual Fixed Income"
+                    value={`₹${(annualIncome / 100000).toFixed(2)} L`}
+                    subtext="Projected Interest"
+                />
+                <MetricCard
+                    icon={TrendingUp}
+                    label="Average Yield"
+                    value={`${avgYield.toFixed(2)}%`}
+                    subtext="Yield to Maturity"
+                />
+                <MetricCard
+                    icon={PieChart}
+                    label="Next Maturity"
+                    value={nextMaturity ? new Date(nextMaturity.maturityDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : 'None'}
+                    subtext={nextMaturity ? nextMaturity.ticker : '-'}
+                />
             </div>
         </div>
     );

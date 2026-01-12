@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { X, Plus, Search, Loader2 } from 'lucide-react';
+import { X, Plus, Search, Loader2, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Share, HoldingDuration } from '@/types/shares';
-import { searchCompanies } from '@/lib/api/alphavantage';
+import { searchCompanies, getCurrentPrice, getCompanyOverview } from '@/lib/api/alphavantage';
 import type { CompanySearchResult } from '@/types/alphavantage';
 
 interface AddShareModalProps {
@@ -23,6 +23,7 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
         currentPrice: '',
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isFetchingPrice, setIsFetchingPrice] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     // Company search states
@@ -65,6 +66,47 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
         'ETF/Index Fund',
         'Other'
     ];
+
+    // Auto-fetch price and sector data
+    const fetchPriceAndSector = async (symbol: string) => {
+        setIsFetchingPrice(true);
+        try {
+            // Fetch current price
+            const price = await getCurrentPrice(symbol);
+            if (price) {
+                setFormData(prev => ({
+                    ...prev,
+                    currentPrice: price.toString(),
+                    // If buy price is empty, default it to current price for convenience
+                    avgBuyPrice: prev.avgBuyPrice || price.toString()
+                }));
+            }
+
+            // Fetch sector (optional, fail silently if it errors)
+            try {
+                const overview = await getCompanyOverview(symbol);
+                if (overview && overview.Sector) {
+                    // Try to match API sector to our predefined sectors
+                    const matchedSector = sectors.find(s => s.toLowerCase() === overview.Sector.toLowerCase()) ||
+                        sectors.find(s => overview.Sector.includes(s)) ||
+                        'Other';
+
+                    setFormData(prev => ({
+                        ...prev,
+                        sector: matchedSector
+                    }));
+                }
+            } catch (err) {
+                console.warn('Could not fetch sector info:', err);
+            }
+
+        } catch (error) {
+            console.error('Error fetching price:', error);
+            // Don't block user, just let them enter manually
+        } finally {
+            setIsFetchingPrice(false);
+        }
+    };
 
     // Debounced search effect
     useEffect(() => {
@@ -148,6 +190,9 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
                 companyName: '',
             }));
         }
+
+        // Trigger auto-fetch
+        fetchPriceAndSector(company.symbol);
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -212,7 +257,8 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
                 gainLoss,
                 gainLossPercent,
                 acquisitionDate,
-                holdingDuration
+                holdingDuration,
+                status: 'active'
             };
 
             await onAdd(newShare);
@@ -455,18 +501,34 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
                                     <label className="block text-sm text-white/60 mb-2">
                                         Current Price (₹) <span className="text-red-400">*</span>
                                     </label>
-                                    <input
-                                        type="number"
-                                        name="currentPrice"
-                                        value={formData.currentPrice}
-                                        onChange={handleChange}
-                                        placeholder="1750"
-                                        min="0.01"
-                                        step="0.01"
-                                        className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${errors.currentPrice ? 'border-red-400/50' : 'border-white/10'
-                                            } text-white placeholder:text-white/30 outline-none focus:border-white/20 transition-colors`}
-                                        disabled={isSubmitting}
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            name="currentPrice"
+                                            value={formData.currentPrice}
+                                            onChange={handleChange}
+                                            placeholder="1750"
+                                            min="0.01"
+                                            step="0.01"
+                                            className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${errors.currentPrice ? 'border-red-400/50' : 'border-white/10'
+                                                } text-white placeholder:text-white/30 outline-none focus:border-white/20 transition-colors pr-10`}
+                                            disabled={isSubmitting || isFetchingPrice}
+                                        />
+                                        {isFetchingPrice ? (
+                                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 animate-spin" />
+                                        ) : (
+                                            formData.symbol && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => fetchPriceAndSector(formData.symbol)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-full transition-colors"
+                                                    title="Refresh Price"
+                                                >
+                                                    <RefreshCw className="w-4 h-4 text-white/40 hover:text-white/80" />
+                                                </button>
+                                            )
+                                        )}
+                                    </div>
                                     {errors.currentPrice && (
                                         <p className="text-red-400 text-xs mt-1">{errors.currentPrice}</p>
                                     )}

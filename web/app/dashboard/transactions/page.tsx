@@ -4,7 +4,6 @@ import { useSource } from '@/context/SourceContext';
 import TransactionHistory from '@/components/realestate/TransactionHistory';
 import SharesTransactions from '@/components/shares/SharesTransactions';
 import { mockTransactions } from '@/lib/mockData/realEstateData';
-import { mockShareTransactions } from '@/lib/mockData/sharesData';
 
 export default function TransactionsPage() {
     const { activeSource } = useSource();
@@ -36,7 +35,7 @@ export default function TransactionsPage() {
                     <div className="w-full h-full overflow-y-auto px-12 py-8">
                         <div className="max-w-[1600px] mx-auto">
                             {/* Market Activity */}
-                            <SharesTransactions transactions={mockShareTransactions} />
+                            <SharesTransactions />
                         </div>
                     </div>
                 );

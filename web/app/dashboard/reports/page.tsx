@@ -4,7 +4,6 @@ import { useSource } from '@/context/SourceContext';
 import DocumentsSection from '@/components/realestate/DocumentsSection';
 import SharesPerformance from '@/components/shares/SharesPerformance';
 import { mockDocuments } from '@/lib/mockData/realEstateData';
-import { mockShares, mockSectorExposure } from '@/lib/mockData/sharesData';
 
 export default function ReportsPage() {
     const { activeSource } = useSource();
@@ -36,7 +35,7 @@ export default function ReportsPage() {
                     <div className="w-full h-full overflow-y-auto px-12 py-8">
                         <div className="max-w-[1600px] mx-auto">
                             {/* Performance Report */}
-                            <SharesPerformance shares={mockShares} sectorExposure={mockSectorExposure} />
+                            <SharesPerformance />
                         </div>
                     </div>
                 );

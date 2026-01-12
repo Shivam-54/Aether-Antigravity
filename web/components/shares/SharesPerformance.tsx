@@ -7,12 +7,53 @@ import { TrendingUp, TrendingDown, Award, AlertTriangle, Clock } from 'lucide-re
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-interface SharesPerformanceProps {
-    shares: Share[];
-    sectorExposure: SectorExposure[];
-}
+import { useShares } from '@/context/SharesContext';
 
-export default function SharesPerformance({ shares, sectorExposure }: SharesPerformanceProps) {
+export default function SharesPerformance() {
+    const { shares } = useShares();
+
+    // Calculate sector exposure dynamically
+    const totalPortfolioValue = shares.reduce((sum, s) => sum + s.totalValue, 0);
+    const sectorMap = new Map<string, number>();
+
+    shares.forEach(share => {
+        const currentVal = sectorMap.get(share.sector) || 0;
+        sectorMap.set(share.sector, currentVal + share.totalValue);
+    });
+
+    const sectorExposure: SectorExposure[] = Array.from(sectorMap.entries()).map(([sector, value], index) => {
+        // Generate a consistent color based on index or sector name hash if needed
+        // For now using a simple palette cycling
+        const colors = ['#60A5FA', '#34D399', '#F87171', '#FBBF24', '#818CF8', '#A78BFA', '#F472B6'];
+        return {
+            sector,
+            value,
+            percentage: totalPortfolioValue > 0 ? (value / totalPortfolioValue) * 100 : 0,
+            color: colors[index % colors.length]
+        };
+    }).sort((a, b) => b.percentage - a.percentage);
+    if (!shares || shares.length === 0) {
+        return (
+            <div className="space-y-8">
+                <div>
+                    <h2 className="text-2xl font-light tracking-wider text-white/90 mb-2">
+                        Performance Report
+                    </h2>
+                    <p className="text-sm font-light tracking-wide text-white/50">
+                        Analytical breakdown of portfolio performance
+                    </p>
+                </div>
+                <div className="p-12 rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm text-center">
+                    <TrendingUp className="w-12 h-12 text-white/20 mx-auto mb-4" />
+                    <h3 className="text-lg font-light text-white mb-2">No Performance Data</h3>
+                    <p className="text-white/40 max-w-sm mx-auto">
+                        Add shares to your portfolio to view performance analytics and detailed breakdowns.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     // Calculate gain/loss distribution
     const gainers = shares.filter(s => s.gainLossPercent > 0);
     const losers = shares.filter(s => s.gainLossPercent < 0);
@@ -20,13 +61,13 @@ export default function SharesPerformance({ shares, sectorExposure }: SharesPerf
     const totalLossValue = Math.abs(losers.reduce((sum, s) => sum + s.gainLoss, 0));
 
     // Find best and worst performers
-    const bestPerformer: BestWorstPerformer = shares.reduce((best, current) =>
+    const bestPerformer: BestWorstPerformer = shares.length > 0 ? shares.reduce((best, current) =>
         current.gainLossPercent > best.gainLossPercent ? current : best
-    );
+    ) : shares[0];
 
-    const worstPerformer: BestWorstPerformer = shares.reduce((worst, current) =>
+    const worstPerformer: BestWorstPerformer = shares.length > 0 ? shares.reduce((worst, current) =>
         current.gainLossPercent < worst.gainLossPercent ? current : worst
-    );
+    ) : shares[0];
 
     // Holding duration analysis
     const shortTerm = shares.filter(s => s.holdingDuration === 'Short');
@@ -151,16 +192,20 @@ export default function SharesPerformance({ shares, sectorExposure }: SharesPerf
                         <Award size={20} strokeWidth={1.5} className="text-green-400/80" />
                         <h3 className="text-lg font-light tracking-wide text-white/90">Best Performer</h3>
                     </div>
-                    <p className="text-xl font-light text-white/90 mb-1">{bestPerformer.symbol}</p>
-                    <p className="text-sm font-light text-white/50 mb-3">{bestPerformer.companyName}</p>
-                    <div className="flex items-center gap-2">
-                        <p className="text-2xl font-light text-green-400/80">
-                            +{bestPerformer.gainLossPercent.toFixed(2)}%
-                        </p>
-                        <p className="text-sm font-light text-white/40">
-                            ₹{(bestPerformer.totalValue / 100000).toFixed(2)}L
-                        </p>
-                    </div>
+                    {bestPerformer && (
+                        <>
+                            <p className="text-xl font-light text-white/90 mb-1">{bestPerformer.symbol}</p>
+                            <p className="text-sm font-light text-white/50 mb-3">{bestPerformer.companyName}</p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-2xl font-light text-green-400/80">
+                                    +{bestPerformer.gainLossPercent.toFixed(2)}%
+                                </p>
+                                <p className="text-sm font-light text-white/40">
+                                    ₹{(bestPerformer.totalValue / 100000).toFixed(2)}L
+                                </p>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 <div
@@ -177,16 +222,20 @@ export default function SharesPerformance({ shares, sectorExposure }: SharesPerf
                         <AlertTriangle size={20} strokeWidth={1.5} className="text-red-400/60" />
                         <h3 className="text-lg font-light tracking-wide text-white/90">Worst Performer</h3>
                     </div>
-                    <p className="text-xl font-light text-white/90 mb-1">{worstPerformer.symbol}</p>
-                    <p className="text-sm font-light text-white/50 mb-3">{worstPerformer.companyName}</p>
-                    <div className="flex items-center gap-2">
-                        <p className="text-2xl font-light text-red-400/60">
-                            {worstPerformer.gainLossPercent.toFixed(2)}%
-                        </p>
-                        <p className="text-sm font-light text-white/40">
-                            ₹{(worstPerformer.totalValue / 100000).toFixed(2)}L
-                        </p>
-                    </div>
+                    {worstPerformer && (
+                        <>
+                            <p className="text-xl font-light text-white/90 mb-1">{worstPerformer.symbol}</p>
+                            <p className="text-sm font-light text-white/50 mb-3">{worstPerformer.companyName}</p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-2xl font-light text-red-400/60">
+                                    {worstPerformer.gainLossPercent.toFixed(2)}%
+                                </p>
+                                <p className="text-sm font-light text-white/40">
+                                    ₹{(worstPerformer.totalValue / 100000).toFixed(2)}L
+                                </p>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 
