@@ -56,6 +56,8 @@ interface CryptoContextType {
     loading: boolean;
     refreshData: () => Promise<void>;
     addCrypto: (crypto: CryptoAsset) => Promise<void>;
+    removeCrypto: (id: string) => Promise<void>;
+    sellCrypto: (id: string, sellPrice: number, quantity: number) => Promise<void>;
 }
 
 // --- Mock Data ---
@@ -248,6 +250,77 @@ export function CryptoProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const removeCrypto = async (id: string) => {
+        // Optimistic removal
+        setHoldings(prev => prev.filter(h => h.id !== id));
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { error } = await supabase
+                .from('assets')
+                .delete()
+                .eq('id', id)
+                .eq('user_id', user.id)
+                .eq('type', 'CRYPTO');
+
+            if (error) throw error;
+
+        } catch (err) {
+            console.error('Error removing crypto from DB:', err);
+            // Revert on error
+            await refreshData();
+        }
+    };
+
+    const sellCrypto = async (id: string, sellPrice: number, quantity: number) => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            // Find the asset
+            const asset = holdings.find(h => h.id === id);
+            if (!asset) return;
+
+            const newQuantity = asset.quantity - quantity;
+
+            // Update local state optimistically
+            if (newQuantity <= 0) {
+                // Remove if sold all
+                setHoldings(prev => prev.filter(h => h.id !== id));
+            } else {
+                // Update quantity
+                setHoldings(prev => prev.map(h =>
+                    h.id === id ? { ...h, quantity: newQuantity } : h
+                ));
+            }
+
+            // Update or delete in database
+            if (newQuantity <= 0) {
+                await supabase
+                    .from('assets')
+                    .delete()
+                    .eq('id', id)
+                    .eq('user_id', user.id);
+            } else {
+                await supabase
+                    .from('assets')
+                    .update({
+                        quantity: newQuantity,
+                        value: newQuantity * asset.current_price
+                    })
+                    .eq('id', id)
+                    .eq('user_id', user.id);
+            }
+
+        } catch (err) {
+            console.error('Error selling crypto:', err);
+            // Revert on error
+            await refreshData();
+        }
+    };
+
     const refreshData = async () => {
         try {
             setLoading(true);
@@ -271,7 +344,7 @@ export function CryptoProvider({ children }: { children: ReactNode }) {
     }, []);
 
     return (
-        <CryptoContext.Provider value={{ holdings, transactions, wallets, metrics, loading, refreshData, addCrypto }}>
+        <CryptoContext.Provider value={{ holdings, transactions, wallets, metrics, loading, refreshData, addCrypto, removeCrypto, sellCrypto }}>
             {children}
         </CryptoContext.Provider>
     );

@@ -41,12 +41,12 @@ const RealEstateContext = createContext<RealEstateContextType | undefined>(undef
 
 export function RealEstateProvider({ children }: { children: ReactNode }) {
     const [properties, setProperties] = useState<Property[]>([]);
-    const [transactions, setTransactions] = useState<RealEstateTransaction[]>(mockTransactions);
-    const [documents, setDocuments] = useState<PropertyDocument[]>(mockDocuments);
+    const [transactions, setTransactions] = useState<RealEstateTransaction[]>([]);
+    const [documents, setDocuments] = useState<PropertyDocument[]>([]);
     const [loading, setLoading] = useState(true);
     const supabase = createClient();
 
-    // Fetch Properties from Supabase
+    // Fetch Properties from Supabase (no mock data fallback)
     const fetchProperties = useCallback(async () => {
         try {
             const { data, error } = await supabase
@@ -55,12 +55,12 @@ export function RealEstateProvider({ children }: { children: ReactNode }) {
                 .eq('type', 'REAL_ESTATE');
 
             if (error) {
-                console.error('Error fetching properties (falling back to mock):', error);
-                setProperties(mockProperties);
+                console.warn('Error fetching properties:', error);
+                setProperties([]); // Set to empty array on error
                 return;
             }
 
-            if (data) {
+            if (data && data.length > 0) {
                 const mappedProperties: Property[] = data.map((asset: Asset) => ({
                     id: asset.id,
                     name: asset.name,
@@ -100,70 +100,13 @@ export function RealEstateProvider({ children }: { children: ReactNode }) {
                     saleInfo: asset.meta?.saleInfo
                 }));
                 setProperties(mappedProperties);
-
-                // If we found data, ensure we mark seeded as true so we don't double seed later
-                if (typeof window !== 'undefined') {
-                    localStorage.setItem('seeded_REAL_ESTATE', 'true');
-                }
             } else {
-                // If DB is empty, check if we should seed mock data
-                // We seed only if we haven't done it before (localStorage check)
-                const hasSeeded = typeof window !== 'undefined' ? localStorage.getItem('seeded_REAL_ESTATE') : false;
-
-                if (!hasSeeded) {
-                    // Seed Logic
-                    // We optimistically show mock data immediately
-                    setProperties(mockProperties);
-
-                    // Then quietly insert them into DB
-                    const seedDB = async () => {
-                        const { data: { user } } = await supabase.auth.getUser();
-                        if (!user) return;
-
-                        for (const prop of mockProperties) {
-                            const meta = {
-                                streetAddress: prop.streetAddress,
-                                city: prop.city,
-                                state: prop.state,
-                                zipCode: prop.zipCode,
-                                latitude: prop.latitude,
-                                longitude: prop.longitude,
-                                propertyType: prop.propertyType,
-                                landArea: prop.landArea,
-                                landUnit: prop.landUnit,
-                                bedrooms: prop.bedrooms,
-                                bathrooms: prop.bathrooms,
-                                purchaseValue: prop.purchaseValue,
-                                outstandingMortgage: prop.outstandingMortgage,
-                                appreciation: prop.appreciation,
-                                acquisitionDate: prop.acquisitionDate,
-                                ownershipStructure: prop.ownershipStructure,
-                                holdingDuration: prop.holdingDuration,
-                                status: prop.status,
-                                rentalInfo: prop.rentalInfo,
-                                saleInfo: prop.saleInfo
-                            };
-
-                            await supabase.from('assets').insert({
-                                user_id: user.id,
-                                type: 'REAL_ESTATE',
-                                name: prop.name,
-                                value: prop.currentValue,
-                                meta: meta
-                            });
-                        }
-                        if (typeof window !== 'undefined') {
-                            localStorage.setItem('seeded_REAL_ESTATE', 'true');
-                        }
-                    };
-                    seedDB();
-                } else {
-                    // It was empty and we ALREADY seeded, means user deleted everything.
-                    setProperties([]);
-                }
+                // No data found - show empty state
+                setProperties([]);
             }
         } catch (err) {
             console.error('Unexpected error fetching properties:', err);
+            setProperties([]);
         } finally {
             setLoading(false);
         }
@@ -175,9 +118,9 @@ export function RealEstateProvider({ children }: { children: ReactNode }) {
 
 
     // Derived AI Insights
-    // In a real app, this would call an API. Here we simulate dynamic logic.
+    // In a real app, this would call an API. Here we simulate dynamic logic based on actual user data.
     const insights: AIInsight[] = properties.length > 0 ? (() => {
-        const generatedInsights: AIInsight[] = [...mockAIInsights];
+        const generatedInsights: AIInsight[] = [];
 
         const owned = properties.filter(p => p.status === PropertyStatus.Owned);
         const rented = properties.filter(p => p.status === PropertyStatus.Rented);
@@ -250,7 +193,7 @@ export function RealEstateProvider({ children }: { children: ReactNode }) {
         }
 
         return generatedInsights;
-    })() : mockAIInsights;
+    })() : []; // Empty array if no properties
 
     // Property management functions
     const addProperty = async (property: Property) => {

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import yahooFinance from 'yahoo-finance2';
+import YahooFinance from 'yahoo-finance2';
+
+// v3 requires instantiation
+const yahooFinance = new YahooFinance();
 
 /**
  * Convert BSE/NSE symbol formats
@@ -32,19 +35,20 @@ export async function POST(request: NextRequest) {
             symbols.map(async (symbol: string) => {
                 try {
                     const yahooSymbol = convertToYahooSymbol(symbol);
+                    console.log(`[Stock API] Fetching price for ${symbol} (Yahoo: ${yahooSymbol})`);
 
-                    // Use quoteSummary to get price data
-                    const result = await yahooFinance.quoteSummary(yahooSymbol, {
-                        modules: ['price']
-                    }) as any;
+                    // Use quote() method instead of quoteSummary for simpler price fetching
+                    const result = await yahooFinance.quote(yahooSymbol);
 
-                    const price = result?.price?.regularMarketPrice;
+                    const price = result?.regularMarketPrice;
                     if (price && typeof price === 'number') {
+                        console.log(`[Stock API] ✓ ${symbol}: ₹${price}`);
                         return { symbol, price };
                     }
+                    console.log(`[Stock API] ✗ ${symbol}: No price data found. Result:`, JSON.stringify(result, null, 2));
                     return { symbol, price: null };
                 } catch (error) {
-                    console.error(`Error fetching ${symbol}:`, error);
+                    console.error(`[Stock API] ✗ Error fetching ${symbol}:`, error);
                     return { symbol, price: null };
                 }
             })

@@ -1,13 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { PropertyDocument } from '@/types/realestate';
-import { FileText, Download, Eye, Calendar, CheckCircle, Archive } from 'lucide-react';
+import { PropertyDocument, DocumentType } from '@/types/realestate';
+import { FileText, Download, Eye, Calendar, CheckCircle, Archive, Upload } from 'lucide-react';
 import { useRealEstate } from '@/context/RealEstateContext';
+import UploadDocumentModal from './UploadDocumentModal';
+import { createClient } from '@/lib/supabase/client';
 
 export default function DocumentsSection() {
-    const { documents } = useRealEstate();
+    const { documents, properties, addDocument } = useRealEstate();
     const [selectedType, setSelectedType] = useState<string>('All');
+    const [showUploadModal, setShowUploadModal] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const supabase = createClient();
     const getDocumentIcon = (type: string) => {
         return FileText;
     };
@@ -22,15 +27,78 @@ export default function DocumentsSection() {
         alert(`Downloading ${doc.type} for ${doc.propertyName}`);
     };
 
+    const handleUploadDocument = async (file: File, propertyId: string, documentType: string) => {
+        setUploading(true);
+
+        try {
+            const property = properties.find(p => p.id === propertyId);
+            if (!property) throw new Error('Property not found');
+
+            // Get current user
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('User not authenticated');
+
+            // Upload file to Supabase Storage
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${property.id}/${documentType.replace(/\s+/g, '_')}_${Date.now()}.${fileExt}`;
+
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('property-documents')
+                .upload(fileName, file);
+
+            if (uploadError) throw uploadError;
+
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('property-documents')
+                .getPublicUrl(fileName);
+
+            // Create document record
+            const newDocument: PropertyDocument = {
+                id: `doc-${Date.now()}`,
+                propertyId: property.id,
+                propertyName: property.name,
+                type: documentType as DocumentType,
+                fileName: file.name,
+                fileUrl: publicUrl,
+                fileSize: file.size,
+                issuedDate: new Date().toISOString().split('T')[0],
+                status: 'active'
+            };
+
+            // Add to context
+            if (addDocument) {
+                await addDocument(newDocument);
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            throw error;
+        } finally {
+            setUploading(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
-            <div>
-                <h2 className="text-2xl font-light tracking-wider text-white/90 mb-2">
-                    Valuations & Documents
-                </h2>
-                <p className="text-sm font-light tracking-wide text-white/50">
-                    Property documentation and records
-                </p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-light tracking-wider text-white/90 mb-2">
+                        Valuations & Documents
+                    </h2>
+                    <p className="text-sm font-light tracking-wide text-white/50">
+                        Property documentation and records
+                    </p>
+                </div>
+
+                {/* Upload Button */}
+                <button
+                    onClick={() => setShowUploadModal(true)}
+                    disabled={uploading}
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 border border-white/20 text-white/90 hover:bg-white/15 hover:scale-105 transition-all duration-200 font-light tracking-wide disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                    <Upload size={18} strokeWidth={1.5} />
+                    Upload Document
+                </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -119,6 +187,14 @@ export default function DocumentsSection() {
                     );
                 })}
             </div>
+
+            {/* Upload Document Modal */}
+            <UploadDocumentModal
+                isOpen={showUploadModal}
+                onClose={() => setShowUploadModal(false)}
+                onUpload={handleUploadDocument}
+                properties={properties}
+            />
         </div>
     );
 }

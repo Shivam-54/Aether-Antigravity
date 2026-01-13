@@ -60,6 +60,9 @@ export default function PropertiesList({ }: PropertiesListProps) {
         );
     }
 
+    // Filter to show only owned properties (hide rented and sold)
+    const ownedProperties = properties.filter(p => p.status === PropertyStatus.Owned);
+
     return (
         <>
             <div className="space-y-6">
@@ -67,10 +70,10 @@ export default function PropertiesList({ }: PropertiesListProps) {
 
                     <div>
                         <h2 className="text-2xl font-light tracking-wider text-white/90 mb-2">
-                            Properties
+                            Active Properties
                         </h2>
                         <p className="text-sm font-light tracking-wide text-white/50">
-                            Your real estate asset inventory
+                            {ownedProperties.length} {ownedProperties.length === 1 ? 'property' : 'properties'} currently owned
                         </p>
                     </div>
 
@@ -85,7 +88,7 @@ export default function PropertiesList({ }: PropertiesListProps) {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {properties.map((property) => (
+                    {ownedProperties.map((property) => (
                         <div
                             key={property.id}
                             className="relative p-6 rounded-2xl overflow-hidden group transition-all duration-300 hover:scale-[1.02]"

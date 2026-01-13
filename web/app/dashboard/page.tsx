@@ -17,6 +17,9 @@ import BondsDashboard from '@/components/bonds/BondsDashboard';
 // Business Components
 import BusinessDashboard from '@/components/business/BusinessDashboard';
 
+// Unified Dashboard
+import UnifiedWealthDashboard from '@/components/dashboard/UnifiedWealthDashboard';
+
 // Mock Data
 import {
     mockPerformanceData,
@@ -90,14 +93,9 @@ export default function DashboardPage() {
             case 'Home':
             default:
                 return (
-                    <div className="flex items-center justify-center h-full">
-                        <div className="text-center space-y-4">
-                            <h1 className="text-4xl font-light text-white/90 tracking-wide">
-                                Welcome to Aether
-                            </h1>
-                            <p className="text-white/50 text-lg font-light tracking-wide">
-                                Select a source from the navigation above to begin
-                            </p>
+                    <div className="w-full h-full overflow-y-auto px-12 py-8">
+                        <div className="max-w-[1600px] mx-auto">
+                            <UnifiedWealthDashboard />
                         </div>
                     </div>
                 );

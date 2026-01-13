@@ -5,10 +5,43 @@ import { ArrowDownCircle, ArrowUpCircle, Home, Calendar, CreditCard, TrendingUp,
 import { useRealEstate } from '@/context/RealEstateContext';
 
 export default function TransactionHistory() {
-    const { transactions } = useRealEstate();
+    const { transactions, properties } = useRealEstate();
+
+    // Get rented and sold properties to display in history
+    const rentedProperties = properties.filter(p => p.status === 'rented');
+    const soldProperties = properties.filter(p => p.status === 'sold');
+
+    // Create transaction entries for rented properties
+    const rentalTransactions: RealEstateTransaction[] = rentedProperties.map(prop => ({
+        id: `rental-${prop.id}`,
+        propertyId: prop.id,
+        propertyName: prop.name,
+        type: 'Rent',
+        value: prop.rentalInfo?.rentAmount || 0,
+        paymentMethod: 'Cash',
+        date: prop.rentalInfo?.startDate || new Date().toISOString().split('T')[0],
+        holdingDuration: undefined,
+        netGainLoss: undefined
+    }));
+
+    // Create transaction entries for sold properties
+    const saleTransactions: RealEstateTransaction[] = soldProperties.map(prop => ({
+        id: `sale-${prop.id}`,
+        propertyId: prop.id,
+        propertyName: prop.name,
+        type: 'Sell',
+        value: prop.saleInfo?.sellingPrice || 0,
+        paymentMethod: prop.saleInfo?.paymentMode || 'Cash',
+        date: prop.saleInfo?.saleDate || new Date().toISOString().split('T')[0],
+        holdingDuration: prop.holdingDuration,
+        netGainLoss: prop.saleInfo?.capitalGain
+    }));
+
+    // Combine all transactions
+    const allTransactions = [...transactions, ...rentalTransactions, ...saleTransactions];
 
     // Sort by date descending
-    const sortedTransactions = [...transactions].sort((a, b) =>
+    const sortedTransactions = [...allTransactions].sort((a, b) =>
         new Date(b.date).getTime() - new Date(a.date).getTime()
     );
 

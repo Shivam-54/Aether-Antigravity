@@ -97,6 +97,8 @@ export interface PropertyDocument {
     issuedDate: string;
     status: DocumentStatus;
     fileUrl?: string;
+    fileName?: string;
+    fileSize?: number;
 }
 
 export interface AIInsight {

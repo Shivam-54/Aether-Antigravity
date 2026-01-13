@@ -7,6 +7,25 @@ import { TrendingUp, TrendingDown, Plus, Trash2, DollarSign, X, RefreshCw } from
 import { motion } from 'framer-motion';
 import AddShareModal from '@/components/shares/AddShareModal';
 
+// Helper function to format relative time
+function formatRelativeTime(date: Date | null): string {
+    if (!date) return 'Never updated';
+
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffSeconds = Math.floor(diffMs / 1000);
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    const diffHours = Math.floor(diffMinutes / 60);
+
+    if (diffSeconds < 10) return 'Just now';
+    if (diffSeconds < 60) return `${diffSeconds} seconds ago`;
+    if (diffMinutes === 1) return '1 minute ago';
+    if (diffMinutes < 60) return `${diffMinutes} minutes ago`;
+    if (diffHours === 1) return '1 hour ago';
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    return date.toLocaleDateString('en-IN');
+}
+
 export default function SharesHoldingsPage() {
     const { setActiveSource } = useSource();
     const { shares, loading, addShare, deleteShare, sellShare } = useShares();
@@ -18,6 +37,7 @@ export default function SharesHoldingsPage() {
     const [sharesWithLivePrices, setSharesWithLivePrices] = useState<any[]>([]);
     const [isRefreshingPrices, setIsRefreshingPrices] = useState(false);
     const [lastPriceUpdate, setLastPriceUpdate] = useState<Date | null>(null);
+    const [relativeTime, setRelativeTime] = useState<string>('Never updated');
 
     useEffect(() => {
         setActiveSource('Shares');
@@ -126,6 +146,18 @@ export default function SharesHoldingsPage() {
         refreshPrices();
     }, [shares]);
 
+    // Update relative time display every minute
+    useEffect(() => {
+        const updateRelativeTime = () => {
+            setRelativeTime(formatRelativeTime(lastPriceUpdate));
+        };
+
+        updateRelativeTime(); // Update immediately
+        const interval = setInterval(updateRelativeTime, 60000); // Update every minute
+
+        return () => clearInterval(interval);
+    }, [lastPriceUpdate]);
+
     // Use live prices if available, otherwise fall back to stored prices
     const activeShares = sharesWithLivePrices.length > 0 ? sharesWithLivePrices : shares.filter(s => s.status === 'active');
     const soldShares = shares.filter(s => s.status === 'sold');
@@ -197,16 +229,21 @@ export default function SharesHoldingsPage() {
                                 Sold ({soldShares.length})
                             </button>
                         </div>
-                        {/* Refresh Prices Button */}
-                        <button
-                            onClick={() => refreshPrices(true)}
-                            disabled={isRefreshingPrices}
-                            className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white/90 hover:bg-white/10 transition-colors flex items-center gap-2 text-xs disabled:opacity-50"
-                            title="Refresh live prices"
-                        >
-                            <RefreshCw size={14} className={isRefreshingPrices ? 'animate-spin' : ''} />
-                            {isRefreshingPrices ? 'Updating...' : 'Refresh'}
-                        </button>
+                        {/* Refresh Prices Button with Timestamp */}
+                        <div className="flex flex-col items-end gap-1">
+                            <button
+                                onClick={() => refreshPrices(true)}
+                                disabled={isRefreshingPrices}
+                                className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white/90 hover:bg-white/10 transition-colors flex items-center gap-2 text-xs disabled:opacity-50"
+                                title="Refresh live prices"
+                            >
+                                <RefreshCw size={14} className={isRefreshingPrices ? 'animate-spin' : ''} />
+                                {isRefreshingPrices ? 'Updating...' : 'Refresh'}
+                            </button>
+                            <span className="text-[10px] text-white/30">
+                                {relativeTime}
+                            </span>
+                        </div>
                         <button
                             onClick={() => setIsAddModalOpen(true)}
                             className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/15 transition-colors flex items-center gap-2 text-sm"
