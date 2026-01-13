@@ -16,6 +16,7 @@ export default function PropertiesList({ }: PropertiesListProps) {
     const { properties, addProperty, loading } = useRealEstate();
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [viewMode, setViewMode] = useState<'owned' | 'rented'>('owned');
 
     const handleAddProperty = async (formData: PropertyFormData) => {
         // Calculate appreciation percentage
@@ -60,8 +61,10 @@ export default function PropertiesList({ }: PropertiesListProps) {
         );
     }
 
-    // Filter to show only owned properties (hide rented and sold)
+    // Filter properties based on view mode (owned or rented)
     const ownedProperties = properties.filter(p => p.status === PropertyStatus.Owned);
+    const rentedProperties = properties.filter(p => p.status === PropertyStatus.Rented);
+    const displayedProperties = viewMode === 'owned' ? ownedProperties : rentedProperties;
 
     return (
         <>
@@ -73,22 +76,49 @@ export default function PropertiesList({ }: PropertiesListProps) {
                             Active Properties
                         </h2>
                         <p className="text-sm font-light tracking-wide text-white/50">
-                            {ownedProperties.length} {ownedProperties.length === 1 ? 'property' : 'properties'} currently owned
+                            {displayedProperties.length} {displayedProperties.length === 1 ? 'property' : 'properties'} {viewMode === 'owned' ? 'currently owned' : 'on rent'}
                         </p>
                     </div>
 
-                    {/* Add Property Button */}
-                    <button
-                        onClick={() => setIsAddModalOpen(true)}
-                        className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 border border-white/20 text-white/90 hover:bg-white/15 hover:scale-105 transition-all duration-200 font-light tracking-wide"
-                    >
-                        <Plus size={18} strokeWidth={1.5} />
-                        Add Property
-                    </button>
+                    <div className="flex items-center gap-3">
+                        {/* Owned/Rented Toggle */}
+                        <div className="flex gap-2 p-1 rounded-lg" style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                            <button
+                                onClick={() => setViewMode('owned')}
+                                className={`px-3 py-1.5 rounded-md text-xs font-light transition-all duration-200 ${viewMode === 'owned'
+                                    ? 'bg-white/10 text-white/90'
+                                    : 'text-white/50 hover:text-white/70'
+                                    }`}
+                            >
+                                Owned ({ownedProperties.length})
+                            </button>
+                            <button
+                                onClick={() => setViewMode('rented')}
+                                className={`px-3 py-1.5 rounded-md text-xs font-light transition-all duration-200 ${viewMode === 'rented'
+                                    ? 'bg-white/10 text-white/90'
+                                    : 'text-white/50 hover:text-white/70'
+                                    }`}
+                            >
+                                Rented ({rentedProperties.length})
+                            </button>
+                        </div>
+
+                        {/* Add Property Button */}
+                        <button
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 border border-white/20 text-white/90 hover:bg-white/15 hover:scale-105 transition-all duration-200 font-light tracking-wide"
+                        >
+                            <Plus size={18} strokeWidth={1.5} />
+                            Add Property
+                        </button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {ownedProperties.map((property) => (
+                    {displayedProperties.map((property) => (
                         <div
                             key={property.id}
                             className="relative p-6 rounded-2xl overflow-hidden group transition-all duration-300 hover:scale-[1.02]"

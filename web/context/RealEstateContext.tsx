@@ -4,12 +4,6 @@ import { createContext, useContext, useState, ReactNode, useEffect, useCallback 
 import { Property, RealEstateTransaction, PropertyDocument, AIInsight, RentalInfo, SaleInfo, PropertyStatus, PropertyType, OwnershipStructure } from '@/types/realestate';
 import { createClient } from '@/lib/supabase/client';
 import { Asset } from '@/types/wealth';
-import {
-    mockTransactions,
-    mockDocuments,
-    mockAIInsights,
-    mockProperties
-} from '@/lib/mockData/realEstateData';
 
 interface RealEstateContextType {
     // Properties

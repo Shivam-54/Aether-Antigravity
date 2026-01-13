@@ -174,14 +174,28 @@ export function SharesProvider({ children }: { children: ReactNode }) {
         const saleTotalValue = share.quantity * salePrice;
         const profitLoss = saleTotalValue - share.totalInvested;
 
-        // Create sell transaction record
+        // Get current time
+        const now = new Date();
+        const time = now.toLocaleTimeString('en-IN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+
+        // Create sell transaction record with all required fields
         const sellTransaction: ShareTransaction = {
             id: `tx-sell-${Date.now()}`,
             shareId: id,
+            symbol: share.symbol,
+            companyName: share.companyName,
             type: 'Sell',
             quantity: share.quantity,
             executionPrice: salePrice,
-            date: saleDate
+            totalValue: saleTotalValue,
+            orderType: 'Market',
+            status: 'Completed',
+            date: saleDate,
+            time: time
         };
 
         // Optimistic Update - add transaction and update share

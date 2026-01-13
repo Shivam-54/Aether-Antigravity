@@ -35,13 +35,17 @@ export default function SharesDashboard() {
     const { shares } = useShares();
     const [timeRange, setTimeRange] = useState<TimeRange>('1Y');
 
-    // Calculate metrics
-    const totalShareValue = shares.reduce((sum, s) => sum + s.totalValue, 0);
-    const totalInvested = shares.reduce((sum, s) => sum + s.totalInvested, 0);
+    // Filter to active shares only for dashboard metrics
+    const activeShares = shares.filter(s => s.status === 'active');
+
+    // Calculate metrics from ACTIVE shares only
+    const totalShareValue = activeShares.reduce((sum, s) => sum + s.totalValue, 0);
+    const totalInvested = activeShares.reduce((sum, s) => sum + s.totalInvested, 0);
     const totalGainLoss = totalShareValue - totalInvested;
     const totalGainLossPercent = totalInvested > 0 ? (totalGainLoss / totalInvested) * 100 : 0;
-    const avgReturn = shares.length > 0 ? shares.reduce((sum, s) => sum + s.gainLossPercent, 0) / shares.length : 0;
-    const totalHoldings = shares.length;
+    const avgReturn = activeShares.length > 0 ? activeShares.reduce((sum, s) => sum + s.gainLossPercent, 0) / activeShares.length : 0;
+    const activeHoldings = activeShares.length;
+    const soldHoldings = shares.filter(s => s.status === 'sold').length;
 
     // Placeholder for real performance data - mostly empty/flat for now until history API is added
     const chartData = {
@@ -152,9 +156,9 @@ export default function SharesDashboard() {
         },
         {
             icon: Package,
-            label: 'Total Holdings',
-            value: totalHoldings.toString(),
-            subtext: 'Distinct equity positions',
+            label: 'Active Holdings',
+            value: activeHoldings.toString(),
+            subtext: 'Current equity positions',
             valueColor: 'text-white/90',
         },
     ];

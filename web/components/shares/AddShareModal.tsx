@@ -4,8 +4,13 @@ import { useState, useEffect, useRef } from 'react';
 import { X, Plus, Search, Loader2, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Share, HoldingDuration } from '@/types/shares';
-import { searchCompanies, getCurrentPrice, getCompanyOverview } from '@/lib/api/alphavantage';
-import type { CompanySearchResult } from '@/types/alphavantage';
+
+interface StockSearchResult {
+    symbol: string;
+    name: string;
+    exchange: string;
+    type: string;
+}
 
 interface AddShareModalProps {
     isOpen: boolean;
@@ -15,9 +20,9 @@ interface AddShareModalProps {
 
 export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalProps) {
     const [formData, setFormData] = useState({
+        sector: '',
         symbol: '',
         companyName: '',
-        sector: '',
         quantity: '',
         avgBuyPrice: '',
         currentPrice: '',
@@ -28,7 +33,7 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
 
     // Company search states
     const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState<CompanySearchResult[]>([]);
+    const [searchResults, setSearchResults] = useState<StockSearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
     const [searchError, setSearchError] = useState<string>('');
@@ -67,49 +72,41 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
         'Other'
     ];
 
-    // Auto-fetch price and sector data
-    const fetchPriceAndSector = async (symbol: string) => {
+    // Auto-fetch price when stock is selected
+    const fetchPrice = async (symbol: string) => {
         setIsFetchingPrice(true);
         try {
-            // Fetch current price
-            const price = await getCurrentPrice(symbol);
-            if (price) {
-                setFormData(prev => ({
-                    ...prev,
-                    currentPrice: price.toString(),
-                    // If buy price is empty, default it to current price for convenience
-                    avgBuyPrice: prev.avgBuyPrice || price.toString()
-                }));
+            const response = await fetch(`/api/stock-details?symbol=${encodeURIComponent(symbol)}`);
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch stock details');
             }
 
-            // Fetch sector (optional, fail silently if it errors)
-            try {
-                const overview = await getCompanyOverview(symbol);
-                if (overview && overview.Sector) {
-                    // Try to match API sector to our predefined sectors
-                    const matchedSector = sectors.find(s => s.toLowerCase() === overview.Sector.toLowerCase()) ||
-                        sectors.find(s => overview.Sector.includes(s)) ||
-                        'Other';
+            const data = await response.json();
 
-                    setFormData(prev => ({
-                        ...prev,
-                        sector: matchedSector
-                    }));
-                }
-            } catch (err) {
-                console.warn('Could not fetch sector info:', err);
+            if (data.price) {
+                setFormData(prev => ({
+                    ...prev,
+                    currentPrice: data.price.toString(),
+                    avgBuyPrice: prev.avgBuyPrice || data.price.toString()
+                }));
             }
 
         } catch (error) {
             console.error('Error fetching price:', error);
-            // Don't block user, just let them enter manually
         } finally {
             setIsFetchingPrice(false);
         }
     };
 
-    // Debounced search effect
+    // Debounced search effect - only active when sector is selected
     useEffect(() => {
+        if (!formData.sector) {
+            setSearchResults([]);
+            setShowDropdown(false);
+            return;
+        }
+
         if (!searchQuery.trim()) {
             setSearchResults([]);
             setShowDropdown(false);
@@ -127,12 +124,24 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
             setSearchError('');
 
             try {
-                const results = await searchCompanies(searchQuery);
+                const response = await fetch(`/api/stock-search?q=${encodeURIComponent(searchQuery)}`);
+
+                if (!response.ok) {
+                    throw new Error('Search failed');
+                }
+
+                const data = await response.json();
+                const results = data.results || [];
+
                 setSearchResults(results);
                 setShowDropdown(results.length > 0);
+
+                if (results.length === 0 && searchQuery.trim().length >= 2) {
+                    setSearchError('No stocks found. Try a different search term.');
+                }
             } catch (error) {
                 console.error('Search error:', error);
-                setSearchError(error instanceof Error ? error.message : 'Search failed');
+                setSearchError('Search failed. Please try again.');
                 setSearchResults([]);
             } finally {
                 setIsSearching(false);
@@ -144,7 +153,7 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
                 clearTimeout(searchTimeoutRef.current);
             }
         };
-    }, [searchQuery]);
+    }, [searchQuery, formData.sector]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -172,12 +181,12 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
         }
     };
 
-    const handleCompanySelect = (company: CompanySearchResult) => {
-        setSearchQuery(`${company.symbol} - ${company.name}`);
+    const handleCompanySelect = (stock: StockSearchResult) => {
+        setSearchQuery(`${stock.symbol} - ${stock.name}`);
         setFormData(prev => ({
             ...prev,
-            symbol: company.symbol,
-            companyName: company.name,
+            symbol: stock.symbol,
+            companyName: stock.name,
         }));
         setShowDropdown(false);
         setSearchResults([]);
@@ -191,13 +200,26 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
             }));
         }
 
-        // Trigger auto-fetch
-        fetchPriceAndSector(company.symbol);
+        // Fetch price
+        fetchPrice(stock.symbol);
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+
+        // Clear search when sector changes
+        if (name === 'sector') {
+            setSearchQuery('');
+            setSearchResults([]);
+            setFormData(prev => ({
+                ...prev,
+                sector: value,
+                symbol: '',
+                companyName: '',
+            }));
+        }
+
         // Clear error when user starts typing
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
@@ -207,9 +229,9 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
     const validate = () => {
         const newErrors: Record<string, string> = {};
 
-        if (!formData.symbol.trim()) newErrors.symbol = 'Symbol is required';
-        if (!formData.companyName.trim()) newErrors.companyName = 'Company name is required';
         if (!formData.sector) newErrors.sector = 'Sector is required';
+        if (!formData.symbol.trim()) newErrors.symbol = 'Please select a stock';
+        if (!formData.companyName.trim()) newErrors.companyName = 'Please select a stock';
         if (!formData.quantity || Number(formData.quantity) <= 0) {
             newErrors.quantity = 'Valid quantity is required';
         }
@@ -240,9 +262,8 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
             const gainLoss = totalValue - totalInvested;
             const gainLossPercent = (gainLoss / totalInvested) * 100;
 
-            // Calculate holding duration based on acquisition date (default to today for new shares)
             const acquisitionDate = new Date().toISOString();
-            const holdingDuration: HoldingDuration = 'Short'; // New shares start as Short
+            const holdingDuration: HoldingDuration = 'Short';
 
             const newShare: Share = {
                 id: `share-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -265,9 +286,9 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
 
             // Reset form
             setFormData({
+                sector: '',
                 symbol: '',
                 companyName: '',
-                sector: '',
                 quantity: '',
                 avgBuyPrice: '',
                 currentPrice: '',
@@ -288,9 +309,9 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
     const handleClose = () => {
         if (!isSubmitting) {
             setFormData({
+                sector: '',
                 symbol: '',
                 companyName: '',
-                sector: '',
                 quantity: '',
                 avgBuyPrice: '',
                 currentPrice: '',
@@ -325,7 +346,7 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
                         <div className="flex items-start justify-between mb-6">
                             <div>
                                 <h2 className="text-2xl font-light text-white">Add New Share</h2>
-                                <p className="text-sm text-white/40 mt-1">Enter share details to add to your portfolio</p>
+                                <p className="text-sm text-white/40 mt-1">Select sector, search stock, and enter details</p>
                             </div>
                             <button
                                 onClick={handleClose}
@@ -338,10 +359,10 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
 
                         {/* Form */}
                         <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* Sector Selection - Moved to top */}
+                            {/* STEP 1: Sector Selection */}
                             <div>
                                 <label className="block text-sm text-white/60 mb-2">
-                                    Sector <span className="text-red-400">*</span>
+                                    <span className="text-white/90 font-medium">Step 1:</span> Select Sector <span className="text-red-400">*</span>
                                 </label>
                                 <select
                                     name="sector"
@@ -351,7 +372,7 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
                                         } text-white outline-none focus:border-white/20 transition-colors`}
                                     disabled={isSubmitting}
                                 >
-                                    <option value="" className="bg-[#0a0a0a]">Select sector...</option>
+                                    <option value="" className="bg-[#0a0a0a]">Select sector first...</option>
                                     {sectors.map(sector => (
                                         <option key={sector} value={sector} className="bg-[#0a0a0a]">
                                             {sector}
@@ -363,10 +384,11 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
                                 )}
                             </div>
 
-                            {/* Company Search with Autocomplete */}
+                            {/* STEP 2: Stock Search (only enabled when sector is selected) */}
                             <div className="relative" ref={dropdownRef}>
                                 <label className="block text-sm text-white/60 mb-2">
-                                    Search Company <span className="text-red-400">*</span>
+                                    <span className="text-white/90 font-medium">Step 2:</span> Search Stock <span className="text-red-400">*</span>
+                                    {!formData.sector && <span className="text-white/30 ml-2">(Select sector first)</span>}
                                 </label>
                                 <div className="relative">
                                     <input
@@ -378,10 +400,10 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
                                                 setShowDropdown(true);
                                             }
                                         }}
-                                        placeholder="Search by company name or symbol..."
+                                        placeholder={formData.sector ? "Type company name or symbol..." : "Select a sector first"}
+                                        disabled={!formData.sector || isSubmitting}
                                         className={`w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border ${(errors.symbol || errors.companyName) ? 'border-red-400/50' : 'border-white/10'
-                                            } text-white placeholder:text-white/30 outline-none focus:border-white/20 transition-colors`}
-                                        disabled={isSubmitting}
+                                            } text-white placeholder:text-white/30 outline-none focus:border-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
                                     />
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                                     {isSearching && (
@@ -406,24 +428,24 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
                                             exit={{ opacity: 0, y: -10 }}
                                             className="absolute z-10 w-full mt-2 rounded-xl border border-white/10 bg-[#0a0a0a]/95 backdrop-blur-xl overflow-hidden shadow-2xl max-h-60 overflow-y-auto"
                                         >
-                                            {searchResults.map((company, index) => (
+                                            {searchResults.map((stock, index) => (
                                                 <button
-                                                    key={`${company.symbol}-${index}`}
+                                                    key={`${stock.symbol}-${index}`}
                                                     type="button"
-                                                    onClick={() => handleCompanySelect(company)}
+                                                    onClick={() => handleCompanySelect(stock)}
                                                     className="w-full px-4 py-3 text-left hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0"
                                                 >
                                                     <div className="flex items-center justify-between">
                                                         <div>
                                                             <div className="text-sm font-medium text-white">
-                                                                {company.symbol}
+                                                                {stock.symbol}
                                                             </div>
                                                             <div className="text-xs text-white/60 truncate">
-                                                                {company.name}
+                                                                {stock.name}
                                                             </div>
                                                         </div>
                                                         <div className="text-xs text-white/40">
-                                                            {company.region}
+                                                            {stock.exchange}
                                                         </div>
                                                     </div>
                                                 </button>
@@ -432,14 +454,14 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
                                     )}
                                 </AnimatePresence>
 
-                                {/* Selected Company Display */}
+                                {/* Selected Stock Display */}
                                 {formData.symbol && formData.companyName && (
                                     <div className="mt-2 p-3 rounded-xl bg-white/5 border border-white/10">
                                         <div className="flex items-center gap-2">
                                             <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold text-white/80">
                                                 {formData.symbol.substring(0, 2)}
                                             </div>
-                                            <div>
+                                            <div className="flex-1">
                                                 <div className="text-sm font-medium text-white">
                                                     {formData.symbol}
                                                 </div>
@@ -447,91 +469,98 @@ export default function AddShareModal({ isOpen, onClose, onAdd }: AddShareModalP
                                                     {formData.companyName}
                                                 </div>
                                             </div>
+                                            <div className="text-xs text-white/40">
+                                                {formData.sector}
+                                            </div>
                                         </div>
                                     </div>
                                 )}
                             </div>
 
-
-                            {/* Quantity and Prices */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-sm text-white/60 mb-2">
-                                        Quantity <span className="text-red-400">*</span>
-                                    </label>
-                                    <input
-                                        type="number"
-                                        name="quantity"
-                                        value={formData.quantity}
-                                        onChange={handleChange}
-                                        placeholder="100"
-                                        min="1"
-                                        step="1"
-                                        className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${errors.quantity ? 'border-red-400/50' : 'border-white/10'
-                                            } text-white placeholder:text-white/30 outline-none focus:border-white/20 transition-colors`}
-                                        disabled={isSubmitting}
-                                    />
-                                    {errors.quantity && (
-                                        <p className="text-red-400 text-xs mt-1">{errors.quantity}</p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm text-white/60 mb-2">
-                                        Avg Buy Price (₹) <span className="text-red-400">*</span>
-                                    </label>
-                                    <input
-                                        type="number"
-                                        name="avgBuyPrice"
-                                        value={formData.avgBuyPrice}
-                                        onChange={handleChange}
-                                        placeholder="1500"
-                                        min="0.01"
-                                        step="0.01"
-                                        className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${errors.avgBuyPrice ? 'border-red-400/50' : 'border-white/10'
-                                            } text-white placeholder:text-white/30 outline-none focus:border-white/20 transition-colors`}
-                                        disabled={isSubmitting}
-                                    />
-                                    {errors.avgBuyPrice && (
-                                        <p className="text-red-400 text-xs mt-1">{errors.avgBuyPrice}</p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm text-white/60 mb-2">
-                                        Current Price (₹) <span className="text-red-400">*</span>
-                                    </label>
-                                    <div className="relative">
+                            {/* STEP 3: Quantity and Prices */}
+                            <div>
+                                <label className="block text-sm text-white/60 mb-3">
+                                    <span className="text-white/90 font-medium">Step 3:</span> Enter Details
+                                </label>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-xs text-white/50 mb-2">
+                                            Quantity <span className="text-red-400">*</span>
+                                        </label>
                                         <input
                                             type="number"
-                                            name="currentPrice"
-                                            value={formData.currentPrice}
+                                            name="quantity"
+                                            value={formData.quantity}
                                             onChange={handleChange}
-                                            placeholder="1750"
-                                            min="0.01"
-                                            step="0.01"
-                                            className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${errors.currentPrice ? 'border-red-400/50' : 'border-white/10'
-                                                } text-white placeholder:text-white/30 outline-none focus:border-white/20 transition-colors pr-10`}
-                                            disabled={isSubmitting || isFetchingPrice}
+                                            placeholder="100"
+                                            min="1"
+                                            step="1"
+                                            className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${errors.quantity ? 'border-red-400/50' : 'border-white/10'
+                                                } text-white placeholder:text-white/30 outline-none focus:border-white/20 transition-colors`}
+                                            disabled={isSubmitting}
                                         />
-                                        {isFetchingPrice ? (
-                                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 animate-spin" />
-                                        ) : (
-                                            formData.symbol && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => fetchPriceAndSector(formData.symbol)}
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-full transition-colors"
-                                                    title="Refresh Price"
-                                                >
-                                                    <RefreshCw className="w-4 h-4 text-white/40 hover:text-white/80" />
-                                                </button>
-                                            )
+                                        {errors.quantity && (
+                                            <p className="text-red-400 text-xs mt-1">{errors.quantity}</p>
                                         )}
                                     </div>
-                                    {errors.currentPrice && (
-                                        <p className="text-red-400 text-xs mt-1">{errors.currentPrice}</p>
-                                    )}
+
+                                    <div>
+                                        <label className="block text-xs text-white/50 mb-2">
+                                            Avg Buy Price (₹) <span className="text-red-400">*</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="avgBuyPrice"
+                                            value={formData.avgBuyPrice}
+                                            onChange={handleChange}
+                                            placeholder="1500"
+                                            min="0.01"
+                                            step="0.01"
+                                            className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${errors.avgBuyPrice ? 'border-red-400/50' : 'border-white/10'
+                                                } text-white placeholder:text-white/30 outline-none focus:border-white/20 transition-colors`}
+                                            disabled={isSubmitting}
+                                        />
+                                        {errors.avgBuyPrice && (
+                                            <p className="text-red-400 text-xs mt-1">{errors.avgBuyPrice}</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs text-white/50 mb-2">
+                                            Current Price (₹) <span className="text-red-400">*</span>
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                type="number"
+                                                name="currentPrice"
+                                                value={formData.currentPrice}
+                                                onChange={handleChange}
+                                                placeholder="1750"
+                                                min="0.01"
+                                                step="0.01"
+                                                className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${errors.currentPrice ? 'border-red-400/50' : 'border-white/10'
+                                                    } text-white placeholder:text-white/30 outline-none focus:border-white/20 transition-colors pr-10`}
+                                                disabled={isSubmitting || isFetchingPrice}
+                                            />
+                                            {isFetchingPrice ? (
+                                                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 animate-spin" />
+                                            ) : (
+                                                formData.symbol && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => fetchPrice(formData.symbol)}
+                                                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-full transition-colors"
+                                                        title="Refresh Price"
+                                                    >
+                                                        <RefreshCw className="w-4 h-4 text-white/40 hover:text-white/80" />
+                                                    </button>
+                                                )
+                                            )}
+                                        </div>
+                                        {errors.currentPrice && (
+                                            <p className="text-red-400 text-xs mt-1">{errors.currentPrice}</p>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
