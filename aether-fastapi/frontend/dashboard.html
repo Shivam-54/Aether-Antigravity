@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aether | Dashboard</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* Base Styling */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #050505;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Ambient Background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background:
+                radial-gradient(circle at 50% 0%, rgba(120, 119, 198, 0.15), transparent 50%),
+                radial-gradient(circle at 100% 0%, rgba(77, 76, 125, 0.1), transparent 40%),
+                radial-gradient(circle at 0% 0%, rgba(56, 55, 99, 0.1), transparent 40%);
+            pointer-events: none;
+        }
+
+        /* Grain Overlay */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            opacity: 0.03;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* Main Container */
+        .dashboard-container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: 240px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-container {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 2rem;
+            padding: 2rem 1rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            height: 100%;
+            box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02);
+        }
+
+        .sidebar-brand {
+            font-size: 0.875rem;
+            font-weight: 300;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: white;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .sidebar-menu {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .sidebar-item {
+            padding: 0.75rem 1rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.875rem;
+            font-weight: 300;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        .sidebar-item:hover {
+            color: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-item.active {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-item svg {
+            width: 16px;
+            height: 16px;
+            opacity: 0.7;
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.05);
+            margin: 0.75rem 0;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            padding: 1.5rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 50;
+        }
+
+        /* Breadcrumb Glass Capsule */
+        .breadcrumb-capsule {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 9999px;
+            padding: 0.5rem 1.25rem;
+            display: flex;
+            align-items: center;
+        }
+
+        #breadcrumb {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 300;
+            letter-spacing: 0.05em;
+        }
+
+        /* Module Tabs Wrapper */
+        .module-tabs-wrapper {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .module-tabs {
+            display: flex;
+            gap: 0;
+            padding: 0.25rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 9999px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02);
+        }
+
+        .module-tab {
+            padding: 0.5rem 1.25rem;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 9999px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.75rem;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .module-tab:hover {
+            color: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .module-tab.active {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* User Section */
+        .user-section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 9999px;
+            padding: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .user-email {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            padding-left: 1rem;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        /* Layout Utilities */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .glass-button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .glass-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .glass-capsule {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 9999px;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Bootstrap Overrides handled via custom classes and !important helpers if needed */
+        .text-white-50 {
+            color: rgba(255, 255, 255, 0.5) !important;
+        }
+
+        .text-white-70 {
+            color: rgba(255, 255, 255, 0.7) !important;
+        }
+
+        .text-white-90 {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+
+        .fw-light {
+            font-weight: 300 !important;
+        }
+
+        .fw-extralight {
+            font-weight: 200 !important;
+        }
+
+        /* Remove default button styles */
+        button {
+            border: none;
+            background: none;
+            color: inherit;
+        }
+
+        /* Module Visibility */
+        .module-content {
+            display: none;
+        }
+
+        .module-content.active {
+            display: block;
+        }
+
+        .realestate-section {
+            display: none;
+        }
+
+        .realestate-section.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-container">
+                <div class="sidebar-brand">AETHER</div>
+                <div class="sidebar-menu" id="sidebarMenu"></div>
+                <div class="sidebar-divider"></div>
+                <div class="sidebar-item" onclick="logout()">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Log Out</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="breadcrumb-capsule">
+                    <span id="breadcrumb">Home / Real Estate / Dashboard</span>
+                </div>
+
+                <div class="module-tabs-wrapper">
+                    <div class="module-tabs">
+                        <button class="module-tab active" data-source="realestate"
+                            onclick="switchSource('realestate')">Real Estate</button>
+                        <button class="module-tab" data-source="crypto" onclick="switchSource('crypto')">Crypto</button>
+                        <button class="module-tab" data-source="shares" onclick="switchSource('shares')">Shares</button>
+                        <button class="module-tab" data-source="bonds" onclick="switchSource('bonds')">Bonds</button>
+                        <button class="module-tab" data-source="business"
+                            onclick="switchSource('business')">Business</button>
+                    </div>
+                </div>
+
+                <div class="user-section">
+                    <span class="user-email" id="userEmail"></span>
+                    <div class="user-avatar">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Dashboard Module -->
+                <div class="module-content active" id="module-dashboard">
+                    <!-- General Dashboard placeholder -->
+                    <div class="glass-card mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-uppercase text-white-50"
+                                    style="font-size: 0.75rem; letter-spacing: 0.1em;">Total Net Worth</div>
+                                <div class="display-4 fw-light text-white my-1" id="totalNetWorth">₹0</div>
+                                <div class="d-flex align-items-center text-success" id="totalGainLoss">
+                                    <span id="gainLossAmount">+₹0</span>
+                                    <span id="gainLossPercent" class="ms-2 opacity-75 small">(+0.00%)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real Estate Module -->
+                <div class="module-content" id="module-realestate">
+                    <!-- 1. Dashboard Section -->
+                    <div id="realestate-section-dashboard" class="realestate-section active">
+                        <!-- Injected by JS -->
+                    </div>
+
+                    <!-- 2. Properties Section -->
+                    <div id="realestate-section-properties" class="realestate-section">
+                        <div class="glass-header mb-4 d-flex justify-content-between align-items-end">
+                            <div>
+                                <h2 class="h3 fw-light mb-2">Active Properties</h2>
+                                <p class="text-white-50 fw-light">Properties currently owned</p>
+                            </div>
+                            <div class="d-flex gap-3">
+                                <div class="glass-capsule p-1 d-flex gap-1">
+                                    <button class="px-3 py-1 rounded-pill bg-white bg-opacity-10 text-white small">Owned
+                                        (3)</button>
+                                    <button class="px-3 py-1 rounded-pill text-white-50 small">Rented (2)</button>
+                                </div>
+                                <button class="glass-button px-4 py-2 rounded-pill small"
+                                    onclick="openPropertyModal(0)">
+                                    <span>+</span> Add Property
+                                </button>
+                            </div>
+                        </div>
+                        <div id="properties-grid" class="row g-4">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+
+                    <!-- 3. Rental History -->
+                    <div id="realestate-section-rental-sale" class="realestate-section">
+                        <div class="glass-header mb-4">
+                            <h2 class="h3 fw-light mb-2">Rental & Sale History</h2>
+                            <p class="text-white-50 fw-light">Chronological transaction ledger</p>
+                        </div>
+                        <div class="glass-card overflow-hidden p-0">
+                            <!-- Table Headers -->
+                            <div
+                                class="row g-0 p-3 border-bottom border-white border-opacity-10 text-white-50 small text-uppercase">
+                                <div class="col-2">Type</div>
+                                <div class="col-4">Property</div>
+                                <div class="col-2">Value</div>
+                                <div class="col-2">Date</div>
+                                <div class="col-2">Gain/Loss</div>
+                            </div>
+                            <div id="transaction-list">
+                                <!-- Injected JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Valuations -->
+                    <div id="realestate-section-valuation" class="realestate-section">
+                        <div class="glass-header mb-4 d-flex justify-content-between align-items-end">
+                            <div>
+                                <h2 class="h3 fw-light mb-2">Valuations & Documents</h2>
+                                <p class="text-white-50 fw-light">Property documentation</p>
+                            </div>
+                        </div>
+                        <div id="documents-list" class="row g-4">
+                            <!-- Injected JS -->
+                        </div>
+                    </div>
+
+                    <!-- 5. AI Insights -->
+                    <div id="realestate-section-ai-insights" class="realestate-section">
+                        <div class="glass-header mb-4">
+                            <h2 class="h3 fw-light mb-2">AI Property Insights</h2>
+                            <p class="text-white-50 fw-light">Strategic recommendations</p>
+                        </div>
+                        <div class="glass-card">
+                            <p class="text-white-50">AI Module initialized...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Other Module Placeholders -->
+                <div class="module-content" id="module-crypto">
+                    <div class="glass-card">
+                        <h2 class="h4 fw-light">Crypto Overview</h2>
+                        <p class="text-white-50">Coming soon...</p>
+                    </div>
+                </div>
+                <div class="module-content" id="module-shares">
+                    <div class="glass-card">
+                        <h2 class="h4 fw-light">Share Portfolio</h2>
+                        <p class="text-white-50">Coming soon...</p>
+                    </div>
+                </div>
+                <div class="module-content" id="module-bonds">
+                    <div class="glass-card">
+                        <h2 class="h4 fw-light">Bonds Portfolio</h2>
+                        <p class="text-white-50">Coming soon...</p>
+                    </div>
+                </div>
+                <div class="module-content" id="module-business">
+                    <div class="glass-card">
+                        <h2 class="h4 fw-light">Business Holdings</h2>
+                        <p class="text-white-50">Coming soon...</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Property Modal -->
+    <div id="property-modal" class="position-fixed top-0 start-0 w-100 h-100 hidden"
+        style="z-index: 1050; display: none;">
+        <div class="position-absolute w-100 h-100 bg-black bg-opacity-75" onclick="closePropertyModal()"></div>
+        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 800px; padding: 1rem;">
+            <div class="glass-card position-relative" id="modal-content-container"
+                style="max-height: 90vh; overflow-y: auto;">
+                <button onclick="closePropertyModal()"
+                    class="position-absolute top-0 end-0 m-4 text-white-50 hover-text-white">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+                <div id="modal-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/dashboard.js"></script>
+</body>
+
+</html>

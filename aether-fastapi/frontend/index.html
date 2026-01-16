@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aether - Portfolio Management</title>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #050505;
+            color: white;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Background System */
+        .bg-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background: radial-gradient(circle at 50% -20%, #151515 0%, #050505 70%);
+            pointer-events: none;
+        }
+
+        /* Grain Texture */
+        .grain-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            opacity: 0.03;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* Navigation Bar */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            padding: 1.5rem 3rem;
+        }
+
+        .nav-brand {
+            justify-self: start;
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 0.3em;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .nav-brand:hover {
+            color: rgba(255, 255, 255, 1);
+        }
+
+        /* Center Navigation Capsule - Exact copy from old project */
+        .nav-menu {
+            justify-self: center;
+            display: flex;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 9999px;
+            padding: 4px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        /* Individual nav item container with its own border */
+        .nav-item {
+            border-radius: 9999px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background: transparent;
+            border: 1px solid transparent;
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-item a {
+            display: block;
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            padding: 8px 20px;
+            font-size: 12px;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .nav-item.active a {
+            color: rgba(255, 255, 255, 1);
+        }
+
+        .nav-item:hover a {
+            color: rgba(255, 255, 255, 1);
+        }
+
+        .nav-item:not(.active):hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Start Button */
+        .btn-start {
+            justify-self: end;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.8);
+            padding: 11px 24px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            line-height: normal;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-start:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 1);
+        }
+
+        .btn-start:active {
+            transform: scale(0.95);
+        }
+
+        /* --- Login Modal Styles --- */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            background: rgba(0, 0, 0, 0.4);
+            /* bg-black/40 */
+            backdrop-filter: blur(12px);
+            /* blur-md/lg custom */
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-card {
+            position: relative;
+            width: 100%;
+            max-width: 28rem;
+            overflow: hidden;
+            border-radius: 1.5rem;
+            /* rounded-3xl */
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            padding: 2.5rem;
+            /* p-10 */
+        }
+
+        .modal-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 40px 8px rgba(255, 255, 255, 0.15), inset 0 0 20px rgba(255, 255, 255, 0.05);
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-title {
+            font-size: 1.875rem;
+            font-weight: 300;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .modal-subtitle {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .modal-note {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.3);
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            font-style: italic;
+            /* margin-top removed to rely on subtitle margin-bottom */
+            text-align: center;
+        }
+
+        /* Utilities */
+        .mb-8 {
+            margin-bottom: 2rem;
+        }
+
+        /* Tabs */
+        .tab-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 0.5rem;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 300;
+            white-space: nowrap;
+        }
+
+        .tab-btn.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.25rem;
+            /* space-y-5 = 20px */
+        }
+
+        .form-label {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            /* tracking-[0.2em] */
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 0.375rem;
+            /* space-y-1.5 = 6px */
+            margin-left: 0.25rem;
+            /* ml-1 */
+            font-weight: 300;
+        }
+
+        .glass-input {
+            width: 100%;
+            /* height: 3rem; removed per strict translation */
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            /* py-3 px-4 */
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            outline: none;
+            transition: all 0.3s ease;
+            font-weight: 300;
+            letter-spacing: 0.025em;
+            /* tracking-wide */
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.04);
+            /* No focus bg change in source unless error */
+            border-color: rgba(255, 255, 255, 0.2);
+            /* focus:border-white/20 */
+            box-shadow: none;
+            /* No ring in source */
+        }
+
+        .glass-input::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Dropdowns */
+        .dropdown-wrapper {
+            position: relative;
+        }
+
+        .dropdown-btn {
+            height: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 0.75rem;
+            padding: 0 1rem;
+            /* px-4 */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.7);
+            /* text-white/70 */
+            font-size: 0.75rem;
+            /* text-xs */
+            font-weight: 300;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            letter-spacing: 0.025em;
+            /* tracking-wide */
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .dropdown-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 0.5rem;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            z-index: 50;
+            min-width: 140px;
+            overflow: hidden;
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .dropdown-menu.active {
+            display: block;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+            font-weight: 300;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        /* Grid for split fields */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .btn-submit {
+            width: 100%;
+            margin-top: 1rem;
+            /* mt-4 */
+            padding: 1rem;
+            /* py-4 */
+            background: rgba(255, 255, 255, 0.1);
+            /* bg-white/10 */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.4em;
+            /* tracking-[0.4em] */
+            font-size: 0.75rem;
+            /* text-xs */
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 300;
+        }
+
+        .btn-submit:hover {
+            background: rgba(255, 255, 255, 0.2);
+            /* hover:bg-white/20 */
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: none;
+            /* remove translateY per source */
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            color: rgba(255, 255, 255, 0.3);
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: white;
+        }
+
+        /* Dot Navigation */
+        .dot-nav {
+            position: fixed;
+            right: 2.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            background: white;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            transform: scale(1.2);
+        }
+
+        .dot:hover {
+            background: white;
+            transform: scale(1.5);
+        }
+
+        /* Sections */
+        section {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        /* Glass Container - Home Section (smaller padding) */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 32px;
+            padding: 80px 64px;
+            text-align: center;
+            max-width: 896px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02);
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1.5s ease forwards;
+        }
+
+        /* Glass Container - Features/Services/About Sections (larger padding) */
+        .glass-card-large {
+            padding: 112px 96px;
+            min-width: 650px;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.01);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Typography */
+        .hero-title {
+            font-size: clamp(3rem, 10vw, 10rem);
+            font-weight: 200;
+            letter-spacing: 0.5em;
+            color: rgba(255, 255, 255, 1);
+            line-height: 1;
+            margin-right: -0.5em;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.25rem, 3vw, 3rem);
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 1rem;
+        }
+
+        .section-title {
+            font-size: 30px;
+            font-weight: 300;
+            letter-spacing: -0.025em;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 36px;
+            margin-bottom: 16px;
+        }
+
+        .section-intro {
+            font-size: 16px;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 0;
+        }
+
+        .section-text {
+            font-size: 20px;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: -0.025em;
+            line-height: 28px;
+        }
+
+        .section-text p {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Large card text lists need bigger gaps */
+        .glass-card-large .section-text {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .glass-card-large .section-title {
+            margin-bottom: 0;
+        }
+
+        .glass-card-large .section-text>p {
+            margin-bottom: 0;
+        }
+
+        .section-footer {
+            margin-top: 48px;
+            font-size: 12px;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 4.8px;
+            text-transform: uppercase;
+        }
+
+        .section-footer-italic {
+            font-style: italic;
+            text-transform: none;
+            letter-spacing: normal;
+            opacity: 0.4;
+            padding-top: 16px;
+            margin-top: 0;
+            font-size: 14px;
+            /* text-xs/sm */
+        }
+
+        .section-content-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            color: rgba(255, 255, 255, 0.6);
+            /* Default text-white/60 for these sections */
+            font-weight: 300;
+            letter-spacing: 0.025em;
+            /* tracking-wide */
+            line-height: 1.625;
+            /* leading-relaxed */
+            font-size: 16px;
+            /* text-base */
+        }
+
+        .section-list-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            /* space-y-2 */
+        }
+
+        .section-intro {
+            color: rgba(255, 255, 255, 0.8);
+            /* text-white/80 */
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            nav {
+                grid-template-columns: auto 1fr;
+                padding: 1rem 1.5rem;
+            }
+
+            .nav-menu {
+                display: none;
+            }
+
+            .btn-start {
+                justify-self: end;
+            }
+
+            .dot-nav {
+                right: 1.5rem;
+            }
+
+            .glass-card {
+                padding: 2rem 1.5rem;
+            }
+
+            .glass-card-large {
+                padding: 3rem 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Background Layers -->
+    <div class="bg-layer"></div>
+    <div class="grain-overlay"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-brand">AETHER</div>
+
+        <!-- Capsule Menu - Each item has its own border -->
+        <div class="nav-menu">
+            <div class="nav-item active" data-section="home">
+                <a href="#home">Home</a>
+            </div>
+            <div class="nav-item" data-section="features">
+                <a href="#features">Features</a>
+            </div>
+            <div class="nav-item" data-section="services">
+                <a href="#services">Services</a>
+            </div>
+            <div class="nav-item" data-section="about">
+                <a href="#about">About Us</a>
+            </div>
+        </div>
+
+        <a href="#" class="btn-start">Start</a>
+    </nav>
+
+    <!-- Dot Navigation -->
+    <div class="dot-nav">
+        <div class="dot active" data-index="0"></div>
+        <div class="dot" data-index="1"></div>
+        <div class="dot" data-index="2"></div>
+        <div class="dot" data-index="3"></div>
+        <div class="dot" data-index="4"></div>
+    </div>
+
+    <!-- Sections -->
+
+    <!-- Section 0: Splash -->
+    <section id="splash">
+        <div class="glass-card glass-card-large" style="max-width: 1024px;">
+            <h1 class="hero-title">AETHER</h1>
+            <p class="hero-subtitle">Above the Ordinary.</p>
+        </div>
+    </section>
+
+    <!-- Section 1: Home -->
+    <section id="home">
+        <div class="glass-card">
+            <h2 class="section-title">A System, Not a Platform.</h2>
+
+            <div class="section-text">
+                <p>Built for those who think in systems, not trends.</p>
+                <p>Designed for movement before permission.</p>
+                <p>Aether does not compete — it separates.</p>
+            </div>
+
+            <div class="section-footer">
+                THIS SPACE IS NOT DESIGNED FOR EVERYONE.
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 2: Features -->
+    <section id="features">
+        <div class="glass-card glass-card-large">
+            <h2 class="section-title">Structural Advantages.</h2>
+
+            <div class="section-content-wrapper">
+                <p class="section-intro">What others call features, we treat as fundamentals.</p>
+
+                <div class="section-list-group">
+                    <p>Selective access over mass visibility.</p>
+                    <p>Systems that compound quietly.</p>
+                    <p>Control without exposure.</p>
+                    <p>Intelligence without noise.</p>
+                </div>
+
+                <div class="section-footer section-footer-italic">
+                    Nothing here is accidental.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 3: Services -->
+    <section id="services">
+        <div class="glass-card glass-card-large">
+            <h2 class="section-title">Execution Without Exposure.</h2>
+
+            <div class="section-content-wrapper">
+                <div class="section-list-group">
+                    <p>Quiet systems.</p>
+                    <p>Private leverage.</p>
+                    <p>Outcomes that do not announce themselves.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 4: About -->
+    <section id="about">
+        <div class="glass-card glass-card-large">
+            <h2 class="section-title">About Aether.</h2>
+
+            <div class="section-content-wrapper" style="max-width: 32rem; margin: 0 auto;">
+                <div class="section-list-group">
+                    <p>Aether is not built for mass appeal.</p>
+                    <p>It is shaped for those who recognize leverage, not labels.</p>
+                </div>
+
+                <div class="section-list-group">
+                    <p>This is not a platform for consumption.</p>
+                    <p>It is an environment for alignment.</p>
+                </div>
+
+                <div class="section-footer section-footer-italic">
+                    Most will scroll past. That is intentional.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Dot Navigation with Scroll
+        const sections = document.querySelectorAll('section');
+        const dots = document.querySelectorAll('.dot');
+        const navItems = document.querySelectorAll('.nav-item');
+
+        // Update active states on scroll
+        function updateActiveSection() {
+            let currentSection = 0;
+            const scrollPosition = window.scrollY + window.innerHeight / 2;
+
+            sections.forEach((section, index) => {
+                const sectionTop = section.offsetTop;
+                const sectionBottom = sectionTop + section.offsetHeight;
+
+                if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
+                    currentSection = index;
+                }
+            });
+
+            // Update dots
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSection);
+            });
+
+            // Update nav items
+            const sectionIds = ['splash', 'home', 'features', 'services', 'about'];
+            navItems.forEach((item) => {
+                const itemSection = item.getAttribute('data-section');
+                item.classList.toggle('active', itemSection === sectionIds[currentSection]);
+            });
+        }
+
+        window.addEventListener('scroll', updateActiveSection);
+        updateActiveSection();
+
+        // Dot click handlers
+        dots.forEach((dot) => {
+            dot.addEventListener('click', () => {
+                const index = parseInt(dot.getAttribute('data-index'));
+                const targetSection = sections[index];
+                targetSection.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        // Nav item click handlers
+        navItems.forEach((item) => {
+            item.querySelector('a').addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = item.querySelector('a').getAttribute('href').substring(1);
+                const targetSection = document.getElementById(targetId);
+                if (targetSection) {
+                    targetSection.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+
+        // Modal Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            // ============================================
+            // FORM VALIDATION FUNCTIONS
+            // ============================================
+
+            // Validation rules
+            const validateEmail = (email) => {
+                const regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                if (!email) return { valid: false, error: 'Email is required' };
+                if (!regex.test(email)) return { valid: false, error: 'Please enter a valid email address' };
+                return { valid: true };
+            };
+
+            const validateName = (name) => {
+                if (!name || name.trim().length === 0) return { valid: false, error: 'Name is required' };
+                if (name.trim().length < 2) return { valid: false, error: 'Name must be at least 2 characters' };
+                if (!/^[a-zA-Z\s]+$/.test(name)) return { valid: false, error: 'Name can only contain letters' };
+                return { valid: true };
+            };
+
+            const validateAge = (age) => {
+                const ageNum = parseInt(age);
+                if (!age) return { valid: false, error: 'Age is required' };
+                if (isNaN(ageNum)) return { valid: false, error: 'Age must be a number' };
+                if (ageNum < 18) return { valid: false, error: 'Must be at least 18 years old' };
+                if (ageNum > 120) return { valid: false, error: 'Please enter a valid age' };
+                return { valid: true };
+            };
+
+            const validatePhone = (phone) => {
+                const cleaned = phone.replace(/\s/g, '');
+                if (!phone) return { valid: false, error: 'Phone number is required' };
+                if (!/^[0-9]{10,15}$/.test(cleaned)) return { valid: false, error: 'Phone must be 10-15 digits' };
+                return { valid: true };
+            };
+
+            const validateAuthKey = (key, keyType = '4-Digit PIN') => {
+                if (!key) return { valid: false, error: 'Authentication key is required' };
+
+                if (keyType === '4-Digit PIN') {
+                    if (!/^[0-9]{4}$/.test(key)) return { valid: false, error: 'Must be exactly 4 digits' };
+                } else if (keyType === '6-Digit PIN') {
+                    if (!/^[0-9]{6}$/.test(key)) return { valid: false, error: 'Must be exactly 6 digits' };
+                } else if (keyType === 'Alphabetical') {
+                    if (key.length < 6) return { valid: false, error: 'Must be at least 6 characters' };
+                    if (!/^[a-zA-Z]+$/.test(key)) return { valid: false, error: 'Only letters allowed' };
+                } else if (keyType === 'Numeric') {
+                    if (key.length < 6) return { valid: false, error: 'Must be at least 6 digits' };
+                    if (!/^[0-9]+$/.test(key)) return { valid: false, error: 'Only numbers allowed' };
+                }
+                return { valid: true };
+            };
+
+            // Show/hide error message
+            const showError = (input, message) => {
+                // Remove existing error
+                const existingError = input.parentElement.querySelector('.error-message');
+                if (existingError) existingError.remove();
+
+                // Add error styling
+                input.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+
+                // Create and insert error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.style.cssText = 'color: rgb(248, 113, 113); font-size: 10px; margin-top: 0.25rem; margin-left: 0.25rem;';
+                errorDiv.textContent = message;
+                input.parentElement.appendChild(errorDiv);
+            };
+
+            const clearError = (input) => {
+                const existingError = input.parentElement.querySelector('.error-message');
+                if (existingError) existingError.remove();
+                input.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+            };
+
+            // ============================================
+            // CONTINUE FORM VALIDATION
+            // ============================================
+            const formLogin = document.getElementById('formLogin');
+            let loginSelectedKeyType = '4-Digit PIN'; // Track selected key type for login
+
+            if (formLogin) {
+                const loginEmail = formLogin.querySelector('input[type="email"]');
+                const loginAuthKey = document.getElementById('loginAuthKeyInput');
+
+                // Real-time validation
+                loginEmail?.addEventListener('blur', () => {
+                    const result = validateEmail(loginEmail.value);
+                    if (!result.valid) showError(loginEmail, result.error);
+                    else clearError(loginEmail);
+                });
+
+                loginAuthKey?.addEventListener('blur', () => {
+                    const result = validateAuthKey(loginAuthKey.value, loginSelectedKeyType);
+                    if (!result.valid) showError(loginAuthKey, result.error);
+                    else clearError(loginAuthKey);
+                });
+
+                // Clear errors when user starts typing
+                loginEmail?.addEventListener('input', () => clearError(loginEmail));
+                loginAuthKey?.addEventListener('input', () => clearError(loginAuthKey));
+
+                // Form submission
+                formLogin.addEventListener('submit', (e) => {
+                    e.preventDefault();
+
+                    const emailResult = validateEmail(loginEmail.value);
+                    const keyResult = validateAuthKey(loginAuthKey.value, loginSelectedKeyType);
+
+                    // Show errors
+                    if (!emailResult.valid) showError(loginEmail, emailResult.error);
+                    else clearError(loginEmail);
+
+                    if (!keyResult.valid) showError(loginAuthKey, keyResult.error);
+                    else clearError(loginAuthKey);
+
+                    // If all valid, proceed
+                    if (emailResult.valid && keyResult.valid) {
+                        // TODO: Make actual API call for authentication
+                        // For now, simulate success
+                        localStorage.setItem('access_token', 'demo_token_' + Date.now());
+                        localStorage.setItem('user_email', loginEmail.value);
+
+                        // Redirect to dashboard
+                        window.location.href = 'dashboard.html';
+                    }
+                });
+
+                // Function to update login key type
+                window.updateLoginKeyType = (type) => {
+                    loginSelectedKeyType = type;
+                };
+            }
+
+            // ============================================
+            // REQUEST ACCESS FORM VALIDATION
+            // ============================================
+            const formRequest = document.getElementById('formRequest');
+            if (formRequest) {
+                const inputs = {
+                    name: formRequest.querySelectorAll('input[type="text"]')[0],
+                    email: formRequest.querySelector('input[type="email"]'),
+                    authKey: formRequest.querySelector('#authKeyInput'),
+                    age: formRequest.querySelector('input[type="number"]'),
+                    phone: formRequest.querySelector('input[type="tel"]')
+                };
+
+                // Track selected key type
+                let selectedKeyType = '4-Digit PIN';
+
+                // Real-time validation
+                inputs.name?.addEventListener('blur', () => {
+                    const result = validateName(inputs.name.value);
+                    if (!result.valid) showError(inputs.name, result.error);
+                    else clearError(inputs.name);
+                });
+
+                inputs.email?.addEventListener('blur', () => {
+                    const result = validateEmail(inputs.email.value);
+                    if (!result.valid) showError(inputs.email, result.error);
+                    else clearError(inputs.email);
+                });
+
+                inputs.authKey?.addEventListener('blur', () => {
+                    const result = validateAuthKey(inputs.authKey.value, selectedKeyType);
+                    if (!result.valid) showError(inputs.authKey, result.error);
+                    else clearError(inputs.authKey);
+                });
+
+                inputs.age?.addEventListener('blur', () => {
+                    const result = validateAge(inputs.age.value);
+                    if (!result.valid) showError(inputs.age, result.error);
+                    else clearError(inputs.age);
+                });
+
+                inputs.phone?.addEventListener('blur', () => {
+                    const result = validatePhone(inputs.phone.value);
+                    if (!result.valid) showError(inputs.phone, result.error);
+                    else clearError(inputs.phone);
+                });
+
+                // Clear errors on input
+                Object.values(inputs).forEach(input => {
+                    input?.addEventListener('input', () => clearError(input));
+                });
+
+                // Form submission
+                formRequest.addEventListener('submit', (e) => {
+                    e.preventDefault();
+
+                    const results = {
+                        name: validateName(inputs.name.value),
+                        email: validateEmail(inputs.email.value),
+                        authKey: validateAuthKey(inputs.authKey.value, selectedKeyType),
+                        age: validateAge(inputs.age.value),
+                        phone: validatePhone(inputs.phone.value)
+                    };
+
+                    // Show all errors
+                    if (!results.name.valid) showError(inputs.name, results.name.error);
+                    else clearError(inputs.name);
+
+                    if (!results.email.valid) showError(inputs.email, results.email.error);
+                    else clearError(inputs.email);
+
+                    if (!results.authKey.valid) showError(inputs.authKey, results.authKey.error);
+                    else clearError(inputs.authKey);
+
+                    if (!results.age.valid) showError(inputs.age, results.age.error);
+                    else clearError(inputs.age);
+
+                    if (!results.phone.valid) showError(inputs.phone, results.phone.error);
+                    else clearError(inputs.phone);
+
+                    // If all valid, proceed
+                    const allValid = Object.values(results).every(r => r.valid);
+                    if (allValid) {
+                        // TODO: Make actual API call for registration
+                        // For now, simulate success
+                        localStorage.setItem('access_token', 'demo_token_' + Date.now());
+                        localStorage.setItem('user_email', inputs.email.value);
+
+                        // Redirect to dashboard
+                        window.location.href = 'dashboard.html';
+                    }
+                });
+
+                // Update selectedKeyType when dropdown changes (we'll connect this in dropdown logic)
+                window.updateSelectedKeyType = (type) => {
+                    selectedKeyType = type;
+                };
+            }
+
+            // ============================================
+            // MODAL MANAGEMENT
+            // ============================================
+            const modal = document.getElementById('loginModal');
+            const startBtn = document.querySelector('.btn-start');
+            const closeBtn = document.getElementById('closeModal');
+            const modalOverlay = document.querySelector('.modal-overlay');
+
+            // Open Modal
+            startBtn.addEventListener('click', (e) => {
+                e.preventDefault(); // Prevent navigation to login.html
+                if (modal) modal.classList.add('active');
+            });
+
+            // Close Modal
+            const closeModal = () => {
+                if (modal) modal.classList.remove('active');
+            };
+
+            if (closeBtn) closeBtn.addEventListener('click', closeModal);
+
+            // Close when clicking outside card
+            if (modalOverlay) {
+                modalOverlay.addEventListener('click', (e) => {
+                    if (e.target === modalOverlay) {
+                        closeModal();
+                    }
+                });
+            }
+
+            // Tab Switching
+            const tabContinue = document.getElementById('tabContinue');
+            const tabRequest = document.getElementById('tabRequest');
+            const modalNote = document.querySelector('.modal-note');
+
+            if (tabContinue && tabRequest && formLogin && formRequest) {
+                tabContinue.addEventListener('click', () => {
+                    tabContinue.classList.add('active');
+                    tabRequest.classList.remove('active');
+                    formLogin.classList.remove('hidden');
+                    formRequest.classList.add('hidden');
+                    if (modalNote) modalNote.textContent = 'Required for continued access.';
+                });
+
+                tabRequest.addEventListener('click', () => {
+                    tabRequest.classList.add('active');
+                    tabContinue.classList.remove('active');
+                    formLogin.classList.add('hidden');
+                    formRequest.classList.remove('hidden');
+                    if (modalNote) modalNote.textContent = 'Requests are reviewed. Access is not guaranteed.';
+                });
+            }
+
+            // Dropdown Logic (Generic)
+            const setupDropdown = (btnId, menuId, itemClass, onSelect) => {
+                const btn = document.getElementById(btnId);
+                const menu = document.getElementById(menuId);
+                if (!btn || !menu) return;
+
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    menu.classList.toggle('active');
+                });
+
+                // Close when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!btn.contains(e.target) && !menu.contains(e.target)) {
+                        menu.classList.remove('active');
+                    }
+                });
+
+                // Selection
+                menu.querySelectorAll('.' + itemClass).forEach(item => {
+                    item.addEventListener('click', () => {
+                        onSelect(item);
+                        menu.classList.remove('active');
+                    });
+                });
+            };
+
+            // Key Type Dropdown
+            const authKeyInput = document.getElementById('authKeyInput');
+            setupDropdown('keyTypeBtn', 'keyTypeMenu', 'dropdown-item', (item) => {
+                const val = item.getAttribute('data-val');
+                const ph = item.getAttribute('data-ph');
+                document.querySelector('#keyTypeBtn span').textContent = val;
+                if (authKeyInput) authKeyInput.placeholder = ph;
+                // Update validation
+                if (window.updateSelectedKeyType) {
+                    window.updateSelectedKeyType(val);
+                }
+            });
+
+            // Login Key Type Dropdown (for Continue form)
+            const loginAuthKeyInput = document.getElementById('loginAuthKeyInput');
+            setupDropdown('loginKeyTypeBtn', 'loginKeyTypeMenu', 'dropdown-item', (item) => {
+                const val = item.getAttribute('data-val');
+                const ph = item.getAttribute('data-ph');
+                document.querySelector('#loginKeyTypeBtn span').textContent = val;
+                if (loginAuthKeyInput) loginAuthKeyInput.placeholder = ph;
+                // Update validation
+                if (window.updateLoginKeyType) {
+                    window.updateLoginKeyType(val);
+                }
+            });
+
+            // Country Dropdown
+            setupDropdown('countryBtn', 'countryMenu', 'dropdown-item', (item) => {
+                const flag = item.getAttribute('data-flag');
+                const code = item.getAttribute('data-code');
+                document.querySelector('#countryBtn span').textContent = `${flag} ${code}`;
+            });
+        });
+    </script>
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal-overlay">
+        <div class="modal-card">
+            <button class="close-btn" id="closeModal">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <div class="text-center mb-8">
+                <h2 class="modal-title">Access</h2>
+                <p class="modal-subtitle">Access is selective.</p>
+                <p class="modal-note">Required for continued access.</p>
+            </div>
+
+            <div class="tab-group">
+                <button class="tab-btn active" id="tabContinue">Continue</button>
+                <button class="tab-btn" id="tabRequest">Request Access</button>
+            </div>
+
+            <!-- Login Form (Continue) -->
+            <form id="formLogin">
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="glass-input" placeholder="name@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Authentication Key</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <div class="dropdown-wrapper">
+                            <button type="button" class="dropdown-btn" id="loginKeyTypeBtn">
+                                <span>4-Digit PIN</span>
+                                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    style="opacity: 1;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div class="dropdown-menu" id="loginKeyTypeMenu">
+                                <button type="button" class="dropdown-item" data-val="4-Digit PIN"
+                                    data-ph="****">4-Digit PIN</button>
+                                <button type="button" class="dropdown-item" data-val="6-Digit PIN"
+                                    data-ph="******">6-Digit PIN</button>
+                                <button type="button" class="dropdown-item" data-val="Alphabetical"
+                                    data-ph="Enter alphabetical key">Alphabetical</button>
+                                <button type="button" class="dropdown-item" data-val="Numeric"
+                                    data-ph="Enter numeric key">Numeric</button>
+                            </div>
+                        </div>
+                        <input type="password" id="loginAuthKeyInput" class="glass-input" placeholder="****" required
+                            style="flex: 1;">
+                    </div>
+                    <div style="text-align: right; margin-top: 0.5rem;">
+                        <a href="#"
+                            style="font-size: 10px; color: rgba(255,255,255,0.4); text-decoration: none; letter-spacing: 0.05em;">Forgot
+                            Authentication Key?</a>
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit">Continue</button>
+            </form>
+
+            <!-- Request Access Form -->
+            <form id="formRequest" class="hidden">
+                <!-- Full Name -->
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="glass-input" placeholder="Enter your name" required>
+                </div>
+
+                <!-- Email -->
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="glass-input" placeholder="name@example.com" required>
+                </div>
+
+                <!-- Auth Key Type & Input -->
+                <div class="form-group">
+                    <label class="form-label">Authentication Key</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <div class="dropdown-wrapper">
+                            <button type="button" class="dropdown-btn" id="keyTypeBtn">
+                                <span>4-Digit PIN</span>
+                                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    style="opacity: 1;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div class="dropdown-menu" id="keyTypeMenu">
+                                <button type="button" class="dropdown-item" data-val="4-Digit PIN"
+                                    data-ph="****">4-Digit PIN</button>
+                                <button type="button" class="dropdown-item" data-val="6-Digit PIN"
+                                    data-ph="******">6-Digit PIN</button>
+                                <button type="button" class="dropdown-item" data-val="Alphabetical"
+                                    data-ph="Enter text">Alphabetical</button>
+                                <button type="button" class="dropdown-item" data-val="Numeric"
+                                    data-ph="Enter numbers">Numeric</button>
+                            </div>
+                        </div>
+                        <input type="text" class="glass-input" id="authKeyInput" placeholder="****" required>
+                    </div>
+                </div>
+
+                <!-- Age & Contact -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Age</label>
+                        <input type="number" class="glass-input" placeholder="25" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Contact Channel</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <div class="dropdown-wrapper">
+                                <button type="button" class="dropdown-btn" id="countryBtn" style="min-width: 100px;">
+                                    <span>🇮🇳 +91</span>
+                                </button>
+                                <div class="dropdown-menu" id="countryMenu">
+                                    <button type="button" class="dropdown-item" data-flag="🇮🇳" data-code="+91">🇮🇳
+                                        India</button>
+                                    <button type="button" class="dropdown-item" data-flag="🇺🇸" data-code="+1">🇺🇸
+                                        USA</button>
+                                    <button type="button" class="dropdown-item" data-flag="🇬🇧" data-code="+44">🇬🇧
+                                        UK</button>
+                                    <button type="button" class="dropdown-item" data-flag="🇯🇵" data-code="+81">🇯🇵
+                                        Japan</button>
+                                </div>
+                            </div>
+                            <input type="tel" class="glass-input" placeholder="98765 43210" required>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Request Access</button>
+            </form>
+        </div>
+    </div>
+</body>
+
+</html>
