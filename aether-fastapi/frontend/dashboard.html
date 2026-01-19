@@ -17,6 +17,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
+    <!-- Custom CSS -->
+    <link href="css/style.css" rel="stylesheet">
+
     <style>
         /* Base Styling */
         body {
@@ -342,6 +345,14 @@
         .realestate-section.active {
             display: block;
         }
+
+        .crypto-section {
+            display: none;
+        }
+
+        .crypto-section.active {
+            display: block;
+        }
     </style>
 </head>
 
@@ -396,28 +407,15 @@
 
             <!-- Content Area -->
             <div class="content-area">
-                <!-- Dashboard Module -->
-                <div class="module-content active" id="module-dashboard">
-                    <!-- General Dashboard placeholder -->
-                    <div class="glass-card mb-4">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="text-uppercase text-white-50"
-                                    style="font-size: 0.75rem; letter-spacing: 0.1em;">Total Net Worth</div>
-                                <div class="display-4 fw-light text-white my-1" id="totalNetWorth">₹0</div>
-                                <div class="d-flex align-items-center text-success" id="totalGainLoss">
-                                    <span id="gainLossAmount">+₹0</span>
-                                    <span id="gainLossPercent" class="ms-2 opacity-75 small">(+0.00%)</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Home Dashboard Module -->
+                <div class="module-content active" id="module-home">
+                    <!-- Intentionally clean/empty landing view -->
                 </div>
 
                 <!-- Real Estate Module -->
                 <div class="module-content" id="module-realestate">
-                    <!-- 1. Dashboard Section -->
-                    <div id="realestate-section-dashboard" class="realestate-section active">
+                    <!-- 1. Overview Section (renamed from Dashboard) -->
+                    <div id="realestate-section-overview" class="realestate-section active">
                         <!-- Injected by JS -->
                     </div>
 
@@ -430,12 +428,13 @@
                             </div>
                             <div class="d-flex gap-3">
                                 <div class="glass-capsule p-1 d-flex gap-1">
-                                    <button class="px-3 py-1 rounded-pill bg-white bg-opacity-10 text-white small">Owned
-                                        (3)</button>
-                                    <button class="px-3 py-1 rounded-pill text-white-50 small">Rented (2)</button>
+                                    <button id="filter-owned"
+                                        class="px-3 py-1 rounded-pill bg-white bg-opacity-10 text-white small"
+                                        onclick="filterProperties('Owned')">Owned</button>
+                                    <button id="filter-rented" class="px-3 py-1 rounded-pill text-white-50 small"
+                                        onclick="filterProperties('Rented')">Rented</button>
                                 </div>
-                                <button class="glass-button px-4 py-2 rounded-pill small"
-                                    onclick="openPropertyModal(0)">
+                                <button class="glass-button px-4 py-2 rounded-pill small" onclick="handleAddProperty()">
                                     <span>+</span> Add Property
                                 </button>
                             </div>
@@ -456,8 +455,9 @@
                             <div
                                 class="row g-0 p-3 border-bottom border-white border-opacity-10 text-white-50 small text-uppercase">
                                 <div class="col-2">Type</div>
-                                <div class="col-4">Property</div>
+                                <div class="col-2">Property</div>
                                 <div class="col-2">Value</div>
+                                <div class="col-2">Rent Amount</div>
                                 <div class="col-2">Date</div>
                                 <div class="col-2">Gain/Loss</div>
                             </div>
@@ -472,8 +472,17 @@
                         <div class="glass-header mb-4 d-flex justify-content-between align-items-end">
                             <div>
                                 <h2 class="h3 fw-light mb-2">Valuations & Documents</h2>
-                                <p class="text-white-50 fw-light">Property documentation</p>
+                                <p class="text-white-50 fw-light">Property documentation and records</p>
                             </div>
+                            <button class="glass-button px-4 py-2 rounded-pill small d-flex align-items-center gap-2"
+                                onclick="openUploadDocumentModal()">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                    </path>
+                                </svg>
+                                Upload Document
+                            </button>
                         </div>
                         <div id="documents-list" class="row g-4">
                             <!-- Injected JS -->
@@ -481,30 +490,359 @@
                     </div>
 
                     <!-- 5. AI Insights -->
-                    <div id="realestate-section-ai-insights" class="realestate-section">
-                        <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2">AI Property Insights</h2>
-                            <p class="text-white-50 fw-light">Strategic recommendations</p>
-                        </div>
-                        <div class="glass-card">
-                            <p class="text-white-50">AI Module initialized...</p>
+                    <div id="realestate-section-ai-insights" class="realestate-section" style="display: none;">
+                        <div class="row g-5">
+                            <!-- Left Panel: AI Property Insights -->
+                            <div class="col-lg-6 d-flex flex-column gap-4">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round" class="text-white">
+                                            <path
+                                                d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                                        </svg>
+                                        <h2 class="h4 fw-light text-white mb-0">AI Property Insights</h2>
+                                    </div>
+                                    <p class="small text-white-50 mb-0 ps-4 ms-1">Strategic recommendations powered by
+                                        AI</p>
+                                </div>
+
+                                <!-- Insight Card -->
+                                <div
+                                    class="glass-card p-4 d-flex gap-3 align-items-start position-relative overflow-hidden">
+                                    <!-- Icon Container -->
+                                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                                        style="width: 48px; height: 48px; background: rgba(255,255,255,0.05);">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round" class="text-white-50">
+                                            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+                                            <polyline points="16 7 22 7 22 13" />
+                                        </svg>
+                                    </div>
+
+                                    <div class="flex-grow-1">
+                                        <p class="text-white fw-light mb-3" style="line-height: 1.6;">
+                                            You have sold 1 properties. Ensure you reinvest capital gains to maintain
+                                            compounding growth.
+                                        </p>
+
+                                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                                            <span
+                                                class="badge bg-warning bg-opacity-10 text-warning fw-normal px-3 py-2 rounded-pill small">Medium
+                                                Impact</span>
+
+                                            <div class="d-flex align-items-center gap-2 flex-grow-1"
+                                                style="max-width: 200px;">
+                                                <div class="progress w-100"
+                                                    style="height: 4px; background: rgba(255,255,255,0.1);">
+                                                    <div class="progress-bar bg-white" role="progressbar"
+                                                        style="width: 95%" aria-valuenow="95" aria-valuemin="0"
+                                                        aria-valuemax="100"></div>
+                                                </div>
+                                                <span class="small text-white-50" style="font-size: 0.75rem;">95%
+                                                    confidence</span>
+                                            </div>
+
+                                            <span
+                                                class="badge bg-white bg-opacity-10 text-white-50 fw-normal px-3 py-2 rounded-pill small">Opportunity</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Panel: AI Assistant -->
+                            <div class="col-lg-6 d-flex flex-column gap-4" style="height: 100%;">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round" class="text-white">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z">
+                                            </path>
+                                        </svg>
+                                        <h2 class="h4 fw-light text-white mb-0">AI Assistant</h2>
+                                    </div>
+                                    <p class="small text-white-50 mb-0 ps-4 ms-1">Ask questions about your portfolio</p>
+                                </div>
+
+                                <!-- View 1: Question Grid -->
+                                <div id="ai-question-grid" class="d-flex flex-column gap-3">
+                                    <div class="row g-3">
+                                        <div class="col-6">
+                                            <button onclick="handleAIChat('Which property is underperforming?')"
+                                                class="glass-card p-4 w-100 text-start h-100 hover-lift d-flex align-items-start gap-3 border-0"
+                                                style="background: rgba(255,255,255,0.03);">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                    class="text-white-50 flex-shrink-0 mt-1">
+                                                    <path d="m12 14 4-4" />
+                                                    <path d="M3.34 19a10 10 0 1 1 17.32 0" />
+                                                </svg>
+                                                <span class="text-white-90 small">Which property is
+                                                    underperforming?</span>
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button onclick="handleAIChat('Should I hold or sell this asset?')"
+                                                class="glass-card p-4 w-100 text-start h-100 hover-lift d-flex align-items-start gap-3 border-0"
+                                                style="background: rgba(255,255,255,0.03);">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                    class="text-white-50 flex-shrink-0 mt-1">
+                                                    <path d="M12 2v20" />
+                                                    <path d="m17 5-5-3-5 3" />
+                                                    <path d="m17 19-5 3-5-3" />
+                                                </svg>
+                                                <span class="text-white-90 small">Should I hold or sell this
+                                                    asset?</span>
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button onclick="handleAIChat('What is my real estate risk exposure?')"
+                                                class="glass-card p-4 w-100 text-start h-100 hover-lift d-flex align-items-start gap-3 border-0"
+                                                style="background: rgba(255,255,255,0.03);">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                    class="text-white-50 flex-shrink-0 mt-1">
+                                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+                                                </svg>
+                                                <span class="text-white-90 small">What is my real estate risk
+                                                    exposure?</span>
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button onclick="handleAIChat('How can I optimize my portfolio?')"
+                                                class="glass-card p-4 w-100 text-start h-100 hover-lift d-flex align-items-start gap-3 border-0"
+                                                style="background: rgba(255,255,255,0.03);">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                    class="text-white-50 flex-shrink-0 mt-1">
+                                                    <path d="M2 20h.01" />
+                                                    <path d="M7 20v-4" />
+                                                    <path d="M12 20v-8" />
+                                                    <path d="M17 20V8" />
+                                                    <path d="M22 4v16" />
+                                                </svg>
+                                                <span class="text-white-90 small">How can I optimize my
+                                                    portfolio?</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <button onclick="toggleAIChatMode()"
+                                            class="btn btn-link text-white-50 text-decoration-none small p-0 hover-text-white transition-all">Expand
+                                            chat</button>
+                                    </div>
+                                </div>
+
+                                <!-- View 2: Active Chat Interface (Hidden by default) -->
+                                <div id="ai-chat-interface" style="display: none;">
+                                    <div class="glass-card d-flex flex-column p-4"
+                                        style="height: 400px; position: relative;">
+                                        <!-- Empty State / Chat Messages -->
+                                        <div id="ai-chat-messages-full"
+                                            class="flex-grow-1 overflow-auto mb-3 custom-scrollbar d-flex flex-column gap-3 pe-2">
+                                            <div id="ai-chat-placeholder"
+                                                class="d-flex align-items-center justify-content-center h-100 text-white-50 small">
+                                                Ask me anything about your real estate portfolio...
+                                            </div>
+                                        </div>
+
+                                        <!-- Input Area -->
+                                        <form
+                                            onsubmit="event.preventDefault(); handleAIChat(this.querySelector('input').value); this.querySelector('input').value='';"
+                                            class="mt-auto">
+                                            <div class="position-relative">
+                                                <input type="text"
+                                                    class="form-control glass-input rounded-pill ps-4 pe-5 py-3 text-white small"
+                                                    placeholder="Type a message..."
+                                                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 0.9rem;">
+                                                <button type="button"
+                                                    onclick="this.form.dispatchEvent(new Event('submit'))"
+                                                    class="btn position-absolute top-50 end-0 translate-middle-y text-white-50 hover-text-white pe-3"
+                                                    style="border:none; background:none;">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="m22 2-7 20-4-9-9-4Z" />
+                                                        <path d="M22 2 11 13" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+
+                                    <!-- Collapse Button (Outside Card) -->
+                                    <button onclick="toggleAIChatMode()"
+                                        class="btn btn-link text-white-50 text-decoration-none small ps-0 mt-2 hover-text-white transition-all">Collapse</button>
+                                </div>
+                            </div>
+
+
+
                         </div>
                     </div>
                 </div>
 
-                <!-- Other Module Placeholders -->
+                <!-- Crypto Module -->
                 <div class="module-content" id="module-crypto">
-                    <div class="glass-card">
-                        <h2 class="h4 fw-light">Crypto Overview</h2>
-                        <p class="text-white-50">Coming soon...</p>
+                    <!-- 1. Overview Section -->
+                    <div id="crypto-section-overview" class="crypto-section active">
+                        <!-- Injected by JS -->
+                    </div>
+
+                    <!-- 2. Holdings Section -->
+                    <div id="crypto-section-holdings" class="crypto-section" style="display: none;">
+                        <!-- Container 1: Add Crypto -->
+                        <div class="glass-card mb-4 p-4 d-flex align-items-center justify-content-between">
+                            <div>
+                                <h3 class="h5 fw-light text-white mb-1">Add New Asset</h3>
+                                <p class="text-white-50 small mb-0">Track a new cryptocurrency in your portfolio.
+                                </p>
+                            </div>
+                            <button onclick="openAddCryptoModal()"
+                                class="btn glass-button text-white px-4 py-2 rounded-pill d-flex align-items-center gap-2 transition-all hover-scale-105">
+                                <span class="fs-5 fw-light">+</span>
+                                <span>Add Crypto</span>
+                            </button>
+                        </div>
+
+                        <!-- Container 2: Holdings List -->
+                        <div class="glass-header mb-3">
+                            <h2 class="h5 fw-light text-white-90">Your Assets</h2>
+                        </div>
+                        <div class="glass-card overflow-hidden p-0">
+                            <div
+                                class="row g-0 p-3 border-bottom border-white border-opacity-10 text-white-50 small text-uppercase">
+                                <div class="col-2">Asset</div>
+                                <div class="col-2">Price</div>
+                                <div class="col-2">Balance</div>
+                                <div class="col-2">Value</div>
+                                <div class="col-2">Network</div>
+                                <div class="col-2 text-end">Actions</div>
+                            </div>
+                            <div id="crypto-holdings-list">
+                                <!-- Injected by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. On-Chain Activity Section -->
+                    <div id="crypto-section-on-chain" class="crypto-section" style="display: none;">
+                        <div class="glass-header mb-4">
+                            <h2 class="h3 fw-light mb-2">On-Chain Activity</h2>
+                            <p class="text-white-50 fw-light">Recent transactions across your wallets</p>
+                        </div>
+                        <div class="glass-card overflow-hidden p-0">
+                            <div
+                                class="row g-0 p-3 border-bottom border-white border-opacity-10 text-white-50 small text-uppercase">
+                                <div class="col-2">Type</div>
+                                <div class="col-2">Asset</div>
+                                <div class="col-2">Amount</div>
+                                <div class="col-2">Value</div>
+                                <div class="col-2">Wallet</div>
+                                <div class="col-2">Status</div>
+                            </div>
+                            <div id="crypto-transactions-list">
+                                <!-- Injected by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Wallets Section -->
+                    <div id="crypto-section-wallets" class="crypto-section" style="display: none;">
+                        <div class="glass-header mb-4">
+                            <h2 class="h3 fw-light mb-2">Connected Wallets</h2>
+                            <p class="text-white-50 fw-light">Manage your wallet connections</p>
+                        </div>
+                        <div id="crypto-wallets-grid" class="row g-4">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+
+                    <!-- 5. AI Insights Section -->
+                    <div id="crypto-section-ai-insights" class="crypto-section" style="display: none;">
+                        <div class="glass-header mb-4">
+                            <h2 class="h3 fw-light mb-2">AI Insights</h2>
+                            <p class="text-white-50 fw-light">AI-powered analysis of your crypto portfolio
+                            </p>
+                        </div>
+                        <div class="glass-card">
+                            <p class="text-white-50">Coming soon...</p>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Shares Module -->
                 <div class="module-content" id="module-shares">
-                    <div class="glass-card">
-                        <h2 class="h4 fw-light">Share Portfolio</h2>
-                        <p class="text-white-50">Coming soon...</p>
+                    <!-- 1. Overview Section -->
+                    <div id="shares-section-overview" class="shares-section active">
+                        <!-- Injected by JS -->
+                    </div>
+
+                    <!-- 2. Holdings Section -->
+                    <div id="shares-section-holdings" class="shares-section" style="display: none;">
+                        <div class="glass-header mb-4">
+                            <h2 class="h3 fw-light mb-2">Share Holdings</h2>
+                            <p class="text-white-50 fw-light">Manage your stock portfolio and add new holdings</p>
+                        </div>
+                        <div id="shares-holdings-list">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+
+                    <!-- 3. Market Activity Section -->
+                    <div id="shares-section-market-activity" class="shares-section" style="display: none;">
+                        <div class="glass-header mb-4">
+                            <h2 class="h3 fw-light mb-2">Market Activity</h2>
+                            <p class="text-white-50 fw-light">Recent market movements in your portfolio</p>
+                        </div>
+                        <div class="glass-card">
+                            <p class="text-white-50">Coming soon...</p>
+                        </div>
+                    </div>
+
+                    <!-- 4. Performance Section -->
+                    <div id="shares-section-performance" class="shares-section" style="display: none;">
+                        <div class="glass-header mb-4">
+                            <h2 class="h3 fw-light mb-2">Performance Analytics</h2>
+                            <p class="text-white-50 fw-light">Deep dive into your portfolio performance</p>
+                        </div>
+                        <div class="glass-card">
+                            <p class="text-white-50">Coming soon...</p>
+                        </div>
+                    </div>
+
+                    <!-- 5. Transactions Section -->
+                    <div id="shares-section-transactions" class="shares-section" style="display: none;">
+                        <div class="glass-header mb-4">
+                            <h2 class="h3 fw-light mb-2">Transaction History</h2>
+                            <p class="text-white-50 fw-light">Complete record of buy and sell orders</p>
+                        </div>
+                        <div class="glass-card">
+                            <p class="text-white-50">Coming soon...</p>
+                        </div>
+                    </div>
+
+                    <!-- 6. AI Insights Section -->
+                    <div id="shares-section-ai-insights" class="shares-section" style="display: none;">
+                        <div class="glass-header mb-4">
+                            <h2 class="h3 fw-light mb-2">AI Insights</h2>
+                            <p class="text-white-50 fw-light">AI-powered analysis of your share portfolio</p>
+                        </div>
+                        <div class="glass-card">
+                            <p class="text-white-50">Coming soon...</p>
+                        </div>
                     </div>
                 </div>
+
                 <div class="module-content" id="module-bonds">
                     <div class="glass-card">
                         <h2 class="h4 fw-light">Bonds Portfolio</h2>
@@ -525,8 +863,9 @@
     <!-- Property Modal -->
     <div id="property-modal" class="position-fixed top-0 start-0 w-100 h-100 hidden"
         style="z-index: 1050; display: none;">
-        <div class="position-absolute w-100 h-100 bg-black bg-opacity-75" onclick="closePropertyModal()"></div>
-        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 800px; padding: 1rem;">
+        <div class="position-absolute w-100 h-100 bg-black bg-opacity-75" onclick="closePropertyModal()">
+        </div>
+        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 600px; padding: 1rem;">
             <div class="glass-card position-relative" id="modal-content-container"
                 style="max-height: 90vh; overflow-y: auto;">
                 <button onclick="closePropertyModal()"
@@ -541,7 +880,934 @@
         </div>
     </div>
 
-    <script src="js/dashboard.js"></script>
+    <script src="js/dashboard.js?v=23"></script>
+    <script src="js/shares-module.js"></script>
+
+
+    <!-- Add Property Modal -->
+    <div id="add-property-modal" class="position-fixed top-0 start-0 w-100 h-100 hidden"
+        style="z-index: 1060; display: none;">
+        <div class="position-absolute w-100 h-100 bg-black bg-opacity-75" onclick="closeAddPropertyModal()">
+        </div>
+        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 600px; padding: 1rem;">
+            <div class="glass-card position-relative p-0 overflow-hidden" style="border-radius: 1.5rem;">
+                <!-- Header -->
+                <div
+                    class="p-4 border-bottom border-white border-opacity-10 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="h4 fw-light text-white-90 mb-1">Add New Property</h2>
+                        <p class="small text-white-50 mb-0">Enter property details to add to your portfolio
+                        </p>
+                    </div>
+                    <button onclick="closeAddPropertyModal()"
+                        class="btn btn-sm glass-button rounded-circle p-2 d-flex align-items-center justify-content-center"
+                        style="width: 32px; height: 32px;">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Form -->
+                <div class="p-4">
+                    <form id="addPropertyForm" onsubmit="submitAddProperty(event)">
+                        <!-- Name -->
+                        <div class="mb-3">
+                            <label class="form-label small text-uppercase text-white-50"
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Property Name *</label>
+                            <input type="text" id="propName" class="form-control glass-input text-white fw-light"
+                                placeholder="e.g., Sunset Villa" required autocomplete="off"
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                        </div>
+
+                        <!-- Type -->
+                        <div class="mb-3">
+                            <label class="form-label small text-uppercase text-white-50"
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Type of Property *</label>
+                            <select id="propType" class="form-select glass-input text-white fw-light" required
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                                <option value="Residential" class="text-dark">Residential</option>
+                                <option value="Commercial" class="text-dark">Commercial</option>
+                                <option value="Land" class="text-dark">Land</option>
+                                <option value="Industrial" class="text-dark">Industrial</option>
+                                <option value="Vacation" class="text-dark">Vacation Rental</option>
+                            </select>
+                        </div>
+
+                        <!-- Address -->
+                        <div class="mb-3">
+                            <label class="form-label small text-uppercase text-white-50"
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Address *</label>
+                            <input type="text" id="propAddress" class="form-control glass-input text-white fw-light"
+                                placeholder="e.g., Mumbai, Maharashtra" required autocomplete="off"
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                        </div>
+
+                        <!-- Prices -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small text-uppercase text-white-50"
+                                    style="letter-spacing: 0.1em; font-size: 0.7rem;">Purchase Price (₹)
+                                    *</label>
+                                <input type="number" id="propPurchasePrice"
+                                    class="form-control glass-input text-white fw-light" placeholder="0" required
+                                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small text-uppercase text-white-50"
+                                    style="letter-spacing: 0.1em; font-size: 0.7rem;">Current Price (₹)
+                                    *</label>
+                                <input type="number" id="propCurrentPrice"
+                                    class="form-control glass-input text-white fw-light" placeholder="0" required
+                                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                            </div>
+                        </div>
+
+                        <!-- Coords -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-6">
+                                <label class="form-label small text-uppercase text-white-50"
+                                    style="letter-spacing: 0.1em; font-size: 0.7rem;">Longitude</label>
+                                <input type="number" step="any" id="propLng"
+                                    class="form-control glass-input text-white fw-light" placeholder="0.0000"
+                                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small text-uppercase text-white-50"
+                                    style="letter-spacing: 0.1em; font-size: 0.7rem;">Latitude</label>
+                                <input type="number" step="any" id="propLat"
+                                    class="form-control glass-input text-white fw-light" placeholder="0.0000"
+                                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-flex gap-3">
+                            <button type="button" onclick="closeAddPropertyModal()"
+                                class="btn w-50 py-2 rounded-3 border border-white border-opacity-10 text-white-50 hover-text-white hover-bg-white hover-bg-opacity-10 transition-colors">Cancel</button>
+                            <button type="submit"
+                                class="btn w-50 py-2 rounded-3 glass-button text-white border border-white border-opacity-20 hover-bg-opacity-20 transition-colors">Add
+                                Property</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Crypto Modal -->
+    <div id="add-crypto-modal" class="position-fixed top-0 start-0 w-100 h-100 hidden"
+        style="z-index: 1055; display: none;">
+        <div class="position-absolute w-100 h-100 bg-black bg-opacity-75" onclick="closeAddCryptoModal()">
+        </div>
+        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 600px; padding: 1rem;">
+            <div class="glass-card position-relative" style="border-radius: 1.5rem; overflow: hidden;">
+                <!-- Header -->
+                <div
+                    class="p-4 border-bottom border-white border-opacity-10 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="h4 fw-light text-white-90 mb-1">Add New Crypto</h2>
+                        <p class="small text-white-50 mb-0">Search and add cryptocurrency to your portfolio
+                        </p>
+                    </div>
+                    <button onclick="closeAddCryptoModal()"
+                        class="btn btn-sm glass-button rounded-circle p-2 d-flex align-items-center justify-content-center"
+                        style="width: 32px; height: 32px;">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Form -->
+                <form id="addCryptoForm" onsubmit="submitAddCrypto(event)" class="p-4">
+                    <!-- Search Cryptocurrency -->
+                    <div class="mb-4 position-relative">
+                        <label class="form-label small text-uppercase text-white-50"
+                            style="letter-spacing: 0.1em; font-size: 0.7rem;">Search Cryptocurrency</label>
+                        <div class="position-relative">
+                            <svg class="position-absolute"
+                                style="left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: rgba(255,255,255,0.4);"
+                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            <input type="text" id="cryptoSearch" class="form-control glass-input text-white fw-light"
+                                placeholder="Bitcoin, Ethereum, Solana..." autocomplete="off"
+                                oninput="handleCryptoSearch(this.value)"
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding-left: 40px;">
+                            <div id="cryptoSearchSpinner" class="position-absolute d-none"
+                                style="right: 12px; top: 50%; transform: translateY(-50%);">
+                                <div class="spinner-border spinner-border-sm text-white-50" role="status"
+                                    style="width: 16px; height: 16px;"></div>
+                            </div>
+                        </div>
+                        <!-- Search Results Dropdown -->
+                        <div id="cryptoSearchResults"
+                            class="position-absolute w-100 mt-2 rounded-3 overflow-hidden d-none"
+                            style="background: rgba(10,10,10,0.95); border: 1px solid rgba(255,255,255,0.1); max-height: 300px; overflow-y: auto; z-index: 100;">
+                            <!-- Results injected by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Symbol and Name -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-4">
+                            <label class="form-label small text-uppercase text-white-50"
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Symbol <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" id="cryptoSymbol" class="form-control glass-input text-white fw-light"
+                                placeholder="BTC, ETH, SOL, etc." required
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                        </div>
+                        <div class="col-8">
+                            <label class="form-label small text-uppercase text-white-50"
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Name <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" id="cryptoName" class="form-control glass-input text-white fw-light"
+                                placeholder="Bitcoin, Ethereum" required
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                        </div>
+                    </div>
+
+                    <!-- Network -->
+                    <div class="mb-4">
+                        <label class="form-label small text-uppercase text-white-50"
+                            style="letter-spacing: 0.1em; font-size: 0.7rem;">Network <span
+                                class="text-danger">*</span></label>
+                        <select id="cryptoNetwork" class="form-select glass-input text-white fw-light" required
+                            style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                            <option value="" class="bg-dark">Select network...</option>
+                            <option value="Bitcoin" class="bg-dark">Bitcoin</option>
+                            <option value="Ethereum" class="bg-dark">Ethereum</option>
+                            <option value="Solana" class="bg-dark">Solana</option>
+                            <option value="Cardano" class="bg-dark">Cardano</option>
+                            <option value="Polkadot" class="bg-dark">Polkadot</option>
+                            <option value="Avalanche" class="bg-dark">Avalanche</option>
+                            <option value="Polygon" class="bg-dark">Polygon</option>
+                            <option value="Binance Smart Chain" class="bg-dark">Binance Smart Chain</option>
+                            <option value="Arbitrum" class="bg-dark">Arbitrum</option>
+                            <option value="Optimism" class="bg-dark">Optimism</option>
+                            <option value="Base" class="bg-dark">Base</option>
+                        </select>
+                    </div>
+
+                    <!-- Quantity and Prices -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-4">
+                            <label class="form-label small text-uppercase text-white-50"
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Quantity <span
+                                    class="text-danger">*</span></label>
+                            <input type="number" id="cryptoQuantity"
+                                class="form-control glass-input text-white fw-light" placeholder="1.5" step="any"
+                                min="0.00000001" required
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label small text-uppercase text-white-50"
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Avg Buy Price (₹) <span
+                                    class="text-danger">*</span></label>
+                            <input type="number" id="cryptoAvgPrice"
+                                class="form-control glass-input text-white fw-light" placeholder="3500000" step="0.01"
+                                min="0" required
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label small text-uppercase text-white-50"
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Current Price (₹) <span
+                                    class="text-danger">*</span></label>
+                            <input type="number" id="cryptoCurrentPrice"
+                                class="form-control glass-input text-white fw-light" placeholder="3850000" step="0.01"
+                                min="0" required
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-3">
+                        <button type="button" onclick="closeAddCryptoModal()"
+                            class="btn w-50 py-2 rounded-3 border border-white border-opacity-10 text-white-50 hover-text-white hover-bg-white hover-bg-opacity-10 transition-colors">Cancel</button>
+                        <button type="submit"
+                            class="btn w-50 py-2 rounded-3 glass-button text-white border border-white border-opacity-20 hover-bg-opacity-20 transition-colors d-flex align-items-center justify-content-center gap-2">
+                            <span>+</span> Add to Portfolio
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="rent-property-modal" class="position-fixed top-0 start-0 w-100 h-100 hidden"
+        style="z-index: 1060; display: none;">
+        <div class="position-absolute w-100 h-100 bg-black bg-opacity-75" onclick="closeRentModal()"></div>
+        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 700px; padding: 1rem;">
+            <div class="glass-card position-relative" style="border-radius: 1.5rem; overflow: hidden;">
+                <!-- Header -->
+                <div
+                    class="p-4 border-bottom border-white border-opacity-10 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="h4 fw-light text-white-90 mb-1">Rent Property</h2>
+                        <p class="small text-white-50 mb-0" id="rent-modal-property-name"></p>
+                    </div>
+                    <button onclick="closeRentModal()"
+                        class="btn btn-sm glass-button rounded-circle p-2 d-flex align-items-center justify-content-center"
+                        style="width: 32px; height: 32px;">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Form Container -->
+                <div class="p-4">
+                    <!-- Step 1: Form -->
+                    <div id="rent-step-1">
+                        <form id="rentPropertyForm" onsubmit="handleRentStep1(event)">
+                            <div class="row g-3 mb-3">
+                                <!-- Rent Type -->
+                                <div class="col-6">
+                                    <label class="form-label small text-uppercase text-white-50"
+                                        style="letter-spacing: 0.1em; font-size: 0.7rem;">Rent Type
+                                        *</label>
+                                    <div class="d-flex gap-2 p-1 rounded-3" style="background: rgba(255,255,255,0.05);">
+                                        <button type="button" onclick="setRentType('Monthly')"
+                                            class="rent-type-btn flex-1 btn py-2 text-white-50 rounded-3 transition-all active"
+                                            data-type="Monthly">Monthly</button>
+                                        <button type="button" onclick="setRentType('Yearly')"
+                                            class="rent-type-btn flex-1 btn py-2 text-white-50 rounded-3 transition-all"
+                                            data-type="Yearly">Yearly</button>
+                                    </div>
+                                    <input type="hidden" id="rentType" value="Monthly" required>
+                                </div>
+
+                                <!-- Rent Amount -->
+                                <div class="col-6">
+                                    <label class="form-label small text-uppercase text-white-50"
+                                        style="letter-spacing: 0.1em; font-size: 0.7rem;">Rent Amount (₹)
+                                        *</label>
+                                    <input type="number" id="rentAmount"
+                                        class="form-control glass-input text-white fw-light" placeholder="50000"
+                                        required
+                                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                                </div>
+
+                                <!-- Start Date -->
+                                <div class="col-6">
+                                    <label class="form-label small text-uppercase text-white-50"
+                                        style="letter-spacing: 0.1em; font-size: 0.7rem;">Start Date
+                                        *</label>
+                                    <input type="date" id="rentStartDate"
+                                        class="form-control glass-input text-white fw-light" required
+                                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                                </div>
+
+                                <!-- Security Deposit -->
+                                <div class="col-6">
+                                    <label class="form-label small text-uppercase text-white-50"
+                                        style="letter-spacing: 0.1em; font-size: 0.7rem;">Security Deposit
+                                        (₹)</label>
+                                    <input type="number" id="securityDeposit"
+                                        class="form-control glass-input text-white fw-light" placeholder="100000"
+                                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                                </div>
+
+                                <!-- Tenant Type -->
+                                <div class="col-12">
+                                    <label class="form-label small text-uppercase text-white-50"
+                                        style="letter-spacing: 0.1em; font-size: 0.7rem;">Tenant
+                                        Type</label>
+                                    <input type="text" id="tenantType"
+                                        class="form-control glass-input text-white fw-light" placeholder="Individual"
+                                        value="Individual"
+                                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="d-flex gap-3">
+                                <button type="button" id="cancelRentBtn" onclick="cancelRentProperty()"
+                                    class="d-none btn flex-1 py-3 rounded-3 border border-danger border-opacity-20 text-danger text-opacity-80 hover-bg-danger hover-bg-opacity-10 transition-all">
+                                    Cancel Rent
+                                </button>
+                                <button type="submit" id="rentSubmitBtn"
+                                    class="btn flex-2 py-3 rounded-3 glass-button text-white border border-white border-opacity-20 hover-bg-opacity-20 transition-all">
+                                    <span class="d-flex align-items-center justify-content-center gap-2">
+                                        <span id="rentSubmitText">Analyze Impact</span>
+                                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                                            <path
+                                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                        </svg>
+                                    </span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Step 2: Impact Analysis -->
+                    <div id="rent-step-2" style="display: none;">
+                        <!-- AI Insight Box -->
+                        <div class="p-4 rounded-4 mb-4 position-relative overflow-hidden"
+                            style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1)); border: 1px solid rgba(59, 130, 246, 0.2);">
+                            <div class="position-absolute top-0 start-0 w-100 h-100"
+                                style="background: rgba(59, 130, 246, 0.05); backdrop-filter: blur(2px);">
+                            </div>
+                            <div class="position-relative">
+                                <div class="d-flex gap-3 mb-4">
+                                    <div class="p-2 rounded-3"
+                                        style="background: rgba(59, 130, 246, 0.2); color: rgb(96, 165, 250);">
+                                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                                            <path
+                                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="h6 fw-light text-white-90 mb-1">Portfolio Impact Analysis
+                                        </h3>
+                                        <p class="small fw-light text-white-60 mb-0" id="impact-description"></p>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 pt-3 border-top border-white border-opacity-10">
+                                    <div class="col-4">
+                                        <div class="small text-uppercase text-white-50 mb-1"
+                                            style="font-size: 0.65rem; letter-spacing: 0.1em;">Rental Yield
+                                        </div>
+                                        <div class="h5 fw-light" style="color: rgb(74, 222, 128);" id="rental-yield">0%
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="small text-uppercase text-white-50 mb-1"
+                                            style="font-size: 0.65rem; letter-spacing: 0.1em;">Annual Income
+                                        </div>
+                                        <div class="h5 fw-light text-white-90" id="annual-income">₹0</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="small text-uppercase text-white-50 mb-1"
+                                            style="font-size: 0.65rem; letter-spacing: 0.1em;">Monthly
+                                            Cashflow
+                                        </div>
+                                        <div class="h5 fw-light text-white-90" id="monthly-cashflow">₹0
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-3">
+                            <button onclick="backToRentStep1()"
+                                class="btn flex-1 py-3 rounded-3 border border-white border-opacity-10 text-white-70 hover-bg-white hover-bg-opacity-5 transition-all">
+                                Back to Edit
+                            </button>
+                            <button onclick="confirmRentProperty()"
+                                class="btn flex-2 py-3 rounded-3 bg-white text-dark hover-scale-105 transition-all">
+                                <span class="d-flex align-items-center justify-content-center gap-2">
+                                    Confirm & Activate
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                                    </svg>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sell Property Confirmation Modal -->
+    <div id="sell-property-modal" class="position-fixed top-0 start-0 w-100 h-100 hidden"
+        style="z-index: 1070; display: none;">
+        <div class="position-absolute w-100 h-100 bg-black bg-opacity-75" onclick="closeSellPropertyModal()"></div>
+        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 400px; padding: 1rem;">
+            <div class="glass-card position-relative overflow-hidden p-0" style="border-radius: 1.5rem;">
+                <div class="p-4 text-center">
+                    <div class="mx-auto mb-3 p-3 rounded-circle d-flex align-items-center justify-content-center"
+                        style="width: 64px; height: 64px; background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+                        <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="h5 text-white mb-2">Sell Property?</h3>
+                    <p class="text-white-50 small mb-4">Are you sure you want to sell this property? This
+                        action
+                        will
+                        remove it from your active portfolio and mark it as sold.</p>
+
+                    <div class="d-flex gap-2">
+                        <button onclick="closeSellPropertyModal()"
+                            class="btn flex-1 py-2 rounded-3 border border-white border-opacity-10 text-white-70 hover-bg-white hover-bg-opacity-5 transition-all">
+                            Cancel
+                        </button>
+                        <button onclick="confirmSellProperty()"
+                            class="btn flex-1 py-2 rounded-3 text-white transition-all"
+                            style="background: rgba(0,0,0,0.5); border: 1px solid rgba(239, 68, 68, 0.5); box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);">
+                            Confirm Sale
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Remove Property Confirmation Modal -->
+    <div id="remove-property-modal" class="position-fixed top-0 start-0 w-100 h-100 hidden"
+        style="z-index: 1080; display: none;">
+        <div class="position-absolute w-100 h-100 bg-black bg-opacity-75" onclick="closeRemovePropertyModal()">
+        </div>
+        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 400px; padding: 1rem;">
+            <div class="glass-card position-relative overflow-hidden p-0" style="border-radius: 1.5rem;">
+                <div class="p-4 text-center">
+                    <div class="mx-auto mb-3 p-3 rounded-circle d-flex align-items-center justify-content-center"
+                        style="width: 64px; height: 64px; background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+                        <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="h5 text-white mb-2">Remove Property?</h3>
+                    <p class="text-white-50 small mb-4">Are you sure you want to remove this property? This
+                        will
+                        permanently delete it from your portfolio history.</p>
+
+                    <div class="d-flex gap-2">
+                        <button onclick="closeRemovePropertyModal()"
+                            class="btn flex-1 py-2 rounded-3 border border-white border-opacity-10 text-white-70 hover-bg-white hover-bg-opacity-5 transition-all">
+                            Cancel
+                        </button>
+                        <button onclick="confirmRemoveProperty()"
+                            class="btn flex-1 py-2 rounded-3 text-white transition-all"
+                            style="background: rgba(0,0,0,0.5); border: 1px solid rgba(239, 68, 68, 0.5); box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);">
+                            Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Rent Confirmation Modal -->
+    <div id="cancel-rent-modal" class="position-fixed top-0 start-0 w-100 h-100 hidden"
+        style="z-index: 1070; display: none;">
+        <div class="position-absolute w-100 h-100 bg-black bg-opacity-75" onclick="closeCancelRentModal()">
+        </div>
+        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 450px; padding: 1rem;">
+            <div class="glass-card position-relative overflow-hidden p-0" style="border-radius: 1.5rem;">
+                <div class="p-4 text-center">
+                    <div class="mx-auto mb-3 p-3 rounded-circle d-flex align-items-center justify-content-center"
+                        style="width: 64px; height: 64px; background: rgba(251, 191, 36, 0.1); color: #fbbf24;">
+                        <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="h5 text-white mb-2">Stop Renting Property?</h3>
+                    <p class="text-white-50 small mb-4">Are you sure you want to stop renting this property?
+                        It will
+                        be
+                        moved to "Owned" status and all rental details will be removed.</p>
+
+                    <div class="d-flex gap-2">
+                        <button onclick="closeCancelRentModal()"
+                            class="btn flex-1 py-2 rounded-3 border border-white border-opacity-10 text-white-70 hover-bg-white hover-bg-opacity-5 transition-all">
+                            Keep Renting
+                        </button>
+                        <button onclick="confirmCancelRent()"
+                            class="btn flex-1 py-2 rounded-3 text-white transition-all"
+                            style="background: rgba(0,0,0,0.5); border: 1px solid rgba(251, 191, 36, 0.5); box-shadow: 0 0 15px rgba(251, 191, 36, 0.2);">
+                            End Rental
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Document Modal -->
+    <div id="upload-document-modal" class="position-fixed top-0 start-0 w-100 h-100 hidden"
+        style="z-index: 1060; display: none;">
+        <div class="position-absolute w-100 h-100 bg-black bg-opacity-75" onclick="closeUploadDocumentModal()">
+        </div>
+        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 500px; padding: 1rem;">
+            <div class="glass-card position-relative p-0 overflow-hidden" style="border-radius: 1.5rem;">
+                <!-- Header -->
+                <div
+                    class="p-4 border-bottom border-white border-opacity-10 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="h4 fw-light text-white-90 mb-0">Upload Document</h2>
+                    </div>
+                    <button onclick="closeUploadDocumentModal()"
+                        class="btn btn-sm glass-button rounded-circle p-2 d-flex align-items-center justify-content-center"
+                        style="width: 32px; height: 32px;">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Form -->
+                <div class="p-4">
+                    <form id="uploadDocumentForm" onsubmit="submitUploadDocument(event)">
+                        <!-- Property Selection -->
+                        <div class="mb-3">
+                            <label class="form-label small text-uppercase text-white-50"
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Property</label>
+                            <select id="docProperty" class="form-select glass-input text-white fw-light" required
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                                <option value="" class="text-dark">Select a property...</option>
+                            </select>
+                        </div>
+
+                        <!-- Document Type -->
+                        <div class="mb-3">
+                            <label class="form-label small text-uppercase text-white-50"
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Document Type</label>
+                            <select id="docType" class="form-select glass-input text-white fw-light" required
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                                <option value="" class="text-dark">Select document type...</option>
+                                <option value="Deed" class="text-dark">Deed</option>
+                                <option value="Valuation Report" class="text-dark">Valuation Report</option>
+                                <option value="Tax Document" class="text-dark">Tax Document</option>
+                                <option value="Insurance" class="text-dark">Insurance</option>
+                                <option value="Inspection Report" class="text-dark">Inspection Report
+                                </option>
+                                <option value="Other" class="text-dark">Other</option>
+                            </select>
+                        </div>
+
+                        <!-- File Upload -->
+                        <div class="mb-4">
+                            <label class="form-label small text-uppercase text-white-50"
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">File</label>
+                            <div class="p-4 rounded-3 text-center position-relative"
+                                style="background: rgba(255,255,255,0.03); border: 2px dashed rgba(255,255,255,0.2); cursor: pointer;"
+                                onclick="document.getElementById('docFile').click()">
+                                <div class="mb-2">
+                                    <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                        class="mx-auto" style="opacity: 0.5;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <p class="text-white-70 mb-1">Drag & drop or click to browse</p>
+                                <p class="small text-white-50 mb-0" style="font-size: 0.7rem;">PDF, PNG,
+                                    JPG, TXT,
+                                    DOC,
+                                    DOCX (Max 10MB)</p>
+                                <input type="file" id="docFile" class="d-none" required
+                                    accept=".pdf,.png,.jpg,.jpeg,.txt,.doc,.docx" onchange="updateFileName(this)">
+                                <p id="fileName" class="small text-white-90 mt-2 mb-0"></p>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-flex gap-3">
+                            <button type="button" onclick="closeUploadDocumentModal()"
+                                class="btn w-50 py-2 rounded-3 border border-white border-opacity-10 text-white-50 hover-text-white hover-bg-white hover-bg-opacity-10 transition-colors">Cancel</button>
+                            <button type="submit"
+                                class="btn w-50 py-2 rounded-3 glass-button text-white border border-white border-opacity-20 hover-bg-opacity-20 transition-colors">Upload</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Document Preview Modal -->
+    <div id="document-preview-modal" class="position-fixed top-0 start-0 w-100 h-100 hidden"
+        style="z-index: 1080; display: none;">
+        <div class="position-absolute w-100 h-100 bg-black bg-opacity-90" onclick="closeDocumentPreview()">
+        </div>
+        <div class="position-absolute top-50 start-50 translate-middle w-100 h-100 d-flex flex-column"
+            style="max-width: 900px; max-height: 90vh; padding: 1rem;">
+            <div class="glass-card position-relative p-0 overflow-hidden d-flex flex-column h-100"
+                style="border-radius: 1.5rem;">
+                <!-- Header -->
+                <div
+                    class="p-3 border-bottom border-white border-opacity-10 d-flex justify-content-between align-items-center flex-shrink-0">
+                    <div class="d-flex align-items-center gap-3">
+                        <h4 id="preview-doc-name" class="h5 fw-light text-white-90 mb-0 text-truncate"
+                            style="max-width: 400px;">Document Preview</h4>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button id="preview-download-btn" onclick="downloadCurrentDocument()"
+                            class="btn btn-sm glass-button rounded-pill px-3 py-1 d-flex align-items-center gap-2">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4">
+                                </path>
+                            </svg>
+                            Download
+                        </button>
+                        <button onclick="closeDocumentPreview()"
+                            class="btn btn-sm glass-button rounded-circle p-2 d-flex align-items-center justify-content-center"
+                            style="width: 32px; height: 32px;">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Preview Content -->
+                <div id="preview-content" class="flex-grow-1 overflow-auto p-3" style="background: rgba(0,0,0,0.3);">
+                    <!-- Content injected by JS -->
+                    <div class="h-100 d-flex align-items-center justify-content-center">
+                        <div class="spinner-border text-white-50" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== SHARES MODALS ========== -->
+
+    <!-- Add Share Modal -->
+    <div id="add-share-modal" class="position-fixed top-0 start-0 w-100 h-100 hidden"
+        style="z-index: 9999; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); display: none;">
+        <div class="d-flex align-items-center justify-content-center h-100 p-4">
+            <div class="glass-modal p-5" style="max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto;">
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <h3 class="h4 fw-light text-white mb-2">Add New Share</h3>
+                        <p class="small text-white-50 mb-0">Select sector, search stock, and enter details</p>
+                    </div>
+                    <button onclick="closeAddShareModal()" class="btn-close btn-close-white"
+                        aria-label="Close"></button>
+                </div>
+
+                <form id="add-share-form" onsubmit="submitAddShare(event)">
+                    <!-- Select Sector -->
+                    <div class="mb-3">
+                        <label class="form-label small text-white-80 mb-2">Select Sector <span
+                                class="text-danger">*</span></label>
+                        <select id="share-sector-select" class="form-select glass-input shadow-none"
+                            onchange="onSectorChange()" required>
+                            <option value="">Select sector first...</option>
+
+                            <!-- GICS Sectors -->
+                            <option value="Communication Services">Communication Services</option>
+                            <option value="Consumer Discretionary">Consumer Discretionary</option>
+                            <option value="Consumer Staples">Consumer Staples</option>
+                            <option value="Energy">Energy</option>
+                            <option value="Financials">Financials</option>
+                            <option value="Healthcare">Healthcare</option>
+                            <option value="Industrials">Industrials</option>
+                            <option value="Information Technology">Information Technology</option>
+                            <option value="Materials">Materials</option>
+                            <option value="Real Estate">Real Estate</option>
+                            <option value="Utilities">Utilities</option>
+
+                            <!-- Detailed Industries -->
+                            <option value="Aerospace & Defense">Aerospace & Defense</option>
+                            <option value="Automobiles & Components">Automobiles & Components</option>
+                            <option value="Banks">Banks</option>
+                            <option value="Biotechnology">Biotechnology</option>
+                            <option value="Capital Goods">Capital Goods</option>
+                            <option value="Commercial Services">Commercial Services</option>
+                            <option value="Consumer Durables">Consumer Durables</option>
+                            <option value="Food & Beverages">Food & Beverages</option>
+                            <option value="Insurance">Insurance</option>
+                            <option value="Media & Entertainment">Media & Entertainment</option>
+                            <option value="Pharmaceuticals">Pharmaceuticals</option>
+                            <option value="Retail">Retail</option>
+                            <option value="Semiconductors">Semiconductors</option>
+                            <option value="Software & Services">Software & Services</option>
+                            <option value="Telecommunication Services">Telecommunication Services</option>
+                            <option value="Transportation">Transportation</option>
+                            <option value="ETF/Index Fund">ETF/Index Fund</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Search Stock -->
+                    <div class="mb-3">
+                        <label class="form-label small text-white-80 mb-2">
+                            Search Stock <span class="text-danger">*</span>
+                            <span id="sector-hint" class="text-white-40 ms-2" style="font-size: 0.75rem;">(Select sector
+                                first)</span>
+                        </label>
+                        <div class="position-relative">
+                            <i class="position-absolute top-50 translate-middle-y text-white-50"
+                                style="left: 14px; z-index: 10;">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </i>
+                            <input type="text" id="share-search-input" class="form-control glass-input shadow-none"
+                                placeholder="Select a sector first" style="padding-left: 42px !important;"
+                                oninput="handleShareSearch(event)" autocomplete="off" disabled>
+
+                            <div id="share-search-results" class="position-absolute w-100 mt-2 rounded-3 hidden"
+                                style="background: #0a0a0a; border: 1px solid rgba(255,255,255,0.1); max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden inputs for selected stock -->
+                    <input type="hidden" id="selected-share-symbol" required>
+                    <input type="hidden" id="selected-share-name" required>
+                    <input type="hidden" id="selected-share-sector">
+
+                    <!-- Enter Details -->
+                    <div class="mb-4">
+                        <label class="form-label small text-white-80 mb-3">Enter Details</label>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label small text-white-50" style="font-size: 0.75rem;">
+                                    Quantity <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" id="share-quantity" class="form-control glass-input"
+                                    placeholder="100" min="1" step="1" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-white-50" style="font-size: 0.75rem;">
+                                    Avg Buy Price (₹) <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" id="share-avg-price" class="form-control glass-input"
+                                    placeholder="1500" min="0.01" step="0.01" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-white-50" style="font-size: 0.75rem;">
+                                    Current Price (₹) <span class="text-danger">*</span>
+                                </label>
+                                <div class="position-relative">
+                                    <input type="number" id="share-current-price" class="form-control glass-input"
+                                        placeholder="1750" min="0.01" step="0.01" required readonly
+                                        style="background: rgba(255,255,255,0.03);">
+                                    <div id="price-loading"
+                                        class="position-absolute end-0 top-50 translate-middle-y me-3 hidden">
+                                        <div class="spinner-border spinner-border-sm text-white-50" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-3 mt-4">
+                        <button type="button" onclick="closeAddShareModal()" class="btn flex-fill py-3 rounded-3"
+                            style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                            Cancel
+                        </button>
+                        <button type="submit" id="add-share-btn" class="btn flex-fill py-3 rounded-3"
+                            style="background: rgba(255,255,255,0.15); border: none; color: white;">
+                            <span class="me-1">+</span> Add Share
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sell Share Modal -->
+    <div id="sell-share-modal" class="position-fixed top-0 start-0 w-100 h-100 hidden"
+        style="z-index: 9999; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); display: none;">
+        <div class="d-flex align-items-center justify-content-center h-100 p-4">
+            <div class="glass-card rounded-4 p-5" style="max-width: 500px; width: 100%;">
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <h3 class="h4 fw-light text-white mb-2">Sell Share</h3>
+                        <p class="small text-white-50 mb-0">Record your share sale</p>
+                    </div>
+                    <button onclick="closeSellShareModal()" class="btn-close btn-close-white"
+                        aria-label="Close"></button>
+                </div>
+
+                <form id="sell-share-form" onsubmit="submitSellShare(event)">
+                    <input type="hidden" id="sell-share-id">
+
+                    <div class="mb-3">
+                        <div class="text-white-70 small mb-2">Asset</div>
+                        <div class="text-white fw-medium" id="sell-share-name"></div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small text-uppercase text-white-50"
+                            style="letter-spacing: 0.1em; font-size: 0.7rem;">
+                            Sale Price per Share (₹)
+                        </label>
+                        <input type="number" id="sell-share-price" class="form-control glass-input" placeholder="2000"
+                            min="0.01" step="0.01" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small text-uppercase text-white-50"
+                            style="letter-spacing: 0.1em; font-size: 0.7rem;">
+                            Sale Date
+                        </label>
+                        <input type="date" id="sell-share-date" class="form-control glass-input" required>
+                    </div>
+
+                    <div class="glass-card p-3 mb-4" id="sell-preview">
+                        <div class="small text-white-50 mb-2">Sale Summary</div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-white-50 small">Quantity:</span>
+                            <span class="text-white small" id="sell-quantity">0</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-white-50 small">Total Sale Value:</span>
+                            <span class="text-white small" id="sell-total-value">₹0</span>
+                        </div>
+                        <div class="d-flex justify-content-between pt-2 border-top"
+                            style="border-color: rgba(255,255,255,0.1) !important;">
+                            <span class="text-white-70">Profit/Loss:</span>
+                            <span class="fw-medium" id="sell-profit-loss">₹0</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3">
+                        <button type="button" onclick="closeSellShareModal()"
+                            class="btn glass-button flex-fill">Cancel</button>
+                        <button type="submit" class="btn flex-fill"
+                            style="background: rgba(22, 101, 52, 0.4); border: 1px solid rgba(74, 222, 128, 0.2); color: #4ade80; transition: all 0.2s ease;"
+                            onmouseover="this.style.background='rgba(22, 101, 52, 0.6)'; this.style.color='#86efac'"
+                            onmouseout="this.style.background='rgba(22, 101, 52, 0.4)'; this.style.color='#4ade80'">
+                            Confirm Sale
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remove Share Confirmation Modal -->
+    <div id="remove-share-modal" class="position-fixed top-0 start-0 w-100 h-100 hidden"
+        style="z-index: 9999; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); display: none;">
+        <div class="d-flex align-items-center justify-content-center h-100 p-4">
+            <div class="glass-card rounded-4 p-5" style="max-width: 400px; width: 100%;">
+                <h3 class="h5 fw-light text-white mb-3">Remove Share?</h3>
+                <p class="text-white-70 mb-4">Are you sure you want to remove <span id="remove-share-name"
+                        class="text-white fw-medium"></span> from your portfolio? This action cannot be undone.</p>
+
+                <input type="hidden" id="remove-share-id">
+
+                <div class="d-flex gap-3">
+                    <button type="button" onclick="closeRemoveShareModal()"
+                        class="btn glass-button flex-fill">Cancel</button>
+                    <button type="button" onclick="confirmRemoveShare()"
+                        class="btn btn-danger flex-fill">Remove</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
+
 
 </html>

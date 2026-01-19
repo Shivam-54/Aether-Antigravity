@@ -6,10 +6,24 @@ from config import settings
 # Create database engine
 # This connects to your Supabase PostgreSQL database
 # Using psycopg3 driver (modern, async-capable)
+# Create database engine
+# This connects to your Supabase PostgreSQL database
+# Using psycopg3 driver (modern, async-capable)
+
+db_url = settings.SQLALCHEMY_DATABASE_URI
+connect_args = {}
+
+if "sqlite" in db_url:
+    connect_args["check_same_thread"] = False
+else:
+    # Use psycopg binary for postgres
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg://")
+
 engine = create_engine(
-    settings.SQLALCHEMY_DATABASE_URI.replace("postgresql://", "postgresql+psycopg://"),
+    db_url,
     echo=False,  # Set to True for debugging SQL queries
-    pool_pre_ping=True  # Verify connections before using them
+    pool_pre_ping=True,  # Verify connections before using them
+    connect_args=connect_args
 )
 
 # Create session factory

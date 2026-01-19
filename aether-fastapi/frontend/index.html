@@ -981,13 +981,46 @@
 
                     // If all valid, proceed
                     if (emailResult.valid && keyResult.valid) {
-                        // TODO: Make actual API call for authentication
-                        // For now, simulate success
-                        localStorage.setItem('access_token', 'demo_token_' + Date.now());
-                        localStorage.setItem('user_email', loginEmail.value);
+                        // Call the backend API for authentication
+                        const formData = new FormData();
+                        formData.append('username', loginEmail.value); // OAuth2 expects 'username' field
+                        formData.append('password', loginAuthKey.value); // Use the passcode as password
 
-                        // Redirect to dashboard
-                        window.location.href = 'dashboard.html';
+                        // Show loading state
+                        const submitBtn = formLogin.querySelector('.btn-submit');
+                        const originalText = submitBtn.textContent;
+                        submitBtn.textContent = 'AUTHENTICATING...';
+                        submitBtn.disabled = true;
+
+                        fetch('http://localhost:8000/api/auth/login', {
+                            method: 'POST',
+                            body: formData
+                        })
+                            .then(response => {
+                                if (!response.ok) {
+                                    return response.json().then(err => {
+                                        throw new Error(err.detail || 'Authentication failed');
+                                    });
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                // Store the access token
+                                localStorage.setItem('access_token', data.access_token);
+                                localStorage.setItem('user_email', loginEmail.value);
+
+                                // Redirect to dashboard
+                                window.location.href = 'dashboard.html';
+                            })
+                            .catch(error => {
+                                // Show error message
+                                console.error('Login error:', error);
+                                showError(loginAuthKey, error.message || 'Authentication failed. Please check your credentials.');
+
+                                // Reset button
+                                submitBtn.textContent = originalText;
+                                submitBtn.disabled = false;
+                            });
                     }
                 });
 
@@ -1080,13 +1113,63 @@
                     // If all valid, proceed
                     const allValid = Object.values(results).every(r => r.valid);
                     if (allValid) {
-                        // TODO: Make actual API call for registration
-                        // For now, simulate success
-                        localStorage.setItem('access_token', 'demo_token_' + Date.now());
-                        localStorage.setItem('user_email', inputs.email.value);
+                        // Call the backend API for registration
+                        const submitBtn = formRequest.querySelector('.btn-submit');
+                        const originalText = submitBtn.textContent;
+                        submitBtn.textContent = 'CREATING ACCOUNT...';
+                        submitBtn.disabled = true;
 
-                        // Redirect to dashboard
-                        window.location.href = 'dashboard.html';
+                        fetch('http://localhost:8000/api/auth/signup', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                email: inputs.email.value,
+                                full_name: inputs.name.value,
+                                password: inputs.authKey.value
+                            })
+                        })
+                            .then(response => {
+                                if (!response.ok) {
+                                    return response.json().then(err => {
+                                        throw new Error(err.detail || 'Registration failed');
+                                    });
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                // Account created successfully, now login
+                                const formData = new FormData();
+                                formData.append('username', inputs.email.value);
+                                formData.append('password', inputs.authKey.value);
+
+                                return fetch('http://localhost:8000/api/auth/login', {
+                                    method: 'POST',
+                                    body: formData
+                                });
+                            })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Account created but login failed. Please try logging in manually.');
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                // Store the access token
+                                localStorage.setItem('access_token', data.access_token);
+                                localStorage.setItem('user_email', inputs.email.value);
+
+                                // Redirect to dashboard
+                                window.location.href = 'dashboard.html';
+                            })
+                            .catch(error => {
+                                console.error('Signup error:', error);
+                                showError(inputs.email, error.message || 'Registration failed. Please try again.');
+
+                                submitBtn.textContent = originalText;
+                                submitBtn.disabled = false;
+                            });
                     }
                 });
 
