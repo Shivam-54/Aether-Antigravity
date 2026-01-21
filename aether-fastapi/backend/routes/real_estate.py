@@ -18,11 +18,11 @@ class PropertyBase(BaseModel):
     name: str
     type: str = "Residential"
     status: str = "Owned"
-    land_area: float = 0.0
-    land_unit: str = "sq ft"
-    purchase_price: float = 0.0
-    current_value: float = 0.0
-    location: str
+    land_area: Optional[float] = 0.0
+    land_unit: Optional[str] = "sq ft"
+    purchase_price: Optional[float] = 0.0
+    current_value: Optional[float] = 0.0
+    location: Optional[str] = None
     address: Optional[str] = None
     acquisition_date: Optional[date] = None
     description: Optional[str] = None

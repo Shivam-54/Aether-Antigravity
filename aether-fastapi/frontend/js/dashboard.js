@@ -1,6 +1,45 @@
 // Dashboard JavaScript - Aether Portfolio Management
 // EXACT REPLICA OF OLD WEBSITE STRUCTURE
 
+// ==================== SAFE EVENT HANDLER UTILITIES ====================
+/**
+ * Safely generate onclick handler with quoted parameters
+ * 
+ * Automatically quotes string values and UUIDs to prevent JavaScript syntax errors.
+ * Use this when dynamically generating event handlers in template literals.
+ * 
+ * @param {string} fnName - Function name to call
+ * @param {...any} args - Arguments (strings/UUIDs will be auto-quoted)
+ * @returns {string} Safe onclick attribute value
+ * 
+ * @example
+ * // Instead of: onclick="sellProperty(${property.id})"  // WRONG
+ * // Use: onclick="${safeOnClick('sellProperty', property.id)}"  // CORRECT
+ */
+function safeOnClick(fnName, ...args) {
+    const quotedArgs = args.map(arg => {
+        // Quote strings and UUIDs (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+        if (typeof arg === 'string' || /^[a-f0-9-]{36}$/i.test(String(arg))) {
+            return `'${arg}'`;
+        }
+        return arg;
+    });
+    return `${fnName}(${quotedArgs.join(', ')})`;
+}
+
+/**
+ * Safely generate onchange handler with quoted parameters
+ * Same logic as safeOnClick
+ */
+function safeOnChange(fnName, ...args) {
+    return safeOnClick(fnName, ...args);
+}
+
+// Expose to window for global access
+window.safeOnClick = safeOnClick;
+window.safeOnChange = safeOnChange;
+// ======================================================================
+
 // Sidebar configurations per source (from browser inspection)
 const SIDEBAR_CONFIG = {
     realestate: [
@@ -684,7 +723,7 @@ function renderRealEstateProperties() {
         <div class="col">
             <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all glass-card h-100" style="transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                 <!-- Hover Texture -->
-                <div class="position-absolute top-0 start-0 w-100 h-100 pointer-events-none opacity-0 group-hover-opacity-100 transition-opacity z-0" style="background-image: ${noiseTexture}; opacity: 0.06; mix-blend-mode: overlay;"></div>
+                <div class="position-absolute top-0 start-0 w-100 h-100 opacity-0 group-hover-opacity-100 transition-opacity z-0" style="background-image: ${noiseTexture}; opacity: 0.06; mix-blend-mode: overlay; pointer-events: none;"></div>
 
                 <div class="position-relative z-1 d-flex flex-column gap-3">
                     <!-- Header -->
@@ -733,7 +772,7 @@ function renderRealEstateProperties() {
                         </div>
 
                         <!-- View Details Button -->
-                        <button onclick="openPropertyModal(${property.id})" class="glass-button rounded-pill px-3 py-1 small">
+                        <button onclick="${safeOnClick('openPropertyModal', property.id)}" class="glass-button rounded-pill px-3 py-1 small">
                             ${ICONS.eye}
                             View Details
                         </button>
@@ -852,13 +891,13 @@ function openPropertyModal(propertyId) {
 
         <div class="row g-3 mb-5">
              <div class="col-6">
-                <button onclick="closePropertyModal(); openRentModal(${property.id}, ${property.status === 'Rented' || property.rent_status === 'Rented'});" class="glass-button w-100 p-3 rounded-4 border border-white border-opacity-10 hover-bg-light transition-colors d-flex align-items-center justify-content-center gap-2 text-white-90">
+                <button onclick="closePropertyModal(); openRentModal('${property.id}', ${property.status === 'Rented' || property.rent_status === 'Rented'});" class="glass-button w-100 p-3 rounded-4 border border-white border-opacity-10 hover-bg-light transition-colors d-flex align-items-center justify-content-center gap-2 text-white-90">
                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11.542 16M15 7a6 6 0 01-1.461-2.45M21 12c-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7 0-.402.036-.796.105-1.182m-2.833-.118C5.064 3.02 2.768 7.057 4 12c1.274 4.057 5.064 7 9.542 7 1.579 0 3.064-.366 4.39-1.02m-4.39 1.02V11"></path></svg>
                     ${(property.status === 'Rented' || property.rent_status === 'Rented') ? 'Edit Rent' : 'Rent Property'}
                 </button>
             </div>
             <div class="col-6">
-                <button onclick="sellProperty(${property.id})" class="btn btn-light w-100 p-3 rounded-4 hover-bg-light transition-colors d-flex align-items-center justify-content-center gap-2 fw-medium border-0">
+                <button onclick="sellProperty('${property.id}')" class="btn btn-light w-100 p-3 rounded-4 hover-bg-light transition-colors d-flex align-items-center justify-content-center gap-2 fw-medium border-0">
                     Sell Property 
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
                 </button>
@@ -871,7 +910,7 @@ function openPropertyModal(propertyId) {
                 <h3 class="small text-uppercase text-white-50 mb-3" style="letter-spacing: 0.1em;">Property Specifications</h3>
                 <div class="row row-cols-1 row-cols-md-2 g-3">
                      <div class="col">
-                        <div class="p-3 rounded-4 h-100 d-flex align-items-center gap-3" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);">
+                        <div class="p-2 rounded-4 h-100 d-flex align-items-center gap-3" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);">
                             <div class="text-white-50 p-2 rounded-3" style="background: rgba(255,255,255,0.05)">${ICONS.home}</div>
                             <div class="w-100">
                                 <p class="small fw-light text-white-50 mb-1" style="letter-spacing: 0.05em;">Land Area</p>
@@ -880,11 +919,11 @@ function openPropertyModal(propertyId) {
                                            class="form-control form-control-sm bg-transparent border-0 text-white p-0 fw-medium shadow-none" 
                                            style="min-width: 0;"
                                            value="${property.land_area || 0}" 
-                                           onchange="updatePropertyField(${property.id}, 'land_area', this.value)">
+                                           onchange="updatePropertyField('${property.id}', 'land_area', this.value)">
                                     <div style="width: 1px; height: 16px; background: rgba(255,255,255,0.1);"></div>
                                     <select class="form-select form-select-sm bg-transparent border-0 text-white-50 p-0 fw-light shadow-none w-auto" 
                                             style="cursor: pointer;"
-                                            onchange="updatePropertyField(${property.id}, 'land_unit', this.value)">
+                                            onchange="updatePropertyField('${property.id}', 'land_unit', this.value)">
                                         <option value="sq ft" ${property.land_unit === 'sq ft' ? 'selected' : ''} class="bg-dark">sq ft</option>
                                         <option value="sq m" ${property.land_unit === 'sq m' ? 'selected' : ''} class="bg-dark">sq m</option>
                                         <option value="acres" ${property.land_unit === 'acres' ? 'selected' : ''} class="bg-dark">acres</option>
@@ -894,14 +933,14 @@ function openPropertyModal(propertyId) {
                         </div>
                     </div>
                      <div class="col">
-                        <div class="p-3 rounded-4 h-100 d-flex align-items-center gap-3" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);">
+                        <div class="p-2 rounded-4 h-100 d-flex align-items-center gap-3" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);">
                             <div class="text-white-50 p-2 rounded-3" style="background: rgba(255,255,255,0.05)">${ICONS.home}</div>
                             <div class="w-100">
                                 <p class="small fw-light text-white-50 mb-1" style="letter-spacing: 0.05em;">Type</p>
                                 <div class="px-2 py-1 rounded-3" style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05);">
                                     <select class="form-select form-select-sm bg-transparent border-0 text-white p-0 fw-medium shadow-none w-100" 
                                             style="cursor: pointer;"
-                                            onchange="updatePropertyField(${property.id}, 'type', this.value)">
+                                            onchange="updatePropertyField('${property.id}', 'type', this.value)">
                                         <option value="Residential" ${property.type === 'Residential' ? 'selected' : ''} class="bg-dark">Residential</option>
                                         <option value="Commercial" ${property.type === 'Commercial' ? 'selected' : ''} class="bg-dark">Commercial</option>
                                         <option value="Land" ${property.type === 'Land' ? 'selected' : ''} class="bg-dark">Land</option>
@@ -995,7 +1034,7 @@ function openPropertyModal(propertyId) {
             
             <!-- Remove Property Option -->
             <div class="mt-4 pt-3 border-top border-white border-opacity-10 text-center">
-                 <button onclick="openRemovePropertyModal(${property.id})" class="btn btn-link text-danger text-opacity-50 text-decoration-none small hover-text-danger transition-colors" style="font-size: 0.8rem;">
+                 <button onclick="${safeOnClick('openRemovePropertyModal', property.id)}" class="btn btn-link text-danger text-opacity-50 text-decoration-none small hover-text-danger transition-colors" style="font-size: 0.8rem;">
                     Remove Property from Portfolio
                 </button>
             </div>
@@ -1796,7 +1835,7 @@ function renderDocuments(documents) {
                             <h5 class="small fw-medium text-white-90 mb-1">${doc.document_type}</h5>
                             <p class="small text-white-50 mb-0" style="font-size: 0.75rem;">${propertyName}</p>
                         </div>
-                        <button onclick="deleteDocument(${doc.id})" class="btn btn-sm p-1 text-white-50 hover-text-danger" title="Delete">
+                        <button onclick="${safeOnClick('deleteDocument', doc.id)}" class="btn btn-sm p-1 text-white-50 hover-text-danger" title="Delete">
                             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -1810,7 +1849,7 @@ function renderDocuments(documents) {
                     </div>
 
                     <div class="mt-auto">
-                        <button onclick="viewDocument('${doc.file_url}')" class="glass-button w-100 py-2 rounded-3 small d-flex align-items-center justify-content-center gap-2 border-0">
+                        <button onclick="${safeOnClick('viewDocument', doc.file_url)}" class="glass-button w-100 py-2 rounded-3 small d-flex align-items-center justify-content-center gap-2 border-0">
                             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -2694,10 +2733,10 @@ function renderCryptoHoldings() {
             <!-- Actions -->
             <div class="col-2 text-end">
                 <div class="d-flex justify-content-end gap-2">
-                    <button onclick="sellCrypto(${holding.id})" class="btn btn-sm p-2 rounded-circle" style="background: rgba(255,165,0,0.1);" title="Sell">
+                    <button onclick="${safeOnClick('sellCrypto', holding.id)}" class="btn btn-sm p-2 rounded-circle" style="background: rgba(255,165,0,0.1);" title="Sell">
                         <svg width="14" height="14" fill="none" stroke="#ffa500" viewBox="0 0 24 24"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/></svg>
                     </button>
-                    <button onclick="removeCrypto(${holding.id})" class="btn btn-sm p-2 rounded-circle" style="background: rgba(255,0,0,0.1);" title="Remove">
+                    <button onclick="${safeOnClick('removeCrypto', holding.id)}" class="btn btn-sm p-2 rounded-circle" style="background: rgba(255,0,0,0.1);" title="Remove">
                         <svg width="14" height="14" fill="none" stroke="#ff4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     </button>
                 </div>
@@ -2831,7 +2870,7 @@ function renderCryptoSearchResults(results) {
         const changeSign = crypto.changePercent24Hr >= 0 ? '+' : '';
 
         return `
-        <button type="button" onclick="selectCrypto('${crypto.id}', '${crypto.symbol}', '${crypto.name}', ${crypto.priceInr}, ${crypto.changePercent24Hr})"
+        <button type="button" onclick="${safeOnClick('selectCrypto', crypto.id, crypto.symbol, crypto.name, crypto.priceInr, crypto.changePercent24Hr)}"
             class="w-100 d-flex align-items-center justify-content-between p-3 border-bottom border-white border-opacity-5 text-start hover-bg-light transition-colors"
             style="background: transparent; border: none; cursor: pointer;">
             <div>

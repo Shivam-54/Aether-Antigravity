@@ -66,11 +66,7 @@ async def get_current_user(
         # If user_id is not a valid UUID (e.g. old token with email), treat as invalid credentials
         raise credentials_exception
     if user is None:
-        # If profile doesn't exist yet, create it
-        user = User(id=user_id)
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+        raise credentials_exception
     
     return user
 
