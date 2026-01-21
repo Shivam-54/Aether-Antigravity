@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
+from uuid import UUID
 
 from database import get_db
 from models.shares import Share, ShareStatus, HoldingDuration
@@ -36,8 +37,8 @@ class ShareUpdate(BaseModel):
 
 
 class ShareResponse(ShareBase):
-    id: int
-    user_id: int
+    id: UUID
+    user_id: UUID
     acquisition_date: datetime
     holding_duration: HoldingDuration
     status: ShareStatus
@@ -166,7 +167,7 @@ async def create_holding(
 
 @router.put("/holdings/{holding_id}", response_model=ShareResponse)
 async def update_holding(
-    holding_id: int,
+    holding_id: UUID,
     holding_update: ShareUpdate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -215,7 +216,7 @@ async def update_holding(
 
 @router.delete("/holdings/{holding_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_holding(
-    holding_id: int,
+    holding_id: UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -235,7 +236,7 @@ async def delete_holding(
 
 @router.post("/holdings/{holding_id}/sell", response_model=ShareResponse)
 async def sell_holding(
-    holding_id: int,
+    holding_id: UUID,
     sell_data: SellShareRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)

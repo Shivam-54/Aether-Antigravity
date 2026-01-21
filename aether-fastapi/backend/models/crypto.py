@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Date, Boolean
+from sqlalchemy import Column, String, Float, DateTime, ForeignKey, Date, Boolean, Integer
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
@@ -8,8 +9,8 @@ class CryptoHolding(Base):
     """Crypto holding model - stores user's cryptocurrency holdings"""
     __tablename__ = 'crypto_holdings'
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("profiles.id"), nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid(), index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id"), nullable=False)
     
     symbol = Column(String, nullable=False)  # BTC, ETH, SOL
     name = Column(String, nullable=False)    # Bitcoin, Ethereum, Solana
@@ -19,7 +20,7 @@ class CryptoHolding(Base):
     purchase_price_avg = Column(Float, default=0.0)  # Average buy price in INR
     current_price = Column(Float, default=0.0)       # Current price in INR
     
-    wallet_id = Column(Integer, ForeignKey("crypto_wallets.id"), nullable=True)
+    wallet_id = Column(UUID(as_uuid=True), ForeignKey("crypto_wallets.id"), nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -35,8 +36,8 @@ class CryptoTransaction(Base):
     """Crypto transaction model - stores on-chain activity"""
     __tablename__ = 'crypto_transactions'
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("profiles.id"), nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid(), index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id"), nullable=False)
     
     type = Column(String, nullable=False)  # Incoming, Outgoing, Swap, Fee
     asset_symbol = Column(String, nullable=False)
@@ -61,8 +62,8 @@ class CryptoWallet(Base):
     """Crypto wallet model - stores connected wallets"""
     __tablename__ = 'crypto_wallets'
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("profiles.id"), nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid(), index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id"), nullable=False)
     
     name = Column(String, nullable=False)        # "Ledger Nano X", "MetaMask Main"
     network = Column(String, default="Multi-Chain")  # Multi-Chain, Ethereum, Solana

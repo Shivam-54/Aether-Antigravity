@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Date
+from sqlalchemy import Column, String, Float, DateTime, ForeignKey, Date
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
@@ -7,8 +8,8 @@ class Property(Base):
     """Property model - maps to 'properties' table in Supabase"""
     __tablename__ = 'properties'
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("profiles.id"), nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid(), index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id"), nullable=False)
     
     name = Column(String, nullable=False)
     type = Column(String, default="Residential") # Residential, Commercial, Land

@@ -114,6 +114,7 @@ function requireAuth() {
 
 // Logout
 function logout() {
+    alert("Session expired. Please log in again.");
     localStorage.removeItem('access_token');
     localStorage.removeItem('user_email');
     window.location.href = 'index.html';
@@ -198,6 +199,16 @@ function switchSource(source) {
 
             // Load Shares data and render
             fetchSharesData();
+        }
+
+        // Special handling for Bonds
+        if (source === 'bonds') {
+            fetchBondsData();
+        }
+
+        // Special handling for Business
+        if (source === 'business') {
+            fetchBusinessData();
         }
     }
 
@@ -414,21 +425,24 @@ function renderRealEstateDashboard() {
 
     const dashboardHtml = `
         <div class="d-flex flex-column gap-4">
-             <div class="glass-header mb-2 container-fluid px-0">
-                <h2 class="h4 fw-light text-white-90 mb-1">Portfolio Value Trend</h2>
-                 <p class="small fw-light text-white-50">Value movement across owned real estate assets over time</p>
-            </div>
-            
-            <!-- Graph Placeholder (Using Chart.js container) -->
-            <div class="glass-card mb-4 rounded-4 overflow-hidden position-relative" style="height: 300px; padding: 2rem;">
-                 <canvas id="realEstateChart"></canvas>
+            <!-- Graph Container -->
+            <div class="mb-4 rounded-4 overflow-hidden position-relative" 
+                 style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 2rem;">
+                 <div class="mb-4">
+                    <h2 class="h4 fw-light text-white-90 mb-1">Portfolio Value Trend</h2>
+                    <p class="small fw-light text-white-50">Value movement across owned real estate assets over time</p>
+                 </div>
+                 <div style="height: 300px; position: relative; width: 100%;">
+                     <canvas id="realEstateChart"></canvas>
+                 </div>
             </div>
 
             <!-- Metrics Grid (5 Columns) -->
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-5 g-3">
                 <!-- Total Properties -->
                 <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all glass-card h-100 d-flex flex-column justify-content-center">
+                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
+                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
                         <div class="position-absolute top-0 start-0 w-100 h-100 pointer-events-none opacity-0 group-hover-opacity-100 transition-opacity z-0" style="background-image: ${noiseTexture}; opacity: 0.06; mix-blend-mode: overlay;"></div>
                         <div class="position-relative z-1 d-flex flex-column gap-2">
                             <div class="text-white-50 mb-1">${ICONS.home}</div>
@@ -443,7 +457,8 @@ function renderRealEstateDashboard() {
 
                 <!-- Total Valuation -->
                  <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all glass-card h-100 d-flex flex-column justify-content-center">
+                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
+                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
                         <div class="position-absolute top-0 start-0 w-100 h-100 pointer-events-none opacity-0 group-hover-opacity-100 transition-opacity z-0" style="background-image: ${noiseTexture}; opacity: 0.06; mix-blend-mode: overlay;"></div>
                         <div class="position-relative z-1 d-flex flex-column gap-2">
                             <div class="text-white-50 mb-1">${ICONS.trending}</div>
@@ -458,7 +473,8 @@ function renderRealEstateDashboard() {
 
                 <!-- Total Equity -->
                  <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all glass-card h-100 d-flex flex-column justify-content-center">
+                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
+                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
                          <div class="position-absolute top-0 start-0 w-100 h-100 pointer-events-none opacity-0 group-hover-opacity-100 transition-opacity z-0" style="background-image: ${noiseTexture}; opacity: 0.06; mix-blend-mode: overlay;"></div>
                         <div class="position-relative z-1 d-flex flex-column gap-2">
                             <div class="text-white-50 mb-1">${ICONS.wallet}</div>
@@ -473,7 +489,8 @@ function renderRealEstateDashboard() {
 
                 <!-- Appreciation -->
                  <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all glass-card h-100 d-flex flex-column justify-content-center">
+                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
+                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
                          <div class="position-absolute top-0 start-0 w-100 h-100 pointer-events-none opacity-0 group-hover-opacity-100 transition-opacity z-0" style="background-image: ${noiseTexture}; opacity: 0.06; mix-blend-mode: overlay;"></div>
                         <div class="position-relative z-1 d-flex flex-column gap-2">
                             <div class="text-white-50 mb-1">${ICONS.piggyBank}</div>
@@ -488,7 +505,8 @@ function renderRealEstateDashboard() {
 
                 <!-- Monthly Rent -->
                  <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all glass-card h-100 d-flex flex-column justify-content-center">
+                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
+                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
                          <div class="position-absolute top-0 start-0 w-100 h-100 pointer-events-none opacity-0 group-hover-opacity-100 transition-opacity z-0" style="background-image: ${noiseTexture}; opacity: 0.06; mix-blend-mode: overlay;"></div>
                         <div class="position-relative z-1 d-flex flex-column gap-2">
                             <div class="text-white-50 mb-1">${ICONS.wallet}</div>
@@ -506,7 +524,7 @@ function renderRealEstateDashboard() {
             <div class="row g-4 mt-1">
                 <!-- Asset Type Distribution -->
                 <div class="col-md-4">
-                    <div class="glass-card p-4 h-100">
+                    <div class="p-4 h-100 rounded-4" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
                         <h4 class="h6 fw-light text-white-90 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Asset Allocation</h4>
                         <div style="height: 200px; position: relative;">
                             <canvas id="chartAssetType"></canvas>
@@ -516,7 +534,7 @@ function renderRealEstateDashboard() {
                 
                 <!-- Location Distribution -->
                 <div class="col-md-4">
-                    <div class="glass-card p-4 h-100">
+                    <div class="p-4 h-100 rounded-4" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
                         <h4 class="h6 fw-light text-white-90 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Geographic Exposure</h4>
                         <div style="height: 200px; position: relative;">
                             <canvas id="chartLocation"></canvas>
@@ -526,7 +544,7 @@ function renderRealEstateDashboard() {
 
                 <!-- Occupancy Rate -->
                 <div class="col-md-4">
-                    <div class="glass-card p-4 h-100 d-flex flex-column align-items-center justify-content-center text-center">
+                    <div class="p-4 h-100 d-flex flex-column align-items-center justify-content-center text-center rounded-4" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
                          <h4 class="h6 fw-light text-white-90 mb-3 align-self-start text-uppercase small" style="letter-spacing: 0.1em;">Occupancy Rate</h4>
                         <div style="height: 140px; width: 140px; position: relative;" class="mb-3">
                            <canvas id="chartOccupancy"></canvas>
@@ -2516,17 +2534,14 @@ function renderCryptoOverview() {
                     <h2 class="h4 fw-light text-white-90 mb-1">Crypto Overview</h2>
                     <p class="small fw-light text-white-50">Real-time market exposure and portfolio value</p>
                 </div>
-                <button onclick="openAddCryptoModal()" class="btn glass-button text-white px-3 py-2 rounded-pill d-flex align-items-center gap-2">
-                    <span class="fs-6 fw-light">+</span>
-                    <span>Add Crypto</span>
-                </button>
             </div>
             
             <!-- Metrics Grid (4 Columns) -->
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3">
                 <!-- Total Crypto Value -->
                 <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all glass-card h-100 d-flex flex-column justify-content-center">
+                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
+                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
                         <div class="position-relative z-1 d-flex flex-column gap-2">
                             <div class="text-white-50 mb-1">${ICONS.wallet}</div>
                             <div>
@@ -2542,7 +2557,8 @@ function renderCryptoOverview() {
 
                 <!-- Portfolio Return -->
                 <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all glass-card h-100 d-flex flex-column justify-content-center">
+                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
+                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
                         <div class="position-relative z-1 d-flex flex-column gap-2">
                             <div class="text-white-50 mb-1">${ICONS.trending}</div>
                             <div>
@@ -2558,7 +2574,8 @@ function renderCryptoOverview() {
 
                 <!-- Active Assets -->
                 <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all glass-card h-100 d-flex flex-column justify-content-center">
+                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
+                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
                         <div class="position-relative z-1 d-flex flex-column gap-2">
                             <div class="text-white-50 mb-1">${ICONS.chart}</div>
                             <div>
@@ -2572,7 +2589,8 @@ function renderCryptoOverview() {
 
                 <!-- Network Status -->
                 <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all glass-card h-100 d-flex flex-column justify-content-center">
+                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
+                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
                         <div class="position-relative z-1 d-flex flex-column gap-2">
                             <div class="text-white-50 mb-1">${ICONS.activity}</div>
                             <div>
@@ -2586,7 +2604,8 @@ function renderCryptoOverview() {
             </div>
 
             <!-- Portfolio Chart Placeholder -->
-            <div class="glass-card rounded-4 overflow-hidden position-relative" style="height: 300px; padding: 2rem;">
+            <div class="rounded-4 overflow-hidden position-relative" 
+                 style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); height: 300px; padding: 2rem;">
                 <div class="d-flex align-items-center justify-between mb-4">
                     <h3 class="small fw-medium text-white-70">Portfolio Performance</h3>
                     <div class="d-flex gap-2">
@@ -2715,6 +2734,7 @@ function closeAddCryptoModal() {
 
 // CoinCap API Constants
 const COINCAP_API_BASE = 'https://api.coincap.io/v2';
+const COINCAP_API_KEY = '38af8494b535f54c74ad1932bb3026ca2c000e14df571ecad3e98f1bbbcde77a'; // Your CoinCap API key
 const USD_TO_INR_RATE = 83.12;
 
 // Search state
@@ -2761,7 +2781,11 @@ function handleCryptoSearch(query) {
  * Search CoinCap API for cryptocurrencies
  */
 async function searchCryptoAPI(query) {
-    const response = await fetch(`${COINCAP_API_BASE}/assets?limit=100`);
+    const response = await fetch(`${COINCAP_API_BASE}/assets?limit=100`, {
+        headers: {
+            'Authorization': `Bearer ${COINCAP_API_KEY}`
+        }
+    });
 
     if (!response.ok) {
         throw new Error(`CoinCap API error: ${response.status}`);
@@ -2861,8 +2885,99 @@ function selectCrypto(id, symbol, name, priceInr, changePercent) {
     document.getElementById('cryptoSearch').value = '';
     document.getElementById('cryptoSearchResults').classList.add('d-none');
 
+    // Update price timestamp
+    const now = new Date().toLocaleTimeString();
+    const updateTimeEl = document.getElementById('priceUpdateTime');
+    if (updateTimeEl) updateTimeEl.textContent = `Updated: ${now}`;
+
+    // Reset calculations
+    calculateCryptoTotals();
+
     // Focus on quantity field
     document.getElementById('cryptoQuantity').focus();
+}
+
+/**
+ * Calculate and update total investment, current value, and profit/loss
+ */
+function calculateCryptoTotals() {
+    const quantity = parseFloat(document.getElementById('cryptoQuantity')?.value) || 0;
+    const avgPrice = parseFloat(document.getElementById('cryptoAvgPrice')?.value) || 0;
+    const currentPrice = parseFloat(document.getElementById('cryptoCurrentPrice')?.value) || 0;
+
+    const totalInvestment = quantity * avgPrice;
+    const currentValue = quantity * currentPrice;
+    const profitLoss = currentValue - totalInvestment;
+    const profitLossPercent = avgPrice > 0 ? ((currentPrice - avgPrice) / avgPrice) * 100 : 0;
+
+    // Update display elements
+    const totalInvestmentEl = document.getElementById('totalInvestment');
+    const currentValueEl = document.getElementById('currentValue');
+    const plElement = document.getElementById('profitLoss');
+    const plPercentElement = document.getElementById('profitLossPercent');
+
+    if (totalInvestmentEl) totalInvestmentEl.textContent = formatCurrency(totalInvestment);
+    if (currentValueEl) currentValueEl.textContent = formatCurrency(currentValue);
+
+    if (plElement) {
+        plElement.textContent = formatCurrency(profitLoss);
+        // Color coding for profit/loss
+        const colorClass = profitLoss >= 0 ? 'text-success' : 'text-danger';
+        plElement.className = `h5 fw-light mb-0 ${colorClass}`;
+    }
+
+    if (plPercentElement) {
+        plPercentElement.textContent = `${profitLossPercent >= 0 ? '+' : ''}${profitLossPercent.toFixed(2)}%`;
+        const colorClass = profitLossPercent >= 0 ? 'text-success' : 'text-danger';
+        plPercentElement.className = `h5 fw-light mb-0 ${colorClass}`;
+    }
+}
+
+/**
+ * Refresh current crypto price from CoinCap API
+ */
+async function refreshCryptoPrice() {
+    if (!selectedCryptoId) {
+        alert('Please select a cryptocurrency first');
+        return;
+    }
+
+    const priceField = document.getElementById('cryptoCurrentPrice');
+    const updateTimeField = document.getElementById('priceUpdateTime');
+
+    try {
+        // Show loading state
+        if (priceField) priceField.style.opacity = '0.5';
+
+        const response = await fetch(`${COINCAP_API_BASE}/assets/${selectedCryptoId}`, {
+            headers: {
+                'Authorization': `Bearer ${COINCAP_API_KEY}`
+            }
+        });
+        if (!response.ok) throw new Error('Failed to fetch price');
+
+        const data = await response.json();
+        const asset = data.data;
+
+        const priceInr = parseFloat(asset.priceUsd) * USD_TO_INR_RATE;
+        if (priceField) priceField.value = priceInr.toFixed(2);
+
+        // Update timestamp
+        const now = new Date().toLocaleTimeString();
+        if (updateTimeField) {
+            updateTimeField.textContent = `Updated: ${now}`;
+            updateTimeField.style.color = 'rgba(74, 222, 128, 0.6)';
+        }
+
+        // Recalculate totals
+        calculateCryptoTotals();
+
+    } catch (error) {
+        console.error('Error refreshing price:', error);
+        alert('Failed to refresh price. Please try again.');
+    } finally {
+        if (priceField) priceField.style.opacity = '1';
+    }
 }
 
 
@@ -2952,3 +3067,67 @@ async function removeCrypto(holdingId) {
         console.error('Error removing crypto:', error);
     }
 }
+
+// Initialize event listeners for crypto modal calculations
+// Wait for DOM to be ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCryptoCalculations);
+} else {
+    initCryptoCalculations();
+}
+
+function initCryptoCalculations() {
+    // Attach listeners to quantity and price fields for real-time calculations
+    const quantityField = document.getElementById('cryptoQuantity');
+    const avgPriceField = document.getElementById('cryptoAvgPrice');
+    const currentPriceField = document.getElementById('cryptoCurrentPrice');
+
+    if (quantityField) quantityField.addEventListener('input', calculateCryptoTotals);
+    if (avgPriceField) avgPriceField.addEventListener('input', calculateCryptoTotals);
+    if (currentPriceField) currentPriceField.addEventListener('input', calculateCryptoTotals);
+}
+
+// Bonds Data Fetcher
+async function fetchBondsData() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/bonds/`, {
+            headers: getAuthHeaders()
+        });
+
+        if (response.ok) {
+            console.log('Bonds data fetched successfully');
+        } else {
+            if (response.status === 401) {
+                console.warn('Unauthorized - logging out');
+                logout();
+                return;
+            }
+            console.error('Failed to fetch bonds');
+        }
+    } catch (error) {
+        console.error('Error fetching bonds data:', error);
+    }
+}
+
+// Business Data Fetcher
+async function fetchBusinessData() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/business/`, {
+            headers: getAuthHeaders()
+        });
+
+        if (response.ok) {
+            console.log('Business data fetched successfully');
+        } else {
+            if (response.status === 401) {
+                console.warn('Unauthorized - logging out');
+                logout();
+                return;
+            }
+            console.error('Failed to fetch business ventures');
+        }
+    } catch (error) {
+        console.error('Error fetching business data:', error);
+    }
+}
+

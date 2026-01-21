@@ -7,6 +7,8 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from datetime import timedelta
+from typing import Optional
+from uuid import UUID
 
 from database import get_db
 from models.user import User
@@ -25,7 +27,7 @@ class UserCreate(BaseModel):
     password: str
 
 class UserResponse(BaseModel):
-    id: int
+    id: UUID
     email: str
     full_name: str
     is_active: bool
@@ -45,20 +47,30 @@ async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ) -> User:
-    """Get the current authenticated user from JWT token"""
+    """Get the current authenticated user from Supabase JWT token"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     
-    email = verify_token(token)
-    if email is None:
+    # For Supabase auth, the token contains user_id in 'sub' claim
+    user_id = verify_token(token)  # Returns the 'sub' claim which is user_id
+    if user_id is None:
         raise credentials_exception
     
-    user = db.query(User).filter(User.email == email).first()
-    if user is None:
+    try:
+        # Query user by ID instead of email
+        user = db.query(User).filter(User.id == user_id).first()
+    except Exception:
+        # If user_id is not a valid UUID (e.g. old token with email), treat as invalid credentials
         raise credentials_exception
+    if user is None:
+        # If profile doesn't exist yet, create it
+        user = User(id=user_id)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
     
     return user
 
@@ -117,7 +129,7 @@ def login(
     # Create access token
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.email},
+        data={"sub": str(user.id)},
         expires_delta=access_token_expires
     )
     

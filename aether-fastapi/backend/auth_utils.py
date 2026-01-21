@@ -44,22 +44,41 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 def verify_token(token: str) -> Optional[str]:
     """
-    Verify a JWT token and return the user email
+    Verify a Supabase JWT token and return the user ID
     
     Args:
-        token: JWT token string
+        token: Supabase JWT token string
         
     Returns:
-        User email if valid, None if invalid
+        User ID (UUID string) if valid, None if invalid
     """
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        email: str = payload.get("sub")
+        # Try to decode with Supabase JWT secret first (preferred)
+        supabase_jwt_secret = settings.SUPABASE_JWT_SECRET
+        try:
+            payload = jwt.decode(
+                token, 
+                supabase_jwt_secret, 
+                algorithms=["HS256"],
+                options={"verify_aud": False}
+            )
+        except JWTError:
+            # Fallback: Try to decode with Backend Secret Key (for local auth)
+            payload = jwt.decode(
+                token, 
+                settings.SECRET_KEY, 
+                algorithms=[settings.ALGORITHM],
+                options={"verify_aud": False}
+            )
         
-        if email is None:
+        # Extract user ID from 'sub' claim
+        user_id: str = payload.get("sub")
+        
+        if user_id is None:
             return None
             
-        return email
+        return user_id
         
-    except JWTError:
+    except JWTError as e:
+        print(f"JWT verification failed: {e}")
         return None

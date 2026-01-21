@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Enum
+from sqlalchemy import Column, String, Float, DateTime, ForeignKey, Enum, Integer
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from sqlalchemy.sql import func
@@ -21,8 +22,8 @@ class ShareStatus(str, enum.Enum):
 class Share(Base):
     __tablename__ = "shares"
     
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("profiles.id"), nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid(), index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id"), nullable=False)
 
     
     # Stock Information

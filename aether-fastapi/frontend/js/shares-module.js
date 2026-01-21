@@ -54,7 +54,8 @@ function renderSharesOverview() {
                     <h2 class="h4 fw-light text-white-90 mb-1">Shares Overview</h2>
                     <p class="small fw-light text-white-50">Equity portfolio performance and metrics</p>
                 </div>
-                <button onclick="openAddShareModal()" class="btn glass-button text-white px-3 py-2 rounded-pill d-flex align-items-center gap-2">
+                <button onclick="openAddShareModal()" class="btn px-3 py-2 rounded-pill d-flex align-items-center gap-2"
+                        style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white;">
                     <span class="fs-6 fw-light">+</span>
                     <span>Add Share</span>
                 </button>
@@ -64,7 +65,8 @@ function renderSharesOverview() {
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3">
                 <!-- Total Value -->
                 <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all glass-card h-100 d-flex flex-column justify-content-center">
+                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
+                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
                         <div class="position-relative z-1 d-flex flex-column gap-2">
                             <div class="text-white-50 mb-1">${ICONS.wallet}</div>
                             <div>
@@ -78,7 +80,8 @@ function renderSharesOverview() {
 
                 <!-- Total Invested -->
                 <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all glass-card h-100 d-flex flex-column justify-content-center">
+                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
+                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
                         <div class="position-relative z-1 d-flex flex-column gap-2">
                             <div class="text-white-50 mb-1">${ICONS.dollar}</div>
                             <div>
@@ -92,7 +95,8 @@ function renderSharesOverview() {
 
                 <!-- Gain/Loss -->
                 <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all glass-card h-100 d-flex flex-column justify-content-center">
+                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
+                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
                         <div class="position-relative z-1 d-flex flex-column gap-2">
                             <div class="text-white-50 mb-1">${ICONS.trending}</div>
                             <div>
@@ -110,7 +114,8 @@ function renderSharesOverview() {
 
                 <!-- Active Shares -->
                 <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all glass-card h-100 d-flex flex-column justify-content-center">
+                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
+                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
                         <div class="position-relative z-1 d-flex flex-column gap-2">
                             <div class="text-white-50 mb-1">${ICONS.chart}</div>
                             <div>
@@ -124,7 +129,8 @@ function renderSharesOverview() {
             </div>
 
             <!-- Portfolio Chart Placeholder -->
-            <div class="glass-card rounded-4 overflow-hidden position-relative" style="height: 300px; padding: 2rem;">
+            <div class="rounded-4 overflow-hidden position-relative" 
+                 style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); height: 300px; padding: 2rem;">
                 <div class="d-flex align-items-center justify-content-between mb-4">
                     <h3 class="small fw-medium text-white-70">Portfolio Performance</h3>
                     <div class="d-flex gap-2">
@@ -340,6 +346,16 @@ function openAddShareModal() {
     document.getElementById('share-search-input').placeholder = 'Select a sector first';
     document.getElementById('sector-hint').textContent = '(Select sector first)';
     document.getElementById('share-current-price').value = '';
+
+    // Reset calculation display
+    if (document.getElementById('shareTotalInvestment')) {
+        document.getElementById('shareTotalInvestment').textContent = '₹0.00';
+        document.getElementById('shareCurrentValue').textContent = '₹0.00';
+        document.getElementById('shareProfitLoss').textContent = '₹0.00';
+        document.getElementById('shareProfitLoss').className = 'h5 fw-light mb-0';
+        document.getElementById('shareProfitLossPercent').textContent = '0.00%';
+        document.getElementById('shareProfitLossPercent').className = 'h5 fw-light mb-0';
+    }
 }
 
 function closeAddShareModal() {
@@ -514,8 +530,41 @@ async function refreshSharePrice() {
     } finally {
         // Hide loading
         if (loadingIndicator) loadingIndicator.classList.add('hidden');
+        // Trigger calculation update
+        updateShareCalculations();
     }
 }
+
+// Update Share Calculations (Total Invested, Current Value, P/L)
+// Update Share Calculations (Total Invested, Current Value, P/L)
+function updateShareCalculations() {
+    console.log('updateShareCalculations triggered');
+    const quantity = parseFloat(document.getElementById('share-quantity').value) || 0;
+    const avgPrice = parseFloat(document.getElementById('share-avg-price').value) || 0;
+    const currentPrice = parseFloat(document.getElementById('share-current-price').value) || 0;
+
+    const totalInvested = quantity * avgPrice;
+    const currentValue = quantity * currentPrice;
+    const profitLoss = currentValue - totalInvested;
+    const profitLossPercent = totalInvested > 0 ? (profitLoss / totalInvested) * 100 : 0;
+
+    // Update UI
+    document.getElementById('shareTotalInvestment').textContent = `₹${totalInvested.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    document.getElementById('shareCurrentValue').textContent = `₹${currentValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    // Profit/Loss Styling
+    const plElement = document.getElementById('shareProfitLoss');
+    plElement.textContent = `${profitLoss >= 0 ? '+' : ''}₹${Math.abs(profitLoss).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    plElement.className = `h5 fw-light mb-0 ${profitLoss >= 0 ? 'text-success' : 'text-danger'}`;
+
+    // Percent Styling
+    const plPercentElement = document.getElementById('shareProfitLossPercent');
+    plPercentElement.textContent = `${profitLossPercent >= 0 ? '+' : ''}${profitLossPercent.toFixed(2)}%`;
+    plPercentElement.className = `h5 fw-light mb-0 ${profitLossPercent >= 0 ? 'text-success' : 'text-danger'}`;
+}
+
+// Make globally accessible
+window.updateShareCalculations = updateShareCalculations;
 
 async function submitAddShare(event) {
     event.preventDefault();
@@ -562,6 +611,87 @@ async function submitAddShare(event) {
         alert('Error adding share');
     }
 }
+
+// Refresh Share Prices
+async function refreshSharePrices() {
+    const refreshBtn = document.querySelector('button[onclick="refreshSharePrices()"]');
+    const originalContent = refreshBtn ? refreshBtn.innerHTML : '';
+
+    if (refreshBtn) {
+        refreshBtn.disabled = true;
+        refreshBtn.innerHTML = `
+            <div class="spinner-border spinner-border-sm text-white-50" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <span class="small ms-2">Refreshing...</span>
+        `;
+    }
+
+    try {
+        console.log('Refreshing share prices...');
+        let updatedCount = 0;
+
+        // 1. Fetch latest prices for all active holdings
+        const activeHoldings = SHARES_DATA.holdings.filter(s => s.status === 'active');
+
+        await Promise.all(activeHoldings.map(async (share) => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/shares/stock-price/${encodeURIComponent(share.symbol)}`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const newPrice = data.price;
+
+                    // Update share data locally
+                    share.current_price = newPrice;
+                    share.total_value = share.quantity * newPrice;
+                    share.gain_loss = share.total_value - share.total_invested;
+                    share.gain_loss_percent = (share.gain_loss / share.total_invested) * 100;
+
+                    updatedCount++;
+                }
+            } catch (err) {
+                console.error(`Error refreshing price for ${share.symbol}:`, err);
+            }
+        }));
+
+        // 2. Recalculate Portfolio Metrics
+        if (updatedCount > 0) {
+            // Recalculate based on current holdings data
+            const activeShares = SHARES_DATA.holdings.filter(s => s.status === 'active');
+
+            SHARES_DATA.metrics.total_value = activeShares.reduce((sum, s) => sum + s.total_value, 0);
+            SHARES_DATA.metrics.total_invested = activeShares.reduce((sum, s) => sum + s.total_invested, 0);
+            SHARES_DATA.metrics.total_gain_loss = SHARES_DATA.metrics.total_value - SHARES_DATA.metrics.total_invested;
+
+            SHARES_DATA.metrics.total_gain_loss_percent = SHARES_DATA.metrics.total_invested > 0
+                ? (SHARES_DATA.metrics.total_gain_loss / SHARES_DATA.metrics.total_invested) * 100
+                : 0;
+
+            console.log('Metrics updated:', SHARES_DATA.metrics);
+        }
+
+        // 3. Update UI
+        renderSharesOverview();
+        renderSharesHoldings();
+
+    } catch (error) {
+        console.error('Error refreshing shares:', error);
+    } finally {
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = originalContent;
+            // Update timestamp text
+            const timeSpan = refreshBtn.nextElementSibling;
+            if (timeSpan) timeSpan.textContent = 'Just now';
+        }
+    }
+}
+
+// Expose to window
+window.refreshSharePrices = refreshSharePrices;
 
 // ========== Sell Share Modal Functions ==========
 

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import date, datetime
+from uuid import UUID
 
 from database import get_db
 from models.real_estate import Property
@@ -61,8 +62,8 @@ class PropertyUpdate(BaseModel):
     tenant_type: Optional[str] = None
 
 class PropertyResponse(PropertyBase):
-    id: int
-    user_id: int
+    id: UUID
+    user_id: UUID
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -109,7 +110,7 @@ async def create_property(
 
 @router.put("/{property_id}", response_model=PropertyResponse)
 async def update_property(
-    property_id: int,
+    property_id: UUID,
     property_update: PropertyUpdate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -159,7 +160,7 @@ async def get_real_estate_stats(
 
 @router.get("/{property_id}", response_model=PropertyResponse)
 async def get_property_detail(
-    property_id: int,
+    property_id: UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -187,7 +188,7 @@ class RentalInfo(BaseModel):
 
 @router.put("/{property_id}/rent", response_model=PropertyResponse)
 async def rent_property(
-    property_id: int,
+    property_id: UUID,
     rental_info: RentalInfo,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -218,7 +219,7 @@ async def rent_property(
 
 @router.put("/{property_id}/sell", response_model=PropertyResponse)
 async def sell_property(
-    property_id: int,
+    property_id: UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -243,7 +244,7 @@ async def sell_property(
 
 @router.delete("/{property_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_property(
-    property_id: int,
+    property_id: UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):

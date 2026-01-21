@@ -32,5 +32,6 @@ class Settings:
     # Supabase Settings (optional - if using Supabase Auth)
     SUPABASE_URL: Optional[str] = os.getenv("SUPABASE_URL")
     SUPABASE_KEY: Optional[str] = os.getenv("SUPABASE_KEY")
+    SUPABASE_JWT_SECRET: str = os.getenv("SUPABASE_JWT_SECRET", "your-supabase-jwt-secret")
 
 settings = Settings()

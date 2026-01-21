@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
+from uuid import UUID
 
 from database import get_db
 from models.crypto import CryptoHolding, CryptoTransaction, CryptoWallet
@@ -20,7 +21,7 @@ class CryptoHoldingBase(BaseModel):
     quantity: float
     purchase_price_avg: float = 0.0
     current_price: float = 0.0
-    wallet_id: Optional[int] = None
+    wallet_id: Optional[UUID] = None
 
 class CryptoHoldingCreate(CryptoHoldingBase):
     pass
@@ -32,11 +33,11 @@ class CryptoHoldingUpdate(BaseModel):
     quantity: Optional[float] = None
     purchase_price_avg: Optional[float] = None
     current_price: Optional[float] = None
-    wallet_id: Optional[int] = None
+    wallet_id: Optional[UUID] = None
 
 class CryptoHoldingResponse(CryptoHoldingBase):
-    id: int
-    user_id: int
+    id: UUID
+    user_id: UUID
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -58,8 +59,8 @@ class CryptoTransactionBase(BaseModel):
     status: str = "Completed"
 
 class CryptoTransactionResponse(CryptoTransactionBase):
-    id: int
-    user_id: int
+    id: UUID
+    user_id: UUID
     timestamp: datetime
 
     class Config:
@@ -75,8 +76,8 @@ class CryptoWalletBase(BaseModel):
     is_connected: bool = False
 
 class CryptoWalletResponse(CryptoWalletBase):
-    id: int
-    user_id: int
+    id: UUID
+    user_id: UUID
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -120,7 +121,7 @@ async def create_holding(
 
 @router.put("/holdings/{holding_id}", response_model=CryptoHoldingResponse)
 async def update_holding(
-    holding_id: int,
+    holding_id: UUID,
     holding_update: CryptoHoldingUpdate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -145,7 +146,7 @@ async def update_holding(
 
 @router.delete("/holdings/{holding_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_holding(
-    holding_id: int,
+    holding_id: UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -164,7 +165,7 @@ async def delete_holding(
 
 @router.post("/holdings/{holding_id}/sell", response_model=CryptoHoldingResponse)
 async def sell_holding(
-    holding_id: int,
+    holding_id: UUID,
     sell_data: SellCryptoRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)

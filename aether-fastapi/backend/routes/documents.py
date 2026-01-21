@@ -7,6 +7,7 @@ import os
 import shutil
 from pathlib import Path
 import uuid
+from uuid import UUID as UUID_Type
 
 from database import get_db
 from models.document import Document
@@ -27,9 +28,9 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 # --- Pydantic Schemas ---
 
 class DocumentResponse(BaseModel):
-    id: int
-    user_id: int
-    property_id: int
+    id: UUID_Type
+    user_id: UUID_Type
+    property_id: UUID_Type
     document_type: str
     file_name: str
     file_url: str
@@ -62,7 +63,7 @@ def generate_unique_filename(original_filename: str) -> str:
 @router.post("/upload", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
 async def upload_document(
     file: UploadFile = File(...),
-    property_id: int = Form(...),
+    property_id: UUID_Type = Form(...),
     document_type: str = Form(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -141,7 +142,7 @@ async def get_documents(
 
 @router.get("/property/{property_id}", response_model=List[DocumentResponse])
 async def get_property_documents(
-    property_id: int,
+    property_id: UUID_Type,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -166,7 +167,7 @@ async def get_property_documents(
 
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_document(
-    document_id: int,
+    document_id: UUID_Type,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):

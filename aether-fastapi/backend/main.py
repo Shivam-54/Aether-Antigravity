@@ -26,7 +26,7 @@ app.add_middleware(
 
 # Import routes
 # Import here to avoid SQLAlchemy loading issues - ensuring config is loaded first
-from routes import auth, real_estate, documents, crypto, shares
+from routes import auth, real_estate, documents, crypto, shares, bonds, business
 from database import engine, Base
 from models import user, real_estate as re_model, document, crypto as crypto_model, shares as shares_model # Import models to register them
 
@@ -39,6 +39,8 @@ app.include_router(real_estate.router)
 app.include_router(documents.router)
 app.include_router(crypto.router)
 app.include_router(shares.router)
+app.include_router(bonds.router)
+app.include_router(business.router)
 
 @app.get("/api")
 def api_root():
