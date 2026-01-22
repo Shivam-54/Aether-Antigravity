@@ -175,6 +175,9 @@ function switchSource(source) {
             homeModule.classList.add('active');
         }
 
+        // Deactivate all nav tabs
+        document.querySelectorAll('.module-tab').forEach(el => el.classList.remove('active'));
+
         // Clear sidebar (no sidebar for home)
         document.getElementById('sidebarMenu').innerHTML = '';
 
@@ -2695,11 +2698,11 @@ function renderCryptoHoldings() {
         const isPositive = parseFloat(mockChange) >= 0;
 
         return `
-        <div class="row g-0 p-3 border-bottom border-white border-opacity-10 text-white-70 small align-items-center hover-bg-light transition-colors" style="transition: background 0.2s;">
+        <div class="row g-0 p-3 text-white-70 small align-items-center hover-lift transition-colors" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
             <!-- Asset -->
             <div class="col-2">
                 <div class="d-flex align-items-center gap-3">
-                    <div class="d-flex align-items-center justify-content-center rounded-circle bg-white bg-opacity-10" style="width: 32px; height: 32px; font-size: 10px; font-weight: bold;">
+                    <div class="d-flex align-items-center justify-content-center rounded-circle text-white fw-bold" style="width: 32px; height: 32px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);">
                         ${holding.symbol[0]}
                     </div>
                     <div>
@@ -2726,18 +2729,29 @@ function renderCryptoHoldings() {
             </div>
             <!-- Network -->
             <div class="col-2">
-                <span class="badge rounded-pill bg-white bg-opacity-5 text-white-60 border border-white border-opacity-5 px-2 py-1" style="font-size: 0.65rem;">
+                <span class="badge fw-normal px-3 py-2 rounded-pill small" 
+                      style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); font-weight: 300;">
                     ${holding.network}
                 </span>
             </div>
             <!-- Actions -->
             <div class="col-2 text-end">
                 <div class="d-flex justify-content-end gap-2">
-                    <button onclick="${safeOnClick('sellCrypto', holding.id)}" class="btn btn-sm p-2 rounded-circle" style="background: rgba(255,165,0,0.1);" title="Sell">
-                        <svg width="14" height="14" fill="none" stroke="#ffa500" viewBox="0 0 24 24"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/></svg>
+                    <button onclick="${safeOnClick('sellCrypto', holding.id)}" 
+                            class="btn btn-sm p-0 text-white-50 hover-text-white transition-colors"
+                            title="Sell / Edit">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                           <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                           <polyline points="16 7 22 7 22 13"></polyline>
+                       </svg>
                     </button>
-                    <button onclick="${safeOnClick('removeCrypto', holding.id)}" class="btn btn-sm p-2 rounded-circle" style="background: rgba(255,0,0,0.1);" title="Remove">
-                        <svg width="14" height="14" fill="none" stroke="#ff4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <button onclick="${safeOnClick('removeCrypto', holding.id)}" 
+                            class="btn btn-sm p-0 text-white-50 hover-text-danger transition-colors"
+                            title="Remove">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -2917,7 +2931,14 @@ function selectCrypto(id, symbol, name, priceInr, changePercent) {
 
     const network = networkMap[symbol.toUpperCase()] || '';
     if (network) {
-        document.getElementById('cryptoNetwork').value = network;
+        selectCryptoNetwork(network);
+    } else {
+        // Reset selection if no match
+        document.getElementById('cryptoNetwork').value = '';
+        document.querySelectorAll('#cryptoNetworkOptions button').forEach(btn => {
+            btn.classList.remove('bg-white', 'text-black');
+            btn.classList.add('glass-button');
+        });
     }
 
     // Clear search and hide dropdown
@@ -3027,9 +3048,9 @@ async function submitAddCrypto(event) {
         symbol: document.getElementById('cryptoSymbol').value.toUpperCase(),
         name: document.getElementById('cryptoName').value,
         network: document.getElementById('cryptoNetwork').value,
-        quantity: parseFloat(document.getElementById('cryptoQuantity').value),
-        purchase_price_avg: parseFloat(document.getElementById('cryptoAvgPrice').value),
-        current_price: parseFloat(document.getElementById('cryptoCurrentPrice').value)
+        quantity: parseFloat(document.getElementById('cryptoQuantity').value) || 0,
+        purchase_price_avg: parseFloat(document.getElementById('cryptoAvgPrice').value) || 0,
+        current_price: parseFloat(document.getElementById('cryptoCurrentPrice').value) || 0
     };
 
     try {
@@ -3044,7 +3065,11 @@ async function submitAddCrypto(event) {
             await fetchCryptoData();
         } else {
             const error = await response.json();
-            alert('Error adding crypto: ' + (error.detail || 'Unknown error'));
+            console.error('API Error Details:', error);
+            const errorMessage = typeof error.detail === 'object'
+                ? JSON.stringify(error.detail)
+                : (error.detail || JSON.stringify(error));
+            alert('Error adding crypto: ' + errorMessage);
         }
     } catch (error) {
         console.error('Error adding crypto:', error);
@@ -3170,3 +3195,42 @@ async function fetchBusinessData() {
     }
 }
 
+
+/**
+ * Handle Network Pill Selection
+ */
+function selectCryptoNetwork(network, btnElement) {
+    const hiddenInput = document.getElementById('cryptoNetwork');
+    if (hiddenInput) {
+        hiddenInput.value = network;
+    }
+
+    // Visual feedback
+    const container = document.getElementById('cryptoNetworkOptions');
+    if (container) {
+        // Reset all buttons
+        container.querySelectorAll('button').forEach(btn => {
+            btn.classList.remove('bg-white', 'text-black');
+            btn.classList.add('glass-button');
+
+            // Handles auto-selection case where btnElement is null
+            if (!btnElement && btn.textContent.trim() === network) {
+                btn.classList.remove('glass-button');
+                btn.classList.add('bg-white', 'text-black');
+            }
+            if (!btnElement && network === 'Binance Smart Chain' && btn.textContent.trim() === 'BSC') {
+                btn.classList.remove('glass-button');
+                btn.classList.add('bg-white', 'text-black');
+            }
+        });
+
+        // Highlight clicked button
+        if (btnElement) {
+            btnElement.classList.remove('glass-button');
+            btnElement.classList.add('bg-white', 'text-black');
+        }
+    }
+}
+
+// Expose to window
+window.selectCryptoNetwork = selectCryptoNetwork;

@@ -1,5 +1,6 @@
 /* Aether Premium Styles - Dark Glassmorphism Theme */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700&display=swap');
+/* TYPOGRAPHY: Geist font (exact match from old website) */
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100;200;300;400;500;600;700&display=swap');
 
 /* =========================================
    🔒 GLOBAL UI INTERACTION CONTRACT 🔒
@@ -89,6 +90,46 @@ label {
     --text-white: #EAEAEA;
     --text-gray: #9ca3af;
     --glass-border: rgba(255, 255, 255, 0.12);
+
+    /* =========================================
+       🔒 LOCKED TYPOGRAPHY TOKENS
+       Extracted from OLD website. DO NOT MODIFY.
+       ========================================= */
+
+    /* Font Family */
+    --font-primary: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+    /* Letter-Spacing (Level 1) */
+    --ls-brand: 0.2em;
+    /* Brand/logo: wide, editorial */
+    --ls-nav: 0.05em;
+    /* Navigation/labels: medium */
+    --ls-body: 0.025em;
+    /* Body text: subtle */
+
+    /* Font-Weights (Level 2) */
+    --fw-heading: 500;
+    /* Headings/emphasis */
+    --fw-body: 300;
+    /* Body/default (font-light) */
+
+    /* Line-Heights (Level 3) */
+    --lh-pill: 1;
+    /* Pills/buttons: tight */
+    --lh-body: 1.5;
+    /* Body text: relaxed */
+
+    /* Text Colors (Level 5) - Warm neutral hierarchy */
+    --text-primary: rgba(255, 255, 255, 0.9);
+    /* Primary text */
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    /* Secondary text */
+    --text-muted: rgba(255, 255, 255, 0.5);
+    /* Muted text */
+    --text-meta: rgba(255, 255, 255, 0.4);
+    /* Labels/meta */
+    --text-subtle: rgba(255, 255, 255, 0.3);
+    /* Very subtle */
 }
 
 /* Global Styles */
@@ -98,14 +139,25 @@ label {
     box-sizing: border-box;
 }
 
+/* LOCKED TYPOGRAPHY: Root-level font inheritance */
+html {
+    font-family: var(--font-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
 body {
     /* Exact Match from Old Codebase */
     background-color: #050505;
     color: var(--text-white);
-    font-family: 'Inter', 'San Francisco', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--font-primary);
+    font-weight: 300;
+    /* font-light as default */
     min-height: 100vh;
     position: relative;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* Utility for Hover Effects (Tailwind emulation for dashboard.js) */
@@ -123,11 +175,21 @@ body {
 
 }
 
-/* Subtle Premium Glow - Less Chaotic */
-/* Exact Gradient from Old Dashboard */
-/* Body pseudo-element removed to eliminate top glow "bulb light" */
+/* AMBIENT DEPTH LAYER: Calm, uniform dark background */
+/* LOCKED: No bands, no hotspots, always darker than glass */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, #080808 0%, #030303 100%);
+    pointer-events: none !important;
+    z-index: -2;
+}
 
-/* Exact Noise Texture from Old Dashboard */
+/* AMBIENT DEPTH LAYER: Grain texture overlay - non-interactive */
 /* DECORATIVE LAYER: Grain texture overlay - non-interactive */
 body::after {
     content: '';
@@ -144,18 +206,18 @@ body::after {
     z-index: -1;
 }
 
-/* User Provided: Premium Glass Panel (Replaces old glass-card) */
+/* CANONICAL GLASS RECIPE - Source of Truth from OLD Website */
 /* INTERACTION RULE: Glass cards are structural containers, not decorative overlays */
 /* They should allow clicks to pass through to their children */
 .glass-card,
 .glass-panel {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.005)) !important;
-    backdrop-filter: blur(26px) !important;
-    -webkit-backdrop-filter: blur(26px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
     box-shadow:
-        inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-        0 20px 50px rgba(0, 0, 0, 0.3) !important;
+        inset 0 0 20px 0 rgba(255, 255, 255, 0.02),
+        0 0 50px 0 rgba(255, 255, 255, 0.05) !important;
     border-radius: 24px !important;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     pointer-events: auto;
@@ -169,33 +231,33 @@ body::after {
     pointer-events: auto;
 }
 
-/* User Provided: Heavy Glass Utility */
+/* CANONICAL GLASS UTILITY - Pill-shaped variant */
 .glass {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.01));
-    backdrop-filter: blur(22px);
-    -webkit-backdrop-filter: blur(22px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow:
-        inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-        0 20px 50px rgba(0, 0, 0, 0.3);
+        inset 0 0 20px 0 rgba(255, 255, 255, 0.02),
+        0 0 50px 0 rgba(255, 255, 255, 0.05);
     border-radius: 999px;
 }
 
-/* User Provided: Active Nav Item */
+/* CANONICAL: Active Nav Item */
 .nav-item.active {
-    background: rgba(255, 255, 255, 0.15) !important;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
-    backdrop-filter: blur(15px);
+    background: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: inset 0 0 20px 0 rgba(255, 255, 255, 0.02) !important;
+    backdrop-filter: blur(10px);
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .glass-card:hover {
     transform: translateY(-2px);
     box-shadow:
-        inset 0 0 0 1px rgba(255, 255, 255, 0.1),
-        0 25px 60px rgba(0, 0, 0, 0.4) !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
+        inset 0 0 20px 0 rgba(255, 255, 255, 0.03),
+        0 0 60px 0 rgba(255, 255, 255, 0.07) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
 }
 
 
@@ -610,4 +672,46 @@ a:hover {
     color: #22c55e !important;
     /* Green-500 */
     background: rgba(34, 197, 94, 0.1) !important;
+}
+
+/* Simple hover effect for table rows */
+.hover-bg-light {
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.hover-bg-light:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* CANONICAL: Glass hover texture overlay (add to containers for premium feel) */
+.glass-hover-texture {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.7s ease-out;
+    z-index: 0;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+.group:hover .glass-hover-texture {
+    opacity: 0.06;
+}
+
+/* CANONICAL: Empty state styling for Coming Soon sections */
+.glass-empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.glass-empty-icon {
+    display: inline-flex;
+    padding: 1.5rem;
+    border-radius: 9999px;
+    margin-bottom: 1.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05);
 }
