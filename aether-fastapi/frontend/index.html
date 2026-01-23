@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aether - Portfolio Management</title>
 
-    <!-- Google Fonts: Inter (Apple Cinematic) -->
+    <!-- 🔒 FONTS: Geist + Inter + SF Pro (LOCKED) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -23,34 +23,24 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: radial-gradient(circle at top, #0c0c0c, #040404 70%);
-            color: white;
+            font-family: "Geist", "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            background: linear-gradient(to bottom, #080808, #030303);
+            color: rgba(255, 255, 255, 0.92);
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Background System - Calm, Deep, Premium */
-        /* LOCKED: Ultra-soft gradient, no bands/hotspots, darker than glass */
+        /* 🔒 AMBIENT HAZE — VERY SUBTLE */
         .bg-layer {
             position: fixed;
             inset: 0;
             z-index: 0;
-            background: linear-gradient(180deg, #080808 0%, #030303 100%);
+            background: radial-gradient(circle at 50% 20%, rgba(255, 230, 200, 0.025), transparent 60%);
             pointer-events: none;
         }
 
-        /* Grain Texture */
-        .grain-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 1;
-            opacity: 0.03;
-            pointer-events: none;
-            mix-blend-mode: overlay;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-        }
+        /* ❌ GRAIN OVERLAY REMOVED — FORBIDDEN BY MASTER LOCK */
 
         /* Navigation Bar */
         nav {
@@ -80,19 +70,21 @@
             color: rgba(255, 255, 255, 1);
         }
 
-        /* Center Navigation Capsule - Exact copy from old project */
+        /* 🔒 NAV MENU — LOCKED GLASS */
         .nav-menu {
             position: relative;
             justify-self: center;
             display: flex;
             gap: 4px;
             background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.10);
             border-radius: 9999px;
             padding: 4px;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            box-shadow: inset 0 0 20px 0 rgba(255, 255, 255, 0.02), 0 0 50px 0 rgba(255, 255, 255, 0.05);
+            box-shadow:
+                inset 0 0 20px rgba(255, 255, 255, 0.02),
+                0 0 50px rgba(255, 255, 255, 0.05);
             overflow: hidden;
         }
 
@@ -556,6 +548,390 @@
             }
         }
 
+        /* =============== LASER FLOW EFFECT =============== */
+
+        /* Keyframes for upward beam flow */
+        @keyframes laserFlow {
+            0% {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            90% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+        }
+
+        /* Pulsing glow animation */
+        @keyframes laserPulse {
+
+            0%,
+            100% {
+                opacity: 0.3;
+                filter: blur(40px);
+            }
+
+            50% {
+                opacity: 0.5;
+                filter: blur(50px);
+            }
+        }
+
+        /* Wisp flow - faster micro-particles */
+        @keyframes wispFlow {
+            0% {
+                transform: translateY(100%) scaleY(0.5);
+                opacity: 0;
+            }
+
+            20% {
+                opacity: 0.7;
+                transform: translateY(50%) scaleY(1);
+            }
+
+            80% {
+                opacity: 0.7;
+            }
+
+            100% {
+                transform: translateY(-100%) scaleY(0.5);
+                opacity: 0;
+            }
+        }
+
+        /* Laser Flow Container - FIXED for entire page */
+        .laser-flow-container {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        /* Base beam styling - WARM WHITE/CREAM TONES */
+        .laser-beam {
+            position: absolute;
+            bottom: 0;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(to top,
+                    transparent 0%,
+                    rgba(255, 248, 235, 0.3) 20%,
+                    rgba(255, 250, 240, 0.5) 50%,
+                    rgba(255, 248, 235, 0.3) 80%,
+                    transparent 100%);
+            filter: blur(1px);
+            animation: laserFlow 8s ease-in-out infinite;
+        }
+
+        /* 12 Individual beam variations */
+        .laser-beam-1 {
+            left: 5%;
+            animation-delay: 0s;
+            animation-duration: 9s;
+            opacity: 0.4;
+        }
+
+        .laser-beam-2 {
+            left: 12%;
+            animation-delay: -3s;
+            animation-duration: 11s;
+            opacity: 0.5;
+            width: 3px;
+        }
+
+        .laser-beam-3 {
+            left: 20%;
+            animation-delay: -1s;
+            animation-duration: 8s;
+            opacity: 0.6;
+        }
+
+        .laser-beam-4 {
+            left: 28%;
+            animation-delay: -5s;
+            animation-duration: 10s;
+            opacity: 0.4;
+        }
+
+        .laser-beam-5 {
+            left: 35%;
+            animation-delay: -2s;
+            animation-duration: 7s;
+            opacity: 0.5;
+            width: 3px;
+        }
+
+        .laser-beam-6 {
+            left: 45%;
+            animation-delay: -4s;
+            animation-duration: 9s;
+            opacity: 0.55;
+        }
+
+        .laser-beam-7 {
+            left: 55%;
+            animation-delay: -1.5s;
+            animation-duration: 8s;
+            opacity: 0.6;
+            width: 4px;
+            background: linear-gradient(to top, transparent 0%, rgba(255, 252, 245, 0.4) 20%, rgba(255, 255, 250, 0.7) 50%, rgba(255, 252, 245, 0.4) 80%, transparent 100%);
+        }
+
+        .laser-beam-8 {
+            left: 62%;
+            animation-delay: -3.5s;
+            animation-duration: 10s;
+            opacity: 0.45;
+        }
+
+        .laser-beam-9 {
+            left: 70%;
+            animation-delay: -2.5s;
+            animation-duration: 9s;
+            opacity: 0.5;
+            width: 3px;
+        }
+
+        .laser-beam-10 {
+            left: 78%;
+            animation-delay: -0.5s;
+            animation-duration: 11s;
+            opacity: 0.4;
+        }
+
+        .laser-beam-11 {
+            left: 86%;
+            animation-delay: -4.5s;
+            animation-duration: 8s;
+            opacity: 0.55;
+        }
+
+        .laser-beam-12 {
+            left: 94%;
+            animation-delay: -2s;
+            animation-duration: 10s;
+            opacity: 0.45;
+            width: 3px;
+        }
+
+        /* Extra dense beams (13-25) */
+        .laser-beam-13 {
+            left: 8%;
+            animation-delay: -1.8s;
+            animation-duration: 9.5s;
+            opacity: 0.5;
+            width: 2px;
+        }
+
+        .laser-beam-14 {
+            left: 42%;
+            animation-delay: -3.2s;
+            animation-duration: 8.5s;
+            opacity: 0.45;
+        }
+
+        .laser-beam-15 {
+            left: 88%;
+            animation-delay: -0.9s;
+            animation-duration: 10.5s;
+            opacity: 0.55;
+            width: 3px;
+        }
+
+        .laser-beam-16 {
+            left: 3%;
+            animation-delay: -4s;
+            animation-duration: 12s;
+            opacity: 0.4;
+        }
+
+        .laser-beam-17 {
+            left: 16%;
+            animation-delay: -1.2s;
+            animation-duration: 7.5s;
+            opacity: 0.5;
+            width: 2px;
+        }
+
+        .laser-beam-18 {
+            left: 25%;
+            animation-delay: -2.8s;
+            animation-duration: 9.2s;
+            opacity: 0.45;
+        }
+
+        .laser-beam-19 {
+            left: 32%;
+            animation-delay: -0.5s;
+            animation-duration: 11s;
+            opacity: 0.4;
+        }
+
+        .laser-beam-20 {
+            left: 58%;
+            animation-delay: -3.5s;
+            animation-duration: 8.8s;
+            opacity: 0.5;
+            width: 3px;
+        }
+
+        .laser-beam-21 {
+            left: 66%;
+            animation-delay: -1.5s;
+            animation-duration: 10.2s;
+            opacity: 0.45;
+        }
+
+        .laser-beam-22 {
+            left: 74%;
+            animation-delay: -2.2s;
+            animation-duration: 7.8s;
+            opacity: 0.5;
+        }
+
+        .laser-beam-23 {
+            left: 82%;
+            animation-delay: -0.8s;
+            animation-duration: 9.8s;
+            opacity: 0.4;
+            width: 2px;
+        }
+
+        .laser-beam-24 {
+            left: 91%;
+            animation-delay: -4.2s;
+            animation-duration: 11.5s;
+            opacity: 0.45;
+        }
+
+        .laser-beam-25 {
+            left: 97%;
+            animation-delay: -1.9s;
+            animation-duration: 8.2s;
+            opacity: 0.5;
+        }
+
+
+
+        /* Wisp elements - faster flowing micro-streaks (WARM WHITE) */
+        .laser-wisp {
+            position: absolute;
+            bottom: 0;
+            width: 1px;
+            height: 60px;
+            background: linear-gradient(to top,
+                    transparent,
+                    rgba(255, 252, 245, 0.7),
+                    transparent);
+            filter: blur(0.5px);
+            animation: wispFlow 3s ease-out infinite;
+        }
+
+        .laser-wisp-1 {
+            left: 8%;
+            animation-delay: 0s;
+        }
+
+        .laser-wisp-2 {
+            left: 15%;
+            animation-delay: -0.5s;
+        }
+
+        .laser-wisp-3 {
+            left: 22%;
+            animation-delay: -1s;
+            height: 80px;
+        }
+
+        .laser-wisp-4 {
+            left: 32%;
+            animation-delay: -1.5s;
+        }
+
+        .laser-wisp-5 {
+            left: 40%;
+            animation-delay: -2s;
+        }
+
+        .laser-wisp-6 {
+            left: 48%;
+            animation-delay: -0.3s;
+            height: 70px;
+        }
+
+        .laser-wisp-7 {
+            left: 53%;
+            animation-delay: -1.2s;
+        }
+
+        .laser-wisp-8 {
+            left: 60%;
+            animation-delay: -0.8s;
+            height: 80px;
+        }
+
+        .laser-wisp-9 {
+            left: 68%;
+            animation-delay: -2.2s;
+        }
+
+        .laser-wisp-10 {
+            left: 75%;
+            animation-delay: -0.6s;
+        }
+
+        .laser-wisp-11 {
+            left: 82%;
+            animation-delay: -1.8s;
+            height: 70px;
+        }
+
+        .laser-wisp-12 {
+            left: 90%;
+            animation-delay: -1.1s;
+        }
+
+        /* Central glow behind beams - WARM WHITE */
+        .laser-glow {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 100%;
+            background: radial-gradient(ellipse 100% 40% at 50% 100%,
+                    rgba(255, 248, 235, 0.1) 0%,
+                    rgba(255, 250, 240, 0.05) 40%,
+                    transparent 70%);
+            filter: blur(60px);
+            animation: laserPulse 10s ease-in-out infinite;
+            mix-blend-mode: screen;
+        }
+
+        /* Fog/atmosphere layer - WARM TONES */
+        .laser-fog {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% 90%, rgba(255, 245, 230, 0.04), transparent 60%),
+                radial-gradient(ellipse 60% 40% at 20% 80%, rgba(255, 250, 240, 0.03), transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 80%, rgba(255, 250, 240, 0.03), transparent 50%);
+            filter: blur(40px);
+            opacity: 0.7;
+        }
+
+        /* Removed vignette for full-page effect */
+
         /* Typography */
         .hero-title {
             font-size: clamp(3rem, 10vw, 10rem);
@@ -699,6 +1075,53 @@
 
     <!-- Background Layers -->
     <div class="bg-layer"></div>
+
+    <!-- Laser Flow Background Effect (Global, Warm White) -->
+    <div class="laser-flow-container">
+        <div class="laser-fog"></div>
+        <div class="laser-glow"></div>
+        <!-- 25 Beams for dense coverage -->
+        <div class="laser-beam laser-beam-1"></div>
+        <div class="laser-beam laser-beam-2"></div>
+        <div class="laser-beam laser-beam-3"></div>
+        <div class="laser-beam laser-beam-4"></div>
+        <div class="laser-beam laser-beam-5"></div>
+        <div class="laser-beam laser-beam-6"></div>
+        <div class="laser-beam laser-beam-7"></div>
+        <div class="laser-beam laser-beam-8"></div>
+        <div class="laser-beam laser-beam-9"></div>
+        <div class="laser-beam laser-beam-10"></div>
+        <div class="laser-beam laser-beam-11"></div>
+        <div class="laser-beam laser-beam-12"></div>
+        <div class="laser-beam laser-beam-13"></div>
+        <div class="laser-beam laser-beam-14"></div>
+        <div class="laser-beam laser-beam-15"></div>
+        <div class="laser-beam laser-beam-16"></div>
+        <div class="laser-beam laser-beam-17"></div>
+        <div class="laser-beam laser-beam-18"></div>
+        <div class="laser-beam laser-beam-19"></div>
+        <div class="laser-beam laser-beam-20"></div>
+        <div class="laser-beam laser-beam-21"></div>
+        <div class="laser-beam laser-beam-22"></div>
+        <div class="laser-beam laser-beam-23"></div>
+        <div class="laser-beam laser-beam-24"></div>
+        <div class="laser-beam laser-beam-25"></div>
+
+        <!-- Wisps -->
+        <div class="laser-wisp laser-wisp-1"></div>
+        <div class="laser-wisp laser-wisp-2"></div>
+        <div class="laser-wisp laser-wisp-3"></div>
+        <div class="laser-wisp laser-wisp-4"></div>
+        <div class="laser-wisp laser-wisp-5"></div>
+        <div class="laser-wisp laser-wisp-6"></div>
+        <div class="laser-wisp laser-wisp-7"></div>
+        <div class="laser-wisp laser-wisp-8"></div>
+        <div class="laser-wisp laser-wisp-9"></div>
+        <div class="laser-wisp laser-wisp-10"></div>
+        <div class="laser-wisp laser-wisp-11"></div>
+        <div class="laser-wisp laser-wisp-12"></div>
+    </div>
+
     <div class="grain-overlay"></div>
 
     <!-- Navigation -->
@@ -737,7 +1160,10 @@
 
     <!-- Section 0: Splash -->
     <section id="splash">
-        <div class="glass-card glass-card-large" style="max-width: 1024px;">
+        <!-- Laser Flow Background Effect -->
+
+
+        <div class="glass-card glass-card-large" style="max-width: 1024px; z-index: 1;">
             <h1 class="hero-title">AETHER</h1>
             <p class="hero-subtitle">Above the Ordinary.</p>
         </div>

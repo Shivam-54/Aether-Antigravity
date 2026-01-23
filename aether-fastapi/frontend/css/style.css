@@ -1,5 +1,5 @@
-/* AETHER CINEMATIC LUXURY - Apple Premium Aesthetic */
-/* TYPOGRAPHY: Inter + SF Pro Display Stack */
+/* AETHER LUXURY UI — FINAL MASTER LOCK */
+/* TYPOGRAPHY: Geist + Inter + SF Pro (LOCKED) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
 /* =========================================
@@ -79,40 +79,88 @@ label {
 }
 
 
-/* Color Palette - Apple Cinematic Luxury */
+/* 🔒 ULTRA-PREMIUM INSTITUTIONAL TERMINAL — DESIGN TOKENS */
 :root {
-    --bg-dark: #050505;
-    --bg-secondary: #121212;
-    --accent-glow: rgba(255, 255, 255, 0.5);
+    /* ═══════════════════════════════════════════════════════
+       DEPTH SYSTEM — 3-TIER MATERIAL STACK
+       ═══════════════════════════════════════════════════════ */
 
-    /* Text Hierarchy (Apple Specs) */
+    /* Base Canvas (Deep matte black with vignette) */
+    --canvas-base: #050506;
+    --canvas-stage: #030304;
+    --canvas-vignette: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.5) 100%);
+
+    /* Container Glass (Restored Locked Recipe) */
+    --glass-fill: rgba(255, 255, 255, 0.03);
+    --glass-inner-shadow: none;
+    --glass-outer-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    --glass-edge-highlight: 1px solid rgba(255, 255, 255, 0.08);
+    --glass-blur: blur(20px);
+
+    /* Active/Focus Layer (Brightness lift + micro glow) */
+    --active-lift: rgba(255, 255, 255, 0.02);
+    --active-glow: 0 0 20px rgba(255, 255, 255, 0.15);
+
+    /* ═══════════════════════════════════════════════════════
+       COLOR DISCIPLINE — STRICT ACCENT SYSTEM
+       ═══════════════════════════════════════════════════════ */
+
+    /* Primary Accent (White - No Green) */
+    --accent-primary: #FFFFFF;
+    --accent-primary-glow: rgba(255, 255, 255, 0.25);
+    --accent-primary-subtle: rgba(255, 255, 255, 0.08);
+
+    /* Positive/Negative Signals (Mapped to White/Red) */
+    --signal-positive: #FFFFFF;
+    --signal-negative: #EF4444;
+    --signal-positive-glow: rgba(255, 255, 255, 0.20);
+    --signal-negative-glow: rgba(239, 68, 68, 0.20);
+
+    /* ═══════════════════════════════════════════════════════
+       TYPOGRAPHY — INSTITUTIONAL TONE
+       ═══════════════════════════════════════════════════════ */
+
+    /* Font Stack */
+    --font-primary: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+    --font-mono: "SF Mono", "JetBrains Mono", "Fira Code", "Consolas", monospace;
+
+    /* Text Colors (Hierarchy) */
     --text-primary: rgba(255, 255, 255, 0.92);
-    /* High contrast */
-    --text-secondary: rgba(255, 255, 255, 0.65);
-    /* Soft secondary */
-    --text-muted: rgba(255, 255, 255, 0.45);
-    /* Deep recycled */
-    --glass-border: rgba(255, 255, 255, 0.1);
-    /* Polished rim */
+    --text-secondary: rgba(255, 255, 255, 0.55);
+    --text-muted: rgba(255, 255, 255, 0.38);
+    --text-disabled: rgba(255, 255, 255, 0.22);
 
-    /* Typography Tokens */
-    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+    /* Letter Spacing (Tight, institutional) */
+    --ls-tight: -0.02em;
+    --ls-metric: -0.03em;
+    --ls-label: 0.08em;
 
-    /* Spacing */
-    --ls-brand: 0.03em;
-    /* Elegant, not loose */
-    --ls-nav: 0.01em;
-    /* Tight, precise */
-    --ls-body: 0em;
-    /* Standard reading */
+    /* Font Weights */
+    --fw-light: 300;
+    --fw-regular: 400;
+    --fw-medium: 500;
+    --fw-semibold: 600;
+    --fw-metric: 600;
 
-    /* Font-Weights */
-    --fw-heading: 600;
-    /* Confident */
-    --fw-body: 400;
-    /* Legible & Soft */
+    /* ═══════════════════════════════════════════════════════
+       MOTION — CALM LUXURY
+       ═══════════════════════════════════════════════════════ */
 
-    /* Line-Heights */
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-magnetic: cubic-bezier(0.23, 1, 0.32, 1);
+    --transition-fast: 150ms var(--ease-smooth);
+    --transition-smooth: 300ms var(--ease-smooth);
+    --transition-slow: 500ms var(--ease-magnetic);
+
+    /* ═══════════════════════════════════════════════════════
+       LEGACY COMPATIBILITY (Mapped to new system)
+       ═══════════════════════════════════════════════════════ */
+    --bg-dark: var(--canvas-base);
+    --bg-stage: var(--canvas-stage);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glow-soft: var(--accent-primary-glow);
+    --glow-medium: rgba(255, 255, 255, 0.18);
+    --glow-strong: rgba(255, 255, 255, 0.25);
     --lh-pill: 1;
     --lh-body: 1.5;
 }
@@ -129,16 +177,17 @@ html {
     font-family: var(--font-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    letter-spacing: var(--ls-tight);
 }
 
 body {
-    /* Cinematic Dark Stage */
-    background: radial-gradient(circle at top, #0c0c0c, #040404 70%);
+    /* ULTRA-PREMIUM INSTITUTIONAL CANVAS */
+    background: var(--canvas-base);
     color: var(--text-primary);
     font-family: var(--font-primary);
-    font-weight: var(--fw-body);
-    letter-spacing: var(--ls-body);
+    font-weight: var(--fw-regular);
     line-height: var(--lh-body);
+    letter-spacing: var(--ls-tight);
     min-height: 100vh;
     position: relative;
     overflow-x: hidden;
@@ -146,53 +195,60 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* =========================================
-   🔒 TYPOGRAPHY UTILITY CLASSES
-   Use these for consistent premium feel.
-   ========================================= */
+/* ═══════════════════════════════════════════════════════
+   TYPOGRAPHY — INSTITUTIONAL UTILITY CLASSES
+   ═══════════════════════════════════════════════════════ */
 
-/* Brand text - wide letter-spacing, uppercase */
+/* Metric/Data text - monospace, tight, heavy */
+.text-metric {
+    font-family: var(--font-mono);
+    font-weight: var(--fw-metric);
+    letter-spacing: var(--ls-metric);
+    color: var(--text-primary);
+}
+
+/* Brand text - uppercase, tracked */
 .text-brand {
-    font-weight: var(--fw-heading);
-    letter-spacing: var(--ls-brand);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-label);
     text-transform: uppercase;
     color: var(--text-primary);
 }
 
-/* Navigation text - medium letter-spacing */
+/* Navigation text */
 .text-nav {
-    font-weight: var(--fw-body);
-    letter-spacing: var(--ls-nav);
+    font-weight: var(--fw-regular);
+    letter-spacing: var(--ls-tight);
     color: var(--text-secondary);
+    transition: color var(--transition-fast);
 }
 
 .text-nav-active {
-    font-weight: var(--fw-body);
-    letter-spacing: var(--ls-nav);
+    font-weight: var(--fw-medium);
+    letter-spacing: var(--ls-tight);
     color: var(--text-primary);
 }
 
 /* Label/meta text - uppercase, muted */
 .text-label {
-    font-weight: var(--fw-body);
-    letter-spacing: var(--ls-nav);
+    font-weight: var(--fw-medium);
+    letter-spacing: var(--ls-label);
     text-transform: uppercase;
-    color: var(--text-meta);
-    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.65rem;
 }
 
-/* Pill/button base - optical alignment */
+/* Pill/button base */
 .pill-base {
     display: flex;
     align-items: center;
     line-height: var(--lh-pill);
     padding: 0.5rem 1.25rem;
-    /* 8px 20px - H > V ratio */
-    letter-spacing: var(--ls-nav);
-    font-weight: var(--fw-body);
+    letter-spacing: var(--ls-tight);
+    font-weight: var(--fw-medium);
 }
 
-/* Text color utilities using tokens */
+/* Text color utilities */
 .text-primary {
     color: var(--text-primary) !important;
 }
@@ -205,140 +261,130 @@ body {
     color: var(--text-muted) !important;
 }
 
-.text-meta {
-    color: var(--text-meta) !important;
+.text-disabled {
+    color: var(--text-disabled) !important;
 }
 
-.text-subtle {
-    color: var(--text-subtle) !important;
+.text-accent {
+    color: var(--accent-primary) !important;
 }
 
-/* Utility for Hover Effects (Tailwind emulation for dashboard.js) */
+.text-positive {
+    color: var(--signal-positive) !important;
+}
+
+.text-negative {
+    color: var(--signal-negative) !important;
+}
+
+/* Utility for Hover Effects */
 .group {
     position: relative;
 }
 
 .group-hover-opacity-100 {
     opacity: 0;
-    transition: opacity 0.7s ease-out;
+    transition: opacity var(--transition-slow);
 }
 
 .group:hover .group-hover-opacity-100 {
     opacity: 1;
-
 }
 
-/* AMBIENT DEPTH LAYER: Calm, uniform dark background */
-/* LOCKED: No bands, no hotspots, always darker than glass */
+/* ═══════════════════════════════════════════════════════
+   DEPTH LAYERS — VIGNETTE + GRAIN TEXTURE
+   ═══════════════════════════════════════════════════════ */
+
+/* Vignette overlay */
 body::before {
     content: '';
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(180deg, #080808 0%, #030303 100%);
+    inset: 0;
+    background: var(--canvas-vignette);
     pointer-events: none !important;
     z-index: -2;
 }
 
-/* AMBIENT DEPTH LAYER: Grain texture overlay - non-interactive */
-/* DECORATIVE LAYER: Grain texture overlay - non-interactive */
+/* Subtle grain texture (2-4% opacity) */
 body::after {
     content: '';
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    opacity: 0.03;
+    inset: 0;
     pointer-events: none !important;
-    /* ✓ Enforced: decorative only */
-    mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
     z-index: -1;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
 }
 
-/* CANONICAL GLASS RECIPE - Source of Truth from OLD Website */
-/* INTERACTION RULE: Glass cards are structural containers, not decorative overlays */
-/* They should allow clicks to pass through to their children */
+/* ═══════════════════════════════════════════════════════
+   GLASS SYSTEM — INSTITUTIONAL TERMINAL DEPTH
+   ═══════════════════════════════════════════════════════ */
+
+/* Base Glass Recipe - Heavyweight Container */
 .glass-card,
-.glass-panel {
-    background: rgba(255, 255, 255, 0.03) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+.glass-panel,
+.glass {
+    background: var(--glass-fill);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: var(--glass-edge-highlight);
+    border-radius: 16px;
     box-shadow:
-        inset 0 0 20px 0 rgba(255, 255, 255, 0.02),
-        0 0 50px 0 rgba(255, 255, 255, 0.05) !important;
-    border-radius: 24px !important;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+        var(--glass-inner-shadow),
+        var(--glass-outer-shadow);
+    transition: all var(--transition-smooth);
     pointer-events: auto;
-    /* Structural container - allows interaction with children */
     position: relative;
 }
 
-/* All children inherit proper interaction behavior from global rules */
+/* All children inherit proper interaction behavior */
 .glass-card>*,
 .glass-panel>* {
     pointer-events: auto;
 }
 
-/* CANONICAL GLASS RECIPE (APPLE-CINEMATIC LUXURY) */
-.glass {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+/* Glass Card Hover - Signal glow only */
+.glass-card:hover,
+.glass-panel:hover {
+    border-color: rgba(255, 255, 255, 0.10);
     box-shadow:
-        inset 0 0 20px rgba(255, 255, 255, 0.035),
-        /* inner glow */
-        inset 0 0 6px rgba(255, 255, 255, 0.06),
-        /* polished rim */
-        0 0 40px rgba(255, 255, 255, 0.07),
-        /* ambient halo */
-        0 18px 55px rgba(0, 0, 0, 0.6);
-    /* physical depth */
-    border-radius: 999px;
-    /* Utility stays pill */
+        var(--glass-inner-shadow),
+        var(--glass-outer-shadow),
+        var(--active-glow);
 }
 
-/* CANONICAL: Active Nav Item - Focused Glass */
+/* Active Nav Item - Command Console Style */
 .nav-item.active {
-    background: rgba(255, 255, 255, 0.05) !important;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 8px;
+    backdrop-filter: blur(12px);
     box-shadow:
-        inset 0 0 20px rgba(255, 255, 255, 0.05),
-        0 0 30px rgba(255, 255, 255, 0.1) !important;
-    backdrop-filter: blur(10px);
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        0 0 20px rgba(255, 255, 255, 0.12);
 }
 
-/* Glass Card - Base Panel */
-.glass-card {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-    /* Smooth cinematic ease */
-    box-shadow:
-        inset 0 0 20px rgba(255, 255, 255, 0.035),
-        inset 0 0 6px rgba(255, 255, 255, 0.06),
-        0 0 40px rgba(255, 255, 255, 0.07),
-        0 18px 55px rgba(0, 0, 0, 0.6);
+/* Active indicator bar (left edge glow) */
+.nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 25%;
+    height: 50%;
+    width: 2px;
+    background: var(--accent-primary);
+    border-radius: 0 2px 2px 0;
+    box-shadow: 0 0 8px var(--accent-primary-glow);
 }
 
-.glass-card:hover {
-    transform: translateY(-4px);
+/* Glass Card Focus State - For interactive containers */
+.glass-card:focus-within {
+    border-color: rgba(0, 212, 170, 0.20);
     box-shadow:
-        inset 0 0 30px rgba(255, 255, 255, 0.05),
-        0 0 60px rgba(255, 255, 255, 0.1),
-        0 30px 80px rgba(0, 0, 0, 0.7) !important;
-    border-color: rgba(255, 255, 255, 0.15) !important;
+        var(--glass-inner-shadow),
+        var(--glass-outer-shadow),
+        var(--active-glow);
 }
-
 
 /* Gradient Text */
 .gradient-text {
@@ -362,12 +408,12 @@ body::after {
     }
 }
 
-/* Modern Form Inputs */
+/* 🔒 INPUTS — FROSTED, SOFT, CONTROLLED */
 .form-control {
-    background: rgba(255, 255, 255, 0.03) !important;
-    border: 1px solid var(--glass-border) !important;
-    color: var(--text-white) !important;
-    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: var(--text-primary) !important;
+    border-radius: 14px !important;
     padding: 14px 18px !important;
     font-size: 15px !important;
     transition: all 0.3s ease !important;
@@ -375,8 +421,9 @@ body::after {
 
 .form-control:focus {
     background: rgba(255, 255, 255, 0.06) !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.20) !important;
+    /* 🔒 WARM GLOW FOCUS */
+    box-shadow: 0 0 18px rgba(0, 212, 170, 0.15) !important;
     outline: none !important;
 }
 
@@ -398,13 +445,13 @@ body::after {
     min-height: 30px !important;
 }
 
-/* Form Select (Dropdowns) */
+/* 🔒 FORM SELECT — LOCKED */
 .form-select {
-    background: rgba(255, 255, 255, 0.03) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23aaaaaa' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
-    border: 1px solid var(--glass-border) !important;
-    color: var(--text-white) !important;
-    border-radius: 12px !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: var(--text-primary) !important;
+    border-radius: 14px !important;
     padding: 14px 18px !important;
     font-size: 15px !important;
     transition: all 0.3s ease !important;
@@ -412,41 +459,41 @@ body::after {
 
 .form-select:focus {
     background-color: rgba(255, 255, 255, 0.06) !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.20) !important;
+    box-shadow: 0 0 18px rgba(0, 212, 170, 0.15) !important;
     outline: none !important;
 }
 
 .form-select option {
-    background: #1a1a1a !important;
-    color: var(--text-white) !important;
+    background: #0a0a0a !important;
+    color: var(--text-primary) !important;
 }
 
-/* Glass Input Class - CANONICAL PREMIUM DEPTH */
+/* 🔒 GLASS INPUT — FROSTED, SOFT, CONTROLLED */
 .glass-input {
-    background: rgba(255, 255, 255, 0.03) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    color: white !important;
-    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: var(--text-primary) !important;
+    border-radius: 14px !important;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    box-shadow: inset 0 0 20px 0 rgba(255, 255, 255, 0.02), 0 0 50px 0 rgba(255, 255, 255, 0.05);
 }
 
 .glass-input:focus {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border-color: rgba(255, 255, 255, 0.15) !important;
-    box-shadow: inset 0 0 20px 0 rgba(255, 255, 255, 0.03), 0 0 60px 0 rgba(255, 255, 255, 0.07) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.20) !important;
+    /* 🔒 WARM GLOW FOCUS */
+    box-shadow: 0 0 18px rgba(0, 212, 170, 0.15) !important;
     outline: none !important;
 }
 
 .glass-input::placeholder {
-    color: rgba(255, 255, 255, 0.4) !important;
+    color: var(--text-muted) !important;
 }
 
 .glass-input:disabled {
     background: rgba(255, 255, 255, 0.02) !important;
-    color: rgba(255, 255, 255, 0.4) !important;
+    color: var(--text-disabled) !important;
     cursor: not-allowed;
 }
 
@@ -532,7 +579,7 @@ body::after {
 /* Loading Spinner */
 .spinner {
     border: 3px solid rgba(255, 255, 255, 0.1);
-    border-top: 3px solid var(--accent-blue);
+    border-top: 3px solid var(--accent-primary);
     border-radius: 50%;
     width: 20px;
     height: 20px;
@@ -584,7 +631,7 @@ body::after {
 
 /* Links */
 a {
-    color: var(--accent-blue);
+    color: var(--accent-primary);
     text-decoration: none;
     transition: color 0.2s ease;
 }
@@ -688,31 +735,26 @@ a:hover {
     color: #fff !important;
 }
 
-/* Premium Glass Effect (Modals & Cards) */
-/* INTERACTION RULE: Modal glass containers are structural, not decorative */
-/* Must allow full interaction with all form elements, buttons, and inputs inside */
+/* 🔒 MODALS — HEAVY CINEMATIC FLOAT */
 .glass-modal,
 .glass-premium {
     background: rgba(255, 255, 255, 0.03) !important;
-    backdrop-filter: blur(24px) !important;
-    -webkit-backdrop-filter: blur(24px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    box-shadow:
-        0 0 0 1px rgba(255, 255, 255, 0.03),
-        0 20px 60px rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
     border-radius: 24px !important;
     pointer-events: auto !important;
-    /* ✓ Enforced: structural container */
+    /* 🔒 LOCKED DEPTH SHADOW STACK */
+    box-shadow:
+        inset 0 0 20px rgba(255, 255, 255, 0.02),
+        0 0 40px rgba(0, 0, 0, 0.5),
+        0 0 60px rgba(255, 255, 255, 0.05) !important;
 }
 
-/* Glass Input */
-.glass-input {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    color: #fff !important;
-    border-radius: 12px !important;
-    padding: 12px 16px !important;
-    transition: all 0.2s ease !important;
+/* Modal Backdrop */
+.modal-backdrop {
+    background: rgba(0, 0, 0, 0.55) !important;
+    backdrop-filter: blur(8px);
 }
 
 .form-select.form-select-sm {
@@ -796,4 +838,17 @@ a:hover {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* 🔒 BOOTSTRAP OVERRIDES — STRICT MONOCHROME */
+.text-success {
+    color: #FFFFFF !important;
+}
+
+.bg-success {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.border-success {
+    border-color: rgba(255, 255, 255, 0.3) !important;
 }
