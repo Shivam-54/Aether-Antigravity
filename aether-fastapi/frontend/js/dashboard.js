@@ -260,7 +260,7 @@ function logout() {
         console.log('DEV_MODE: Logout blocked');
         return;
     }
-    alert("Session expired. Please log in again.");
+    showToast("Session expired. Please log in again.", "error");
     localStorage.removeItem('access_token');
     localStorage.removeItem('user_email');
     window.location.href = 'index.html';
@@ -583,6 +583,13 @@ Object.assign(ICONS, {
 const formatCurrency = (value) => {
     if (value >= 10000000) return `₹${(value / 10000000).toFixed(2)} Cr`;
     if (value >= 100000) return `₹${(value / 100000).toFixed(2)} L`;
+    return `₹${value.toLocaleString()}`;
+};
+
+const formatBondCurrency = (value) => {
+    if (value >= 10000000) return `₹${(value / 10000000).toFixed(2)} Cr`;
+    if (value >= 100000) return `₹${(value / 100000).toFixed(2)} L`;
+    if (value >= 1000) return `₹${(value / 1000).toFixed(1)}k`;
     return `₹${value.toLocaleString()}`;
 };
 
@@ -1271,34 +1278,12 @@ async function submitAddProperty(event) {
             fetchRealEstateData(); // Reload data
         } else {
             if (response.status === 401) {
-                if (DEV_MODE) {
-                    // DEV_MODE: Add mock property to local state for UI testing
-                    const mockProperty = {
-                        id: 'mock-' + Date.now(),
-                        name: payload.name,
-                        location: payload.location,
-                        address: payload.address,
-                        purchase_price: payload.purchase_price,
-                        current_value: payload.current_value,
-                        type: payload.type,
-                        status: payload.status,
-                        ownership_structure: payload.ownership_structure,
-                        acquisition_date: new Date().toISOString().split('T')[0]
-                    };
-                    REAL_ESTATE_DATA.properties.push(mockProperty);
-
-                    showToast("Property added successfully!", "success");
-                    closeAddPropertyModal();
-                    document.getElementById('addPropertyForm').reset();
-                    renderRealEstateProperties(); // Refresh property list
-                    renderRealEstateDashboard(); // Refresh dashboard
-                } else {
-                    logout();
-                }
+                console.warn('Unauthorized - logging out');
+                logout();
                 return;
             }
             const error = await response.json();
-            showFormError("addPropertyForm", error.detail || "Failed to add property");
+            showToast(`Error adding property: ${error.detail || 'Unknown error'}`, 'error');
         }
     } catch (err) {
         console.error(err);
@@ -1334,7 +1319,7 @@ function handleUploadDocument() {
                     </div >
     `;
                 container.insertAdjacentHTML('afterbegin', docHtml);
-                alert(`Document "${file.name}" uploaded successfully associated with your portfolio.`);
+                showToast(`Document "${file.name}" uploaded successfully associated with your portfolio.`, "success");
             }, 500);
         }
     };
@@ -1451,7 +1436,7 @@ async function confirmCancelRent() {
 
     } catch (error) {
         console.error('Error cancelling rent:', error);
-        alert('Failed to cancel rent. Please try again.');
+        showToast('Failed to cancel rent. Please try again.', 'error');
     }
 }
 
@@ -1492,7 +1477,7 @@ function handleRentStep1(event) {
     const tenantType = document.getElementById('tenantType').value;
 
     if (!rentAmount || rentAmount <= 0) {
-        alert('Please enter a valid rent amount');
+        showToast('Please enter a valid rent amount', 'error');
         return;
     }
 
@@ -1555,7 +1540,7 @@ async function confirmRentProperty() {
         }
     } catch (err) {
         console.error(err);
-        alert('Failed to connect to server.');
+        showToast('Failed to connect to server.', 'error');
     }
 }
 
@@ -1606,11 +1591,11 @@ async function confirmSellProperty() {
                 return;
             }
             const error = await response.json();
-            alert(`Error selling property: ${error.detail || 'Unknown error'}`);
+            showToast(`Error selling property: ${error.detail || 'Unknown error'}`, 'error');
         }
     } catch (err) {
         console.error(err);
-        alert('Failed to connect to server.');
+        showToast('Failed to connect to server.', 'error');
     }
 }
 
@@ -1714,7 +1699,7 @@ async function updatePropertyField(propertyId, field, value) {
 
     if (!validation.valid) {
         console.error(`Validation failed for ${field}:`, validation.error);
-        alert(`Validation Error: ${validation.error}`);
+        showToast(`Validation Error: ${validation.error}`, 'error');
         return;
     }
 
@@ -1751,11 +1736,11 @@ async function updatePropertyField(propertyId, field, value) {
         } else {
             const error = await response.json();
             console.error('Update failed:', error);
-            alert(`Failed to update ${field}: ${error.detail || 'Unknown error'}`);
+            showToast(`Failed to update ${field}: ${error.detail || 'Unknown error'}`, 'error');
         }
     } catch (err) {
         console.error('Network error:', err);
-        alert("Failed to connect to server. Please check your connection.");
+        showToast("Failed to connect to server. Please check your connection.", "error");
     }
 }
 
@@ -1804,11 +1789,11 @@ async function confirmRemoveProperty() {
                 return;
             }
             const error = await response.json();
-            alert(`Error removing property: ${error.detail || 'Unknown error'}`);
+            showToast(`Error removing property: ${error.detail || 'Unknown error'}`, 'error');
         }
     } catch (err) {
         console.error(err);
-        alert('Failed to connect to server.');
+        showToast('Failed to connect to server.', 'error');
     }
 }
 
@@ -1904,13 +1889,13 @@ async function submitUploadDocument(event) {
     const file = fileInput.files[0];
 
     if (!file) {
-        alert('Please select a file to upload');
+        showToast('Please select a file to upload', 'error');
         return;
     }
 
     // Check file size (10MB max)
     if (file.size > 10 * 1024 * 1024) {
-        alert('File size must be less than 10MB');
+        showToast('File size must be less than 10MB', 'error');
         return;
     }
 
@@ -1943,7 +1928,7 @@ async function submitUploadDocument(event) {
 
     } catch (error) {
         console.error('Error uploading document:', error);
-        alert('Failed to upload document. Please try again.');
+        showToast('Failed to upload document. Please try again.', 'error');
     }
 }
 
@@ -2085,7 +2070,7 @@ async function deleteDocument(docId) {
 
     } catch (error) {
         console.error('Error deleting document:', error);
-        alert('Failed to delete document. Please try again.');
+        showToast('Failed to delete document. Please try again.', 'error');
     }
 }
 
@@ -2276,7 +2261,7 @@ async function generateYieldInsights() {
 
     } catch (error) {
         console.error('Error generating AI insights:', error);
-        alert('Failed to generate insights. Please try again.');
+        showToast('Failed to generate insights. Please try again.', 'error');
     }
 }
 
@@ -2613,7 +2598,7 @@ function handleAIChat(message) {
         const thinkingEl = document.getElementById(thinkingId);
         if (thinkingEl) thinkingEl.remove();
 
-        const response = generateMockAIResponse(message);
+        const response = "AI insights are coming soon! We are currently connecting the AI engine to your real-time portfolio data.";
         addChatMessage(response, 'ai');
     }, 1500);
 }
@@ -2642,41 +2627,7 @@ function addChatMessage(text, sender) {
     container.scrollTop = container.scrollHeight;
 }
 
-function generateMockAIResponse(question) {
-    const q = question.toLowerCase();
-    const props = REAL_ESTATE_DATA.properties || [];
 
-    if (q.includes('underperforming') || q.includes('worst')) {
-        // Find low yield
-        const worst = props.filter(p => p.status === 'Rented').sort((a, b) => {
-            // rough yield calc
-            const ya = ((a.rent_amount || 0) * 12) / (a.current_value || 1);
-            const yb = ((b.rent_amount || 0) * 12) / (b.current_value || 1);
-            return ya - yb;
-        })[0];
-
-        if (worst) return `Based on yield analysis, **${worst.name}** is currently underperforming with a yield of approx. ${(((worst.rent_amount * 12) / worst.current_value) * 100).toFixed(1)}%. Consider rent review or renovations.`;
-        return "I couldn't identify any strictly underperforming assets. All rented properties seem to be performing within acceptable ranges.";
-    }
-
-    if (q.includes('hold') && q.includes('sell')) {
-        return "Given current market trends, I'd recommend **holding** your core residential assets as property values are projected to rise by 4.5% this year. However, consider selling any properties with consistently low occupancy rates.";
-    }
-
-    if (q.includes('risk') || q.includes('exposure')) {
-        return "Your portfolio currently has a concentration risk in **Residential** assets (80%). I'd recommend exploring Commercial Opportunities or diversifying geographically to mitigate market-specific downturns.";
-    }
-
-    if (q.includes('optimize') || q.includes('improve')) {
-        return "To optimize your portfolio:\n1. Increase rent on 'Green Meadows' to match market rates.\n2. Consider refinancing 'Sunset Villa' to leverage its appreciation.\n3. Look into commercial properties for higher yield stability.";
-    }
-
-    if (q.includes('hold') || q.includes('sell')) {
-        return "For **Green Meadows Apartment**, market analysis suggests a **HOLD**.\n\n- Appreciation: +30.7% (Strong)\n- Yield: 4.2% (Moderate)\n\nThe upcoming metro line nearby is projected to increase value by another 12% in the next 18 months.";
-    }
-
-    return "That's an interesting question. Based on your current portfolio data, I'm analyzing the market trends. Could you specify which property you're referring to?";
-}
 
 // ================================
 // CRYPTO MODULE FUNCTIONS
@@ -2706,14 +2657,9 @@ async function fetchCryptoData() {
         if (holdingsResponse.ok) {
             CRYPTO_DATA.holdings = await holdingsResponse.json();
         } else if (holdingsResponse.status === 401) {
-            if (DEV_MODE) {
-                console.log('DEV_MODE: Crypto auth error ignored, rendering with mock data');
-                // Continue with mock/empty data for UI testing
-            } else {
-                console.warn('Unauthorized - logging out');
-                logout();
-                return;
-            }
+            console.warn('Unauthorized - logging out');
+            logout();
+            return;
         }
 
         // Fetch metrics
@@ -3207,7 +3153,7 @@ function calculateCryptoTotals() {
  */
 async function refreshCryptoPrice() {
     if (!selectedCryptoId) {
-        alert('Please select a cryptocurrency first');
+        showToast('Please select a cryptocurrency first', 'info');
         return;
     }
 
@@ -3243,7 +3189,7 @@ async function refreshCryptoPrice() {
 
     } catch (error) {
         console.error('Error refreshing price:', error);
-        alert('Failed to refresh price. Please try again.');
+        showToast('Failed to refresh price. Please try again.', 'error');
     } finally {
         if (priceField) priceField.style.opacity = '1';
     }
@@ -3278,11 +3224,11 @@ async function submitAddCrypto(event) {
             const errorMessage = typeof error.detail === 'object'
                 ? JSON.stringify(error.detail)
                 : (error.detail || JSON.stringify(error));
-            alert('Error adding crypto: ' + errorMessage);
+            showToast('Error adding crypto: ' + errorMessage, 'error');
         }
     } catch (error) {
         console.error('Error adding crypto:', error);
-        alert('Error adding crypto. Please try again.');
+        showToast('Error adding crypto. Please try again.', 'error');
     }
 }
 
@@ -3310,7 +3256,7 @@ async function sellCrypto(holdingId) {
             await fetchCryptoData();
         } else {
             const error = await response.json();
-            alert('Error selling crypto: ' + (error.detail || 'Unknown error'));
+            showToast('Error selling crypto: ' + (error.detail || 'Unknown error'), 'error');
         }
     } catch (error) {
         console.error('Error selling crypto:', error);
@@ -3334,7 +3280,7 @@ async function removeCrypto(holdingId) {
         if (response.ok) {
             await fetchCryptoData();
         } else {
-            alert('Error removing crypto');
+            showToast('Error removing crypto', 'error');
         }
     } catch (error) {
         console.error('Error removing crypto:', error);
@@ -3365,136 +3311,115 @@ function initCryptoCalculations() {
 let BONDS_DATA = [];
 
 // ==================== BUSINESS MODULE DATA ====================
-let BUSINESS_DATA = [
-    {
-        id: 'biz-001',
-        name: 'Aether Technologies',
-        industry: 'Technology',
-        ownership: 75,
-        valuation: 150000000,
-        annualRevenue: 48000000,
-        annualProfit: 12000000,
-        monthlyRevenue: 4000000,
-        monthlyProfit: 1000000,
-        cashFlow: 800000,
-        status: 'Growing',
-        founded: '2020-01-15',
-        description: 'Enterprise SaaS platform for portfolio management and wealth intelligence.'
-    },
-    {
-        id: 'biz-002',
-        name: 'Skyline Properties',
-        industry: 'Real Estate',
-        ownership: 40,
-        valuation: 85000000,
-        annualRevenue: 24000000,
-        annualProfit: 6000000,
-        monthlyRevenue: 2000000,
-        monthlyProfit: 500000,
-        cashFlow: 450000,
-        status: 'Stable',
-        founded: '2018-06-20',
-        description: 'Commercial and residential property development in metro cities.'
-    },
-    {
-        id: 'biz-003',
-        name: 'GreenLeaf Organics',
-        industry: 'Agriculture',
-        ownership: 60,
-        valuation: 35000000,
-        annualRevenue: 18000000,
-        annualProfit: 3600000,
-        monthlyRevenue: 1500000,
-        monthlyProfit: 300000,
-        cashFlow: 250000,
-        status: 'Growing',
-        founded: '2021-03-10',
-        description: 'Organic produce cultivation and distribution network.'
-    },
-    {
-        id: 'biz-004',
-        name: 'Velocity Logistics',
-        industry: 'Transportation',
-        ownership: 25,
-        valuation: 120000000,
-        annualRevenue: 72000000,
-        annualProfit: 8000000,
-        monthlyRevenue: 6000000,
-        monthlyProfit: 650000,
-        cashFlow: 500000,
-        status: 'Stable',
-        founded: '2017-09-05',
-        description: 'Last-mile delivery and warehousing solutions.'
-    }
-];
+// Data will be fetched from API - no more hardcoded mock data
+let BUSINESS_DATA = [];
 
-let BUSINESS_TRANSACTIONS = [
-    { id: 'cf-001', businessId: 'biz-001', businessName: 'Aether Technologies', date: '2026-01-20', amount: 1500000, type: 'Income', category: 'Client Payment', notes: 'Enterprise contract - Q1' },
-    { id: 'cf-002', businessId: 'biz-001', businessName: 'Aether Technologies', date: '2026-01-18', amount: -350000, type: 'Expense', category: 'Salary', notes: 'January payroll' },
-    { id: 'cf-003', businessId: 'biz-002', businessName: 'Skyline Properties', date: '2026-01-15', amount: 800000, type: 'Income', category: 'Rental Income', notes: 'Commercial rent - Tower B' },
-    { id: 'cf-004', businessId: 'biz-003', businessName: 'GreenLeaf Organics', date: '2026-01-12', amount: -120000, type: 'Expense', category: 'Operations', notes: 'Cold storage facility maintenance' },
-    { id: 'cf-005', businessId: 'biz-004', businessName: 'Velocity Logistics', date: '2026-01-10', amount: 2000000, type: 'Investment', category: 'Capital Infusion', notes: 'Series B follow-on' },
-    { id: 'cf-006', businessId: 'biz-001', businessName: 'Aether Technologies', date: '2026-01-08', amount: 500000, type: 'Income', category: 'Dividend', notes: 'Q4 2025 dividend payout' },
-    { id: 'cf-007', businessId: 'biz-002', businessName: 'Skyline Properties', date: '2026-01-05', amount: -450000, type: 'Expense', category: 'Property Tax', notes: 'Annual property tax - FY26' },
-    { id: 'cf-008', businessId: 'biz-003', businessName: 'GreenLeaf Organics', date: '2026-01-02', amount: 650000, type: 'Income', category: 'Wholesale Order', notes: 'Metro supermarket chain order' }
-];
-
-let BUSINESS_STATEMENTS = {
-    pl: [
-        { businessId: 'biz-001', period: 'January 2026', revenue: 4000000, expenses: 2800000, netProfit: 1200000, expenseBreakdown: { salary: 1200000, rent: 300000, marketing: 500000, operations: 600000, other: 200000 } },
-        { businessId: 'biz-002', period: 'January 2026', revenue: 2000000, expenses: 1400000, netProfit: 600000, expenseBreakdown: { salary: 400000, rent: 200000, marketing: 100000, operations: 500000, other: 200000 } }
-    ],
-    bs: [
-        { businessId: 'biz-001', assets: { cash: 8000000, inventory: 2000000, equipment: 5000000 }, liabilities: { loans: 3000000, payables: 1500000 }, equity: 10500000 },
-        { businessId: 'biz-002', assets: { cash: 4000000, inventory: 500000, equipment: 25000000 }, liabilities: { loans: 8000000, payables: 2000000 }, equity: 19500000 }
-    ]
-};
-
-let BUSINESS_DOCUMENTS = [
-    { id: 'doc-001', businessId: 'biz-001', name: 'Company Registration Certificate', type: 'Registration', date: '2020-01-15' },
-    { id: 'doc-002', businessId: 'biz-001', name: 'FY25 Tax Filing', type: 'Tax Filing', date: '2025-07-31' },
-    { id: 'doc-003', businessId: 'biz-002', name: 'Property Deed - Tower B', type: 'Contract', date: '2019-03-22' },
-    { id: 'doc-004', businessId: 'biz-003', name: 'Q4 2025 Financial Statement', type: 'Financial Statement', date: '2026-01-05' }
-];
-
-let BUSINESS_AI_INSIGHTS = [
-    { id: 'ins-001', businessId: 'biz-001', type: 'Growth Opportunity', severity: 'info', title: 'Revenue Acceleration Detected', description: 'Aether Technologies showed 23% MoM revenue growth. Consider reinvesting in sales capacity.', date: '2026-01-20' },
-    { id: 'ins-002', businessId: 'biz-002', type: 'Expense Spike', severity: 'warning', title: 'Property Tax Increase', description: 'Skyline Properties property tax increased by 15% YoY. Review municipal valuation.', date: '2026-01-18' },
-    { id: 'ins-003', businessId: null, type: 'Cash Flow Risk', severity: 'critical', title: 'Portfolio Cash Reserves Low', description: 'Combined cash reserves cover only 2.5 months of operational expenses. Consider liquidity injection.', date: '2026-01-15' },
-    { id: 'ins-004', businessId: 'biz-003', type: 'Profit Trend', severity: 'info', title: 'Margin Improvement', description: 'GreenLeaf Organics operating margin improved from 18% to 21% over the last quarter.', date: '2026-01-12' }
-];
+let BUSINESS_TRANSACTIONS = [];
+let BUSINESS_STATEMENTS = { pl: [], bs: [] };
+let BUSINESS_DOCUMENTS = [];
+let BUSINESS_AI_INSIGHTS = [];
 // ==================== END BUSINESS MODULE DATA ====================
-// Bonds Data Fetcher (Mock Implementation)
-async function fetchBondsData() {
-    // Simulate API delay
-    // await new Promise(r => setTimeout(r, 500)); 
 
-    BONDS_DATA = [
-        { id: 'bond-gov-001', ticker: 'GOI-2030', description: 'Government of India 7.26% 2030', issuer: 'Government of India', faceValue: 5000000, couponRate: 7.26, maturityDate: '2030-08-22', type: 'Government', yieldToMaturity: 7.15 },
-        { id: 'bond-trs-001', ticker: 'T-Bond-2032', description: 'Indian Treasury Bond 6.8% 2032', issuer: 'Reserve Bank of India', faceValue: 3000000, couponRate: 6.8, maturityDate: '2032-05-15', type: 'Treasury', yieldToMaturity: 6.75 },
-        { id: 'bond-muni-001', ticker: 'BMC-2028', description: 'Mumbai Municipal Bond 6.5%', issuer: 'Brihanmumbai Municipal Corp', faceValue: 1000000, couponRate: 6.5, maturityDate: '2028-03-31', type: 'Municipal', yieldToMaturity: 6.45 },
-        { id: 'bond-corp-001', ticker: 'RIL-2027', description: 'Reliance Industries 8.5% 2027', issuer: 'Reliance Industries Ltd', faceValue: 2500000, couponRate: 8.5, maturityDate: '2027-11-15', type: 'Corporate', yieldToMaturity: 8.2 },
-        { id: 'bond-agc-001', ticker: 'NABARD-2031', description: 'NABARD Rural Bond 7.3% 2031', issuer: 'NABARD', faceValue: 1500000, couponRate: 7.3, maturityDate: '2031-09-15', type: 'Agency', yieldToMaturity: 7.25 },
-        { id: 'bond-sov-001', ticker: 'UST-2029', description: 'US Treasury Sovereign 4.5% 2029', issuer: 'US Department of Treasury', faceValue: 8200000, couponRate: 4.5, maturityDate: '2029-05-15', type: 'Sovereign', yieldToMaturity: 4.35 },
-        { id: 'bond-conv-001', ticker: 'TCS-CV-2026', description: 'TCS Convertible 5.2% 2026', issuer: 'Tata Consultancy Services', faceValue: 2000000, couponRate: 5.2, maturityDate: '2026-12-31', type: 'Convertible', yieldToMaturity: 5.1 },
-        { id: 'bond-zero-001', ticker: 'ZERO-2035', description: 'Zero Coupon Deep Discount 2035', issuer: 'State Bank of India', faceValue: 5000000, couponRate: 0, maturityDate: '2035-12-31', type: 'Zero-Coupon', yieldToMaturity: 7.8 },
-        { id: 'bond-float-001', ticker: 'HDFC-FRN-2028', description: 'HDFC Floating Rate Note MIBOR+2%', issuer: 'HDFC Bank', faceValue: 1800000, couponRate: 8.5, maturityDate: '2028-06-30', type: 'Floating Rate', yieldToMaturity: 8.4 },
-        { id: 'bond-iib-001', ticker: 'IIB-2034', description: 'Inflation Indexed Bond 2.5% + CPI', issuer: 'Government of India', faceValue: 3500000, couponRate: 2.5, maturityDate: '2034-06-05', type: 'Inflation-Linked', yieldToMaturity: 6.8 },
-        { id: 'bond-hy-001', ticker: 'VFL-2026', description: 'Videocon High Yield 12.5% 2026', issuer: 'Videocon Finance Ltd', faceValue: 1000000, couponRate: 12.5, maturityDate: '2026-03-15', type: 'High-Yield', yieldToMaturity: 13.2 },
-        { id: 'bond-green-001', ticker: 'NTPC-GREEN-2030', description: 'NTPC Green Energy Bond 7.0% 2030', issuer: 'NTPC Limited', faceValue: 2200000, couponRate: 7.0, maturityDate: '2030-09-20', type: 'Green', yieldToMaturity: 6.95 },
-        { id: 'bond-perp-001', ticker: 'ICICI-AT1', description: 'ICICI Bank Perpetual Tier 1 Bond 9.5%', issuer: 'ICICI Bank', faceValue: 1500000, couponRate: 9.5, maturityDate: '2099-12-31', type: 'Perpetual', yieldToMaturity: 9.3 },
-        { id: 'bond-other-001', ticker: 'SGB-2028', description: 'Sovereign Gold Bond Series IV 2.5%', issuer: 'Reserve Bank of India', faceValue: 500000, couponRate: 2.5, maturityDate: '2028-06-15', type: 'Other', yieldToMaturity: 2.5 }
-    ];
+// Bonds Data Fetcher - Fetches from real API
+async function fetchBondsData() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/bonds/`, {
+            headers: getAuthHeaders()
+        });
+
+        if (response.ok) {
+            const bonds = await response.json();
+            // Map API response to frontend format
+            BONDS_DATA = bonds.map(bond => ({
+                id: bond.id,
+                ticker: bond.ticker,
+                description: bond.description,
+                issuer: bond.issuer,
+                faceValue: bond.face_value,
+                couponRate: bond.coupon_rate,
+                maturityDate: bond.maturity_date,
+                type: bond.type,
+                yieldToMaturity: bond.yield_to_maturity
+            }));
+        } else if (response.status === 401) {
+            logout();
+            return;
+        }
+    } catch (error) {
+        console.error('Error fetching bonds data:', error);
+    }
 
     console.log('Bonds data loaded:', BONDS_DATA.length);
-    renderBondsOverview(); // Initial render
+    renderBondsOverview();
 }
 
 // Render Bonds Overview
 function renderBondsOverview() {
-    // Basic metrics calculation could go here if needed to update the Overview cards
-    // For now, we assume Overview static or separately handled, but we ensure the chart exists
-    // (Existing Overview chart logic is likely elsewhere or static for now, as per original file)
+    if (!BONDS_DATA) return;
+
+    // Calculate Metrics
+    const totalValue = BONDS_DATA.reduce((sum, bond) => sum + (bond.faceValue || 0), 0);
+    const totalAnnualIncome = BONDS_DATA.reduce((sum, bond) => sum + (bond.faceValue * ((bond.couponRate || 0) / 100)), 0);
+
+    // Average Yield (Weighted by Face Value)
+    let avgYield = 0;
+    if (totalValue > 0) {
+        const weightedYieldSum = BONDS_DATA.reduce((sum, bond) => sum + ((bond.yieldToMaturity || 0) * bond.faceValue), 0);
+        avgYield = weightedYieldSum / totalValue;
+    }
+
+    // Next Maturity
+    let nextMaturity = null;
+    let nextMaturityStr = "--";
+    let nextMaturityLabel = "Upcoming Date";
+
+    if (BONDS_DATA.length > 0) {
+        const sortedByDate = [...BONDS_DATA]
+            .filter(b => b.maturityDate)
+            .sort((a, b) => new Date(a.maturityDate) - new Date(b.maturityDate));
+
+        // Find first future date
+        const today = new Date();
+        const futureBonds = sortedByDate.filter(b => new Date(b.maturityDate) >= today);
+
+        if (futureBonds.length > 0) {
+            nextMaturity = futureBonds[0];
+        } else if (sortedByDate.length > 0) {
+            nextMaturity = sortedByDate[sortedByDate.length - 1]; // Last one if all past
+        }
+
+        if (nextMaturity) {
+            const d = new Date(nextMaturity.maturityDate);
+            nextMaturityStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' }); // e.g., 12 Oct 25
+
+            // Calculate time remaining
+            const diffTime = Math.abs(d - today);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays < 30) nextMaturityLabel = `${diffDays} days left`;
+            else if (diffDays < 365) nextMaturityLabel = `${Math.floor(diffDays / 30)} months left`;
+            else nextMaturityLabel = `${(diffDays / 365).toFixed(1)} years left`;
+        }
+    }
+
+    // Update DOM
+    const totalValueEl = document.getElementById('bonds-overview-total-value');
+    if (totalValueEl) totalValueEl.textContent = formatBondCurrency(totalValue);
+
+    const annualIncomeEl = document.getElementById('bonds-overview-annual-income');
+    if (annualIncomeEl) annualIncomeEl.textContent = formatBondCurrency(totalAnnualIncome);
+
+    const avgYieldEl = document.getElementById('bonds-overview-avg-yield');
+    if (avgYieldEl) avgYieldEl.textContent = `${avgYield.toFixed(2)}%`;
+
+    const nextMaturityEl = document.getElementById('bonds-overview-next-maturity');
+    if (nextMaturityEl) nextMaturityEl.textContent = nextMaturityStr;
+
+    const nextMaturityLabelEl = document.getElementById('bonds-overview-next-maturity-date');
+    if (nextMaturityLabelEl) nextMaturityLabelEl.textContent = nextMaturityLabel;
+
+    // Also update dynamic yield analysis if that section is visible
+    renderBondYieldAnalysis();
+    renderBondAllocation();
 }
 
 // Render Bond Holdings Section
@@ -3645,7 +3570,7 @@ function renderBondAllocation() {
 
     // Update Center Text
     const corpusEl = document.getElementById('bonds-total-corpus');
-    if (corpusEl) corpusEl.textContent = `₹${(totalCorpus / 10000000).toFixed(2)} Cr`;
+    if (corpusEl) corpusEl.textContent = formatBondCurrency(totalCorpus);
 
     // Render Chart
     const ctx = document.getElementById('bondsAllocationChart');
@@ -3684,7 +3609,7 @@ function renderBondAllocation() {
                         titleColor: 'rgba(255, 255, 255, 0.9)',
                         bodyColor: 'rgba(255, 255, 255, 0.7)',
                         callbacks: {
-                            label: (context) => ` ₹${(context.parsed / 100000).toFixed(2)} L`
+                            label: (context) => ` ${formatBondCurrency(context.parsed)}`
                         }
                     }
                 }
@@ -3707,7 +3632,7 @@ function renderBondAllocation() {
                     </div>
                     <div class="text-end">
                         <span class="text-white-90 fw-light d-block">${percent}%</span>
-                        <span class="text-white-30 small" style="font-size: 0.7rem;">₹${(value / 100000).toFixed(2)} L</span>
+                        <span class="text-white-30 small" style="font-size: 0.7rem;">${formatBondCurrency(value)}</span>
                     </div>
                 </div>
             `;
@@ -3718,25 +3643,136 @@ function renderBondAllocation() {
 // Business Data Fetcher
 async function fetchBusinessData() {
     try {
+        // Fetch business ventures
         const response = await fetch(`${API_BASE_URL}/business/`, {
             headers: getAuthHeaders()
         });
 
         if (response.ok) {
-            console.log('Business data fetched successfully');
+            const businesses = await response.json();
+            // Map API response to frontend format
+            BUSINESS_DATA = businesses.map(biz => ({
+                id: biz.id,
+                name: biz.name,
+                industry: biz.industry,
+                ownership: biz.ownership,
+                valuation: biz.valuation,
+                annualRevenue: biz.annual_revenue,
+                annualProfit: biz.annual_profit,
+                monthlyRevenue: biz.monthly_revenue,
+                monthlyProfit: biz.monthly_profit,
+                cashFlow: biz.cash_flow,
+                status: biz.status,
+                founded: biz.founded,
+                description: biz.description
+            }));
+            console.log('Business data fetched successfully:', BUSINESS_DATA.length);
+        } else if (response.status === 401) {
+            logout();
+            return;
         } else {
-            if (response.status === 401) {
-                console.warn('Unauthorized - logging out');
-                logout();
-                return;
-            }
             console.error('Failed to fetch business ventures');
         }
+
+        // Fetch business transactions
+        const txResponse = await fetch(`${API_BASE_URL}/business/transactions/all`, {
+            headers: getAuthHeaders()
+        });
+
+        if (txResponse.ok) {
+            const transactions = await txResponse.json();
+            BUSINESS_TRANSACTIONS = transactions.map(tx => ({
+                id: tx.id,
+                businessId: tx.business_id,
+                businessName: tx.business_name,
+                date: tx.date,
+                amount: tx.amount,
+                type: tx.type,
+                category: tx.category,
+                notes: tx.notes
+            }));
+            console.log('Business transactions fetched:', BUSINESS_TRANSACTIONS.length);
+        }
+
     } catch (error) {
         console.error('Error fetching business data:', error);
     }
+
+    // Re-render business UI
+    renderBusinessDashboard();
 }
 
+
+function closeAddDocumentModal() {
+    const modal = document.getElementById('add-business-document-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+}
+
+// Ensure global scope
+window.openAddBusinessModal = openAddBusinessModal;
+window.closeAddBusinessModal = closeAddBusinessModal;
+window.openAddBusinessDocumentModal = openAddBusinessDocumentModal;
+window.closeAddDocumentModal = closeAddDocumentModal;
+
+/**
+ * Submit New Business via API
+ */
+async function submitNewBusiness(event) {
+    event.preventDefault();
+
+    const name = document.getElementById('biz-name').value;
+    const industry = document.getElementById('biz-industry').value;
+    const description = document.getElementById('biz-description').value;
+    const ownership = parseFloat(document.getElementById('biz-ownership').value);
+    const ownershipType = document.getElementById('biz-ownership-type').value;
+    const valuation = parseFloat(document.getElementById('biz-valuation').value);
+    const revenue = parseFloat(document.getElementById('biz-revenue').value);
+    const profit = parseFloat(document.getElementById('biz-profit').value);
+    const status = document.getElementById('biz-status').value;
+    const founded = document.getElementById('biz-founded').value;
+
+    const payload = {
+        name: name,
+        industry: industry,
+        description: description,
+        ownership: ownership,
+        ownership_type: ownershipType,
+        valuation: valuation,
+        annual_revenue: revenue * 12, // Annualized
+        annual_profit: profit * 12, // Annualized
+        monthly_revenue: revenue,
+        monthly_profit: profit,
+        cash_flow: profit, // Simplified assumption
+        status: status,
+        founded: founded || null
+    };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/business/`, {
+            method: 'POST',
+            headers: getAuthHeaders(), // Using existing helper
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            showToast("Business added successfully!", "success");
+            closeAddBusinessModal();
+            fetchBusinessData(); // Reload from API
+        } else {
+            const error = await response.json();
+            showToast(`Error adding business: ${error.detail || 'Unknown error'}`, 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showToast("Failed to connect to server", "error");
+    }
+}
+
+// Expose to window
+window.submitNewBusiness = submitNewBusiness;
 
 /**
  * Handle Network Pill Selection
@@ -3830,7 +3866,7 @@ function updateBondCalculations() {
     if (incomeEl) incomeEl.textContent = `₹${annualIncome.toLocaleString('en-IN')}`;
 }
 
-function submitAddBond(event) {
+async function submitAddBond(event) {
     event.preventDefault();
 
     // Collect Data
@@ -3840,30 +3876,43 @@ function submitAddBond(event) {
     const faceValue = parseFloat(document.getElementById('bond-face-value').value);
     const coupon = parseFloat(document.getElementById('bond-coupon').value);
     const maturity = document.getElementById('bond-maturity').value;
+    const quantity = parseFloat(document.getElementById('bond-quantity').value);
+    const price = parseFloat(document.getElementById('bond-price').value);
 
-    // Create Entry
-    const newBond = {
-        id: `bond-${Date.now()}`,
+    // Create Payload
+    const payload = {
         ticker: ticker,
         description: `${issuer} ${coupon}% ${new Date(maturity).getFullYear()}`,
         issuer: issuer,
-        faceValue: faceValue,
-        couponRate: coupon,
-        maturityDate: maturity,
+        face_value: faceValue,
+        coupon_rate: coupon,
+        maturity_date: maturity, // ISO date string yyyy-mm-dd
         type: type,
-        yieldToMaturity: coupon
+        yield_to_maturity: coupon, // Simplified assumption
+        quantity: quantity,
+        purchase_price: price,
+        purchase_date: new Date().toISOString().split('T')[0]
     };
 
-    // Add to Data
-    BONDS_DATA.push(newBond);
+    try {
+        const response = await fetch(`${API_BASE_URL}/bonds/`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(payload)
+        });
 
-    // Refresh Views
-    renderBondHoldings();
-    renderBondMaturity();
-    renderBondAllocation();
-
-    // Close Modal
-    closeAddBondModal();
+        if (response.ok) {
+            showToast("Bond added successfully!", "success");
+            closeAddBondModal();
+            fetchBondsData(); // Reload from API
+        } else {
+            const error = await response.json();
+            showToast(`Error adding bond: ${error.detail || 'Unknown error'}`, 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showToast("Failed to connect to server", "error");
+    }
 }
 
 // Expose Bond functions to window
@@ -4615,7 +4664,7 @@ function submitNewDocument(event) {
     const notes = document.getElementById('doc-notes').value.trim();
 
     if (!title || !businessId || !docType) {
-        alert('Please fill in all required fields.');
+        showToast('Please fill in all required fields.', 'error');
         return;
     }
 

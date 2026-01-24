@@ -1175,7 +1175,7 @@
                                         <span class="text-white-50 small text-uppercase spacing-1">Total Bond
                                             Value</span>
                                     </div>
-                                    <h3 class="h4 fw-light mb-1 text-white">--</h3>
+                                    <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-total-value">--</h3>
                                     <p class="small text-white-50">Current Market Value</p>
                                 </div>
                             </div>
@@ -1194,7 +1194,7 @@
                                         <span class="text-white-50 small text-uppercase spacing-1">Annual Fixed
                                             Income</span>
                                     </div>
-                                    <h3 class="h4 fw-light mb-1 text-white">--</h3>
+                                    <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-annual-income">--</h3>
                                     <p class="small text-white-50">Projected Interest</p>
                                 </div>
                             </div>
@@ -1210,7 +1210,7 @@
                                         </svg>
                                         <span class="text-white-50 small text-uppercase spacing-1">Average Yield</span>
                                     </div>
-                                    <h3 class="h4 fw-light mb-1 text-white">--</h3>
+                                    <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-avg-yield">--</h3>
                                     <p class="small text-white-50">Yield to Maturity</p>
                                 </div>
                             </div>
@@ -1226,8 +1226,9 @@
                                         </svg>
                                         <span class="text-white-50 small text-uppercase spacing-1">Next Maturity</span>
                                     </div>
-                                    <h3 class="h4 fw-light mb-1 text-white">--</h3>
-                                    <p class="small text-white-50">Upcoming Date</p>
+                                    <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-next-maturity">--</h3>
+                                    <p class="small text-white-50" id="bonds-overview-next-maturity-date">Upcoming Date
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -1552,7 +1553,7 @@
         </div>
     </div>
 
-    <script src="js/dashboard.js?v=55"></script>
+    <script src="js/dashboard.js?v=56"></script>
     <script src="js/shares-module.js"></script>
 
 
@@ -2719,12 +2720,12 @@
                             <div class="col-md-6">
                                 <label class="form-label small text-white-50 mb-1" style="font-size: 0.75rem;">Ownership
                                     Percentage <span class="text-danger">*</span></label>
-                                <div class="input-group">
+                                <div class="position-relative">
                                     <input type="number" id="biz-ownership" class="form-control glass-input py-2"
                                         placeholder="75" min="0.01" max="100" step="0.01" required
-                                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
-                                    <span class="input-group-text"
-                                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.5);">%</span>
+                                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding-right: 2rem;">
+                                    <span class="position-absolute top-50 end-0 translate-middle-y pe-3 text-white-50"
+                                        style="pointer-events: none;">%</span>
                                 </div>
                             </div>
                             <div class="col-md-6">

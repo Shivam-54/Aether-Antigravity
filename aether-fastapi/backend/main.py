@@ -28,7 +28,7 @@ app.add_middleware(
 # Import here to avoid SQLAlchemy loading issues - ensuring config is loaded first
 from routes import auth, real_estate, documents, crypto, shares, bonds, business
 from database import engine, Base
-from models import user, real_estate as re_model, document, crypto as crypto_model, shares as shares_model # Import models to register them
+from models import user, real_estate as re_model, document, crypto as crypto_model, shares as shares_model, bonds as bonds_model, business as business_model # Import models to register them
 
 # Create tables
 Base.metadata.create_all(bind=engine)
