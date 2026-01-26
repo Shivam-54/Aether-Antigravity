@@ -1,6 +1,8 @@
 
 // ==================== SHARES MODULE ====================
 
+console.log("[SHARES VERSION] 3 - BUTTON MOVED TO HOLDINGS");
+
 let SHARES_DATA = {
     holdings: [],
     metrics: {
@@ -54,11 +56,22 @@ function renderSharesOverview() {
                     <h2 class="h4 fw-light text-white-90 mb-1">Shares Overview</h2>
                     <p class="small fw-light text-white-50">Equity portfolio performance and metrics</p>
                 </div>
-                <button onclick="openAddShareModal()" class="btn px-3 py-2 rounded-pill d-flex align-items-center gap-2"
-                        style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white;">
-                    <span class="fs-6 fw-light">+</span>
-                    <span>Add Share</span>
-                </button>
+            </div>
+
+            <!-- Portfolio Chart Placeholder -->
+            <div class="rounded-4 overflow-hidden position-relative" 
+                 style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); height: 300px; padding: 2rem;">
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <h3 class="small fw-medium text-white-70">Portfolio Performance</h3>
+                    <div class="d-flex gap-2">
+                        ${['1D', '1W', '1M', '1Y', 'ALL'].map(range => `
+                            <button class="px-3 py-1 rounded-pill small" style="background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); border: none;">${range}</button>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="text-white-50 text-center mt-5">
+                    <p>Performance chart coming soon...</p>
+                </div>
             </div>
 
             <!-- Metrics Grid -->
@@ -125,22 +138,6 @@ function renderSharesOverview() {
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Portfolio Chart Placeholder -->
-            <div class="rounded-4 overflow-hidden position-relative" 
-                 style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); height: 300px; padding: 2rem;">
-                <div class="d-flex align-items-center justify-content-between mb-4">
-                    <h3 class="small fw-medium text-white-70">Portfolio Performance</h3>
-                    <div class="d-flex gap-2">
-                        ${['1D', '1W', '1M', '1Y', 'ALL'].map(range => `
-                            <button class="px-3 py-1 rounded-pill small" style="background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); border: none;">${range}</button>
-                        `).join('')}
-                    </div>
-                </div>
-                <div class="text-white-50 text-center mt-5">
-                    <p>Performance chart coming soon...</p>
                 </div>
             </div>
         </div>

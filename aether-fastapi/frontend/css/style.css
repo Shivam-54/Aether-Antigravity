@@ -852,3 +852,10 @@ a:hover {
 .border-success {
     border-color: rgba(255, 255, 255, 0.3) !important;
 }
+/* Custom 5-column grid layout */
+@media (min-width: 992px) {
+    .col-lg-2dot4 {
+        flex: 0 0 auto;
+        width: 20%;
+    }
+}

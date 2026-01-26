@@ -192,7 +192,9 @@ const SIDEBAR_CONFIG = {
         { icon: 'home', text: 'Overview', id: 'overview', active: true },
         { icon: 'briefcase', text: 'Ventures', id: 'ventures' },
         { icon: 'trending', text: 'Cash Flow', id: 'cash-flow' },
-        { icon: 'document', text: 'Statements', id: 'statements' },
+
+        { icon: 'receipt', text: 'Statements', id: 'statements' },
+        { icon: 'document', text: 'Documents', id: 'documentation' },
         { icon: 'bulb', text: 'AI Insights', id: 'ai-insights' },
         { divider: true },
         { icon: 'arrow-up', text: 'Upgrade', id: 'upgrade' },
@@ -477,6 +479,7 @@ function navigateToSection(sectionId, sectionName, btn) {
             if (sectionId === 'ventures') renderBusinessVentures();
             if (sectionId === 'cash-flow') renderBusinessCashFlow();
             if (sectionId === 'statements') renderBusinessStatements();
+            if (sectionId === 'documentation') renderBusinessDocumentation();
             if (sectionId === 'ai-insights') renderBusinessAIInsights();
 
         } else {
@@ -1075,7 +1078,7 @@ function openPropertyModal(propertyId) {
                             <div class="text-white-50 p-2 rounded-3" style="background: rgba(255,255,255,0.05)">${ICONS.home}</div>
                             <div class="w-100">
                                 <p class="small fw-light text-white-50 mb-1" style="letter-spacing: 0.05em;">Land Area</p>
-                                <div class="d-flex align-items-center gap-2 px-2 py-1 rounded-3" style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05);">
+                                <div class="d-flex align-items-center gap-2 px-2 py-1 rounded-3">
                                     <input type="number" 
                                            class="form-control form-control-sm bg-transparent border-0 text-white p-0 fw-medium shadow-none" 
                                            style="min-width: 0;"
@@ -1098,7 +1101,7 @@ function openPropertyModal(propertyId) {
                             <div class="text-white-50 p-2 rounded-3" style="background: rgba(255,255,255,0.05)">${ICONS.home}</div>
                             <div class="w-100">
                                 <p class="small fw-light text-white-50 mb-1" style="letter-spacing: 0.05em;">Type</p>
-                                <div class="px-2 py-1 rounded-3" style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05);">
+                                <div class="px-2 py-1 rounded-3">
                                     <select class="form-select form-select-sm bg-transparent border-0 text-white p-0 fw-medium shadow-none w-100" 
                                             style="cursor: pointer;"
                                             onchange="updatePropertyField('${property.id}', 'type', this.value)">
@@ -2748,9 +2751,9 @@ function renderCryptoOverview() {
                         <h3 class="small fw-medium text-white-70 mb-4">Network Correlation</h3>
                         <div class="flex-grow-1 d-flex align-items-center justify-content-center position-relative" id="network-correlation-container">
                             <!-- Ambient vignette overlay -->
-                            <div style="position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 50% 50%, transparent 30%, rgba(0,0,0,0.4) 100%); pointer-events: none; z-index: 2;"></div>
+                            <div style="position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 50% 50%, transparent 30%, rgba(0,0,0,0.4) 100%); pointer-events: none; z-index: 1;"></div>
                             <!-- Canvas for animated constellation -->
-                            <canvas id="networkCorrelationCanvas" style="width: 100%; max-width: 280px; height: 220px; position: relative; z-index: 1;"></canvas>
+                            <canvas id="networkCorrelationCanvas" style="width: 100%; max-width: 280px; height: 220px; position: relative; z-index: 2;"></canvas>
                         </div>
                     </div>
                 </div>
@@ -2828,6 +2831,20 @@ function renderCryptoOverview() {
     const container = document.getElementById('crypto-section-overview');
     if (container) {
         container.innerHTML = overviewHtml;
+
+        // Initialize Network Correlation Animation
+        if (document.getElementById('networkCorrelationCanvas')) {
+            if (window.networkCorrelationInstance) {
+                // Stop previous animation loop if method exists, otherwise just overwrite
+                if (window.networkCorrelationInstance.animationId) {
+                    cancelAnimationFrame(window.networkCorrelationInstance.animationId);
+                }
+            }
+            // Small delay to ensure DOM paint
+            setTimeout(() => {
+                window.networkCorrelationInstance = new NetworkCorrelationAnimation('networkCorrelationCanvas');
+            }, 50);
+        }
     }
 }
 
@@ -3316,7 +3333,7 @@ let BUSINESS_DATA = [];
 
 let BUSINESS_TRANSACTIONS = [];
 let BUSINESS_STATEMENTS = { pl: [], bs: [] };
-let BUSINESS_DOCUMENTS = [];
+let BUSINESS_DOCUMENTS = JSON.parse(localStorage.getItem('aether_business_documents') || '[]');
 let BUSINESS_AI_INSIGHTS = [];
 // ==================== END BUSINESS MODULE DATA ====================
 
@@ -3416,6 +3433,23 @@ function renderBondsOverview() {
 
     const nextMaturityLabelEl = document.getElementById('bonds-overview-next-maturity-date');
     if (nextMaturityLabelEl) nextMaturityLabelEl.textContent = nextMaturityLabel;
+
+    const totalCountEl = document.getElementById('bonds-overview-total-count');
+    if (totalCountEl) {
+        // Count active bonds only (not matured)
+        const today = new Date();
+        // Reset time part to ensure we count bonds maturing today as active until EOD (or just simple date comparison)
+        today.setHours(0, 0, 0, 0);
+
+        const activeBondsCount = BONDS_DATA.filter(b => {
+            if (!b.maturityDate) return false;
+            const mDate = new Date(b.maturityDate);
+            mDate.setHours(0, 0, 0, 0);
+            return mDate >= today;
+        }).length;
+
+        totalCountEl.textContent = activeBondsCount;
+    }
 
     // Also update dynamic yield analysis if that section is visible
     renderBondYieldAnalysis();
@@ -3640,6 +3674,54 @@ function renderBondAllocation() {
     }
 }
 
+// Helper to generate statements from data
+function generateBusinessStatements() {
+    BUSINESS_STATEMENTS.pl = [];
+    BUSINESS_STATEMENTS.bs = [];
+
+    BUSINESS_DATA.forEach(biz => {
+        // Calculate P&L from transactions
+        const bizTx = BUSINESS_TRANSACTIONS.filter(tx => tx.businessId === biz.id);
+        const revenue = bizTx.filter(tx => tx.type === 'Income').reduce((sum, tx) => sum + tx.amount, 0);
+
+        const expenses = bizTx.filter(tx => tx.type === 'Expense').reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+        const netProfit = revenue - expenses;
+
+        BUSINESS_STATEMENTS.pl.push({
+            businessId: biz.id,
+            period: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+            revenue: revenue,
+            expenses: expenses,
+            netProfit: netProfit,
+            expenseBreakdown: { operations: expenses }
+        });
+
+        // Calculate Balance Sheet (Simplified estimation)
+        const cash = (biz.cashFlow || 0) + netProfit;
+        const assets = {
+            cash: Math.max(0, cash),
+            inventory: 0,
+            equipment: biz.valuation * 0.1
+        };
+        const totalAssets = Object.values(assets).reduce((a, b) => a + b, 0);
+
+        const liabilities = {
+            loans: 0,
+            payables: 0
+        };
+        const totalLiabilities = 0;
+
+        const equity = totalAssets - totalLiabilities;
+
+        BUSINESS_STATEMENTS.bs.push({
+            businessId: biz.id,
+            assets: assets,
+            liabilities: liabilities,
+            equity: equity
+        });
+    });
+}
+
 // Business Data Fetcher
 async function fetchBusinessData() {
     try {
@@ -3694,12 +3776,20 @@ async function fetchBusinessData() {
             console.log('Business transactions fetched:', BUSINESS_TRANSACTIONS.length);
         }
 
+        // Generate dynamic statements
+        generateBusinessStatements();
+
     } catch (error) {
         console.error('Error fetching business data:', error);
     }
 
     // Re-render business UI
     renderBusinessDashboard();
+    renderBusinessVentures();
+    renderBusinessCashFlow();
+    renderBusinessStatements();
+    renderBusinessDocumentation();
+    renderBusinessAIInsights();
 }
 
 
@@ -3923,29 +4013,19 @@ window.updateBondCalculations = updateBondCalculations;
 window.submitAddBond = submitAddBond;
 
 // ===========================================
-// DYNAMIC YIELD ANALYSIS (Refactored)
+// DYNAMIC YIELD ANALYSIS
 // ===========================================
 
 function renderBondYieldAnalysis() {
     console.log('Rendering Dynamic Yield Analysis...');
-    const grid = document.getElementById('bonds-yield-grid'); // Renamed from bonds-ai-insights-list if used interchangeably, but checking html
-    // Per previous HTML edit, render target is 'bonds-ai-insights-list' for AI, but for Yield Analysis it's 'bonds-yield-grid'
-    // Let's verify target in HTML.
-
-    const targetGrid = document.getElementById('bonds-ai-insights-list'); // Wait, AI Insights is different.
-    // The previous prompt said "Yield Analysis" section.
-    // Let's look for 'bonds-section-yield-analysis' in HTML.
-
-    // Actually, I should use the correct ID. 
-    // In previous steps I added 'bonds-section-ai-insights' but specifically 'Yield Analysis' was added earlier.
-    // Let's assume the ID is 'bonds-yield-grid' as per the user's manual edit in step 3511.
-
     const container = document.getElementById('bonds-yield-grid');
+
     if (!container) {
         console.warn('Yield Analysis Container (bonds-yield-grid) not found.');
         return;
     }
 
+    // Empty state: No bonds
     if (!BONDS_DATA || BONDS_DATA.length === 0) {
         container.innerHTML = `
             <div class="col-12 text-center py-5">
@@ -3955,100 +4035,70 @@ function renderBondYieldAnalysis() {
         return;
     }
 
-    // --- 1. Aggregation Helper ---
-    const aggregate = (groupFn) => {
-        const groups = {};
-        BONDS_DATA.forEach(bond => {
-            const key = groupFn(bond);
-            if (!groups[key]) {
-                groups[key] = { count: 0, totalValue: 0, weightedYieldSum: 0, weightedCouponSum: 0 };
-            }
-            const value = bond.faceValue * (bond.quantity || 1); // Assuming quantity 1 if missing, or use faceValue as weight
-            // Actually BONDS_DATA usually has quantity? Let's check submitAddBond. 
-            // submitAddBond has faceValue. currentPrice. 
-            // Let's strictly use faceValue as volume weight for now.
+    // Group bonds by type
+    const bondsByType = {};
 
-            groups[key].count++;
-            groups[key].totalValue += bond.faceValue;
-            groups[key].weightedYieldSum += bond.yieldToMaturity * bond.faceValue;
-            groups[key].weightedCouponSum += bond.couponRate * bond.faceValue;
-        });
-        return groups;
-    };
+    BONDS_DATA.forEach(bond => {
+        const type = bond.type || 'Other';
+        if (!bondsByType[type]) {
+            bondsByType[type] = [];
+        }
+        bondsByType[type].push(bond);
+    });
 
-    // --- 2. Calculate Metrics ---
-    const processGroups = (groups) => {
-        return Object.entries(groups).map(([name, data]) => ({
-            name,
-            count: data.count,
-            totalValue: data.totalValue,
-            avgYtm: data.weightedYieldSum / data.totalValue,
-            avgCoupon: data.weightedCouponSum / data.totalValue
-        })).sort((a, b) => b.totalValue - a.totalValue); // Sort by allocation size
-    };
+    // Render containers - one per bond type
+    container.innerHTML = Object.entries(bondsByType).map(([type, bonds]) => {
+        // Calculate average YTM for this type
+        const avgYTM = (bonds.reduce((sum, b) => sum + (b.yieldToMaturity || 0), 0) / bonds.length).toFixed(2);
 
-    const byType = processGroups(aggregate(b => b.type));
-    const byIssuer = processGroups(aggregate(b => b.issuer));
-    const byMaturity = processGroups(aggregate(b => {
-        const mat = new Date(b.maturityDate);
-        const now = new Date();
-        const years = (mat - now) / (1000 * 60 * 60 * 24 * 365);
-        if (years < 3) return 'Short Term (<3y)';
-        if (years < 7) return 'Medium Term (3-7y)';
-        return 'Long Term (>7y)';
-    }));
+        // Render individual bonds within this type
+        const bondsList = bonds.map(bond => {
+            const ytm = (bond.yieldToMaturity || 0).toFixed(2);
+            const coupon = (bond.couponRate || 0).toFixed(2);
 
-    // --- 3. Render HTML ---
-    const renderCard = (title, items) => `
-        <div class="col-md-4">
-            <div class="glass-card p-4 h-100">
-                <h3 class="h6 fw-light text-white-90 mb-3 text-uppercase tracking-wider border-bottom border-white-10 pb-2">${title}</h3>
-                <div class="d-flex flex-column gap-3">
-                    ${items.slice(0, 5).map(item => `
+            return `
+                <div class="mb-3 pb-3 border-bottom border-white-10 last-child-no-border">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
                         <div>
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="text-white fw-light small">${item.name}</span>
-                                <span class="text-white-90 small fw-medium">${item.avgYtm.toFixed(2)}% <span class="text-white-30" style="font-size:0.75em">YTM</span></span>
-                            </div>
-                            <div class="progress" style="height: 3px; background: rgba(255,255,255,0.05);">
-                                <div class="progress-bar bg-amber-200" role="progressbar" 
-                                     style="width: ${Math.min((item.avgYtm / 12) * 100, 100)}%; opacity: 0.8;"></div>
-                            </div>
-                            <div class="d-flex justify-content-between mt-1">
-                                <span class="text-white-40 small" style="font-size: 0.7rem;">${item.count} bond${item.count > 1 ? 's' : ''}</span>
-                                <span class="text-white-40 small" style="font-size: 0.7rem;">Avg Cpn: ${item.avgCoupon.toFixed(2)}%</span>
-                            </div>
+                            <div class="text-white fw-light small">${bond.issuer || bond.ticker || 'Unknown'}</div>
+                            <div class="text-white-40" style="font-size: 0.75rem;">${bond.ticker || ''}</div>
                         </div>
-                    `).join('')}
+                        <div class="text-white-90 fw-medium">${ytm}%</div>
+                    </div>
+                    <div class="progress mb-2" style="height: 3px; background: rgba(255,255,255,0.05);">
+                        <div class="progress-bar" style="width: ${Math.min((parseFloat(ytm) / 12) * 100, 100)}%; background: rgba(251, 191, 36, 0.6);"></div>
+                    </div>
+                    <div class="d-flex justify-content-between text-white-40" style="font-size: 0.7rem;">
+                        <span>Coupon: ${coupon}%</span>
+                        <span>Maturity: ${bond.maturityDate ? new Date(bond.maturityDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' }) : 'N/A'}</span>
+                    </div>
                 </div>
-            </div>
-        </div>
-    `;
+            `;
+        }).join('');
 
-    container.innerHTML = `
-        <div class="row g-4">
-            ${renderCard('By Bond Type', byType)}
-            ${renderCard('By Issuer', byIssuer)}
-            ${renderCard('By Maturity', byMaturity)}
-        </div>
-        
-        <!-- Summary Stats Board -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="glass-card p-4 d-flex justify-content-around align-items-center text-center">
-                    <div>
-                        <div class="h2 text-white fw-light mb-0">${(byType.reduce((acc, g) => acc + g.avgYtm * g.totalValue, 0) / byType.reduce((acc, g) => acc + g.totalValue, 0)).toFixed(2)}%</div>
-                        <div class="small text-white-40 text-uppercase tracking-wider">Portfolio Weighted YTM</div>
+        return `
+            <div class="col-md-6 mb-4">
+                <div class="glass-card p-4 h-100" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <!-- Header: Bond Type and Average YTM -->
+                    <div class="d-flex justify-content-between align-items-start mb-3 pb-3 border-bottom border-white-10">
+                        <div>
+                            <h3 class="h5 fw-light text-white-90 mb-1">${type} Bonds</h3>
+                            <p class="text-white-40 small mb-0">${bonds.length} Active Instrument${bonds.length > 1 ? 's' : ''}</p>
+                        </div>
+                        <div class="text-end">
+                            <div class="h2 text-white fw-light mb-0">${avgYTM}%</div>
+                            <div class="text-white-30 small">Avg YTM</div>
+                        </div>
                     </div>
-                    <div style="width: 1px; height: 40px; background: rgba(255,255,255,0.1);"></div>
-                    <div>
-                        <div class="h2 text-white fw-light mb-0">${(byType.reduce((acc, g) => acc + g.avgCoupon * g.totalValue, 0) / byType.reduce((acc, g) => acc + g.totalValue, 0)).toFixed(2)}%</div>
-                        <div class="small text-white-40 text-uppercase tracking-wider">Avg Coupon Rate</div>
+
+                    <!-- Individual Bonds List -->
+                    <div class="bonds-list">
+                        ${bondsList}
                     </div>
                 </div>
             </div>
-        </div>
-    `;
+        `;
+    }).join('');
 }
 
 // Attach to window
@@ -4071,6 +4121,129 @@ function renderBusinessDashboard() {
     let healthStatus = 'Healthy';
     if (profitMargin < 10) healthStatus = 'At Risk';
     else if (profitMargin < 20) healthStatus = 'Stable';
+
+    // 0. Render Chart
+    const chartCtx = document.getElementById('businessRevenueChart');
+    if (chartCtx) {
+        if (window.businessRevenueChartInstance) {
+            window.businessRevenueChartInstance.destroy();
+        }
+
+        // Generate Mock Trend Data (12 Months)
+        const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        // Base monthly values from annual totals (approx)
+        const baseMonthlyRevenue = totalRevenue / 12;
+        const baseMonthlyProfit = totalProfit / 12;
+
+        // Create a realistic-looking curve with some randomness
+        const revenueData = labels.map((_, i) => {
+            // Slowly increasing trend + random noise
+            return baseMonthlyRevenue * (0.8 + (i * 0.05)) * (0.95 + Math.random() * 0.1);
+        });
+
+        const profitData = labels.map((_, i) => {
+            // Profit follows revenue but with variable margin
+            return revenueData[i] * (profitMargin / 100) * (0.9 + Math.random() * 0.2);
+        });
+
+        window.businessRevenueChartInstance = new Chart(chartCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Revenue',
+                        data: revenueData,
+                        borderColor: '#ffffff',
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#ffffff',
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    },
+                    {
+                        label: 'Profit',
+                        data: profitData,
+                        borderColor: '#4ade80', // green-400
+                        backgroundColor: 'rgba(74, 222, 128, 0.05)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#4ade80',
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            color: 'rgba(255, 255, 255, 0.7)',
+                            font: { size: 11, family: "'Inter', sans-serif" },
+                            usePointStyle: true,
+                            boxWidth: 8
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(18, 18, 22, 0.95)',
+                        titleColor: '#fff',
+                        bodyColor: 'rgba(255, 255, 255, 0.8)',
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: true,
+                        callbacks: {
+                            label: function (context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += formatCurrency(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)',
+                            borderColor: 'transparent'
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.4)',
+                            font: { size: 10, family: "'Inter', sans-serif" }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)',
+                            borderColor: 'transparent'
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.4)',
+                            font: { size: 10, family: "'Inter', sans-serif" },
+                            callback: function (value) {
+                                if (value >= 10000000) return '₹' + (value / 10000000).toFixed(1) + 'Cr';
+                                if (value >= 100000) return '₹' + (value / 100000).toFixed(0) + 'L';
+                                return '₹' + value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
 
     // Summary Cards
     const cardsContainer = document.getElementById('business-summary-cards');
@@ -4209,6 +4382,7 @@ function renderBusinessCashFlow() {
     const filterBusiness = document.getElementById('business-cf-filter-business')?.value || 'all';
     const filterType = document.getElementById('business-cf-filter-type')?.value || 'all';
 
+    // Filter transactions
     const filtered = BUSINESS_TRANSACTIONS.filter(tx => {
         const bizMatch = filterBusiness === 'all' || tx.businessId === filterBusiness;
         const typeMatch = filterType === 'all' || tx.type === filterType;
@@ -4218,6 +4392,23 @@ function renderBusinessCashFlow() {
     const container = document.getElementById('business-cf-transactions');
     if (!container) return;
 
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="p-5 text-center text-white-40">No transactions found</div>';
+        return;
+    }
+
+    // Group transactions by business
+    const groupedByBusiness = {};
+    filtered.forEach(tx => {
+        if (!groupedByBusiness[tx.businessId]) {
+            groupedByBusiness[tx.businessId] = {
+                name: tx.businessName || 'Unknown Business',
+                transactions: []
+            };
+        }
+        groupedByBusiness[tx.businessId].transactions.push(tx);
+    });
+
     const typeColors = {
         'Income': 'bg-green-500-10 text-green-400',
         'Expense': 'bg-red-500-10 text-red-400',
@@ -4225,34 +4416,46 @@ function renderBusinessCashFlow() {
         'Transfer': 'bg-purple-500-10 text-purple-400'
     };
 
-    container.innerHTML = filtered.length === 0 ? '<div class="p-5 text-center text-white-40">No transactions found</div>' :
-        filtered.map(tx => {
-            const isPositive = tx.amount > 0;
-            const colorClass = typeColors[tx.type] || 'bg-white-10 text-white-60';
-            return `
-            <div class="p-4 border-bottom border-white-5">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center ${colorClass}" style="width: 40px; height: 40px;">
-                            ${isPositive ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>' :
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 7l-9.2 9.2M7 7v10h10"/></svg>'}
-                        </div>
-                        <div>
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <span class="text-white fw-medium">${tx.businessName}</span>
-                                <span class="badge small ${colorClass}" style="font-size: 0.7rem;">${tx.category}</span>
-                            </div>
-                            <div class="small text-white-40">${new Date(tx.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}${tx.notes ? ' · ' + tx.notes : ''}</div>
-                        </div>
-                    </div>
-                    <div class="text-end">
-                        <div class="h5 mb-0 ${isPositive ? 'text-green-400' : 'text-red-400'}">${isPositive ? '+' : '-'}₹${(Math.abs(tx.amount) / 100000).toFixed(2)}L</div>
-                        <div class="small text-white-40">${tx.type}</div>
-                    </div>
-                </div>
+    // Render cards
+    // Render cards
+    container.innerHTML = Object.values(groupedByBusiness).map(group => `
+        <div class="glass-card mb-4 p-0 overflow-hidden">
+            <div class="p-4 d-flex align-items-center justify-content-between" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                <span class="fw-medium text-white">${group.name}</span>
+                <span class="badge bg-white-5 text-white-40 rounded-pill small px-2" style="font-size: 0.7rem; font-weight: 400;">${group.transactions.length} Entries</span>
             </div>
-            `;
-        }).join('');
+            <div>
+                ${group.transactions.map(tx => {
+        const isPositive = tx.amount > 0;
+        const colorClass = typeColors[tx.type] || 'bg-white-10 text-white-60';
+        const textColor = isPositive ? 'text-green-400' : 'text-red-400';
+
+        return `
+                    <div class="p-4 last:border-0" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center ${colorClass}" style="width: 40px; height: 40px;">
+                                    ${isPositive ?
+                '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>' :
+                '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 7l-9.2 9.2M7 7v10h10"/></svg>'}
+                                </div>
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                         <span class="fw-medium ${textColor}">${tx.category || tx.type}</span>
+                                    </div>
+                                    <div class="small text-white-40">${new Date(tx.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}${tx.notes ? ' · ' + tx.notes : ''}</div>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div class="h6 mb-0 ${textColor}">${isPositive ? '+' : '-'}₹${(Math.abs(tx.amount) / 100000).toFixed(2)}L</div>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+    }).join('')}
+            </div>
+        </div>
+    `).join('');
 }
 
 function renderBusinessStatements() {
@@ -4313,6 +4516,10 @@ function renderBusinessStatements() {
             `;
         }).join('');
     }
+}
+
+function renderBusinessDocumentation() {
+    console.log('Rendering Business Documentation...');
 
     // Grouped Documents by Business
     const docsContainer = document.getElementById('business-documents-grouped');
@@ -4343,26 +4550,49 @@ function renderBusinessStatements() {
             if (bizDocs.length === 0) return;
 
             html += `
-            <div class="mb-4">
-                <h4 class="small text-white-60 mb-3 d-flex align-items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5m-4 0h4"/>
-                    </svg>
-                    ${biz.name}
-                </h4>
-                <div class="row g-3">
+            <div class="mb-5">
+                <!-- Business Long Pill Header -->
+                <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-pill mb-4 w-100" 
+                     style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
+                    <div class="p-1 rounded-circle bg-white-10 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white-60">
+                            <path d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5m-4 0h4"/>
+                        </svg>
+                    </div>
+                    <span class="small fw-medium text-white-70" style="font-size: 0.75rem; letter-spacing: 0.02em;">${biz.name}</span>
+                    <div class="ms-auto pe-1">
+                        <span class="py-1 px-3 rounded-pill bg-white-10 text-white-40" style="font-size: 0.65rem; letter-spacing: 0.05em;">${bizDocs.length} ${bizDocs.length === 1 ? 'FILE' : 'FILES'}</span>
+                    </div>
+                </div>
+
+                <div class="row g-4">
                     ${bizDocs.map(doc => {
                 const colorClass = typeColors[doc.type] || 'bg-white-10 text-white-60';
+
+                // Icon based on type (using global helper)
+                let iconSvg = getFileIcon(doc.fileName || 'file.pdf');
+
                 return `
                         <div class="col-md-4">
-                            <div class="glass-card p-3 h-100 d-flex align-items-start gap-3" style="cursor: pointer; background: rgba(255,255,255,0.02);">
-                                <div class="rounded-2 bg-white-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-white-60"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            <div class="glass-card p-4 h-100 d-flex flex-column group relative" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);">
+                                <div class="d-flex align-items-start justify-content-between mb-4">
+                                    <div class="p-3 rounded-3 ${colorClass}">
+                                        ${iconSvg}
+                                    </div>
+                                    <button class="btn btn-link text-white-50 p-0 hover-text-danger transition-colors" onclick="event.stopPropagation(); deleteBusinessDocument('${doc.id}')" title="Delete Document">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
                                 </div>
-                                <div class="flex-grow-1 min-width-0">
-                                    <h5 class="small text-white mb-1 text-truncate">${doc.name}</h5>
-                                    <span class="badge small ${colorClass}" style="font-size: 0.65rem;">${doc.type}</span>
-                                </div>
+                                <h3 class="h6 fw-medium text-white mb-1 text-truncate" title="${doc.name}">${doc.name}</h3>
+                                <p class="small text-white-70 mb-1 text-truncate" style="font-size: 0.75rem;">${doc.fileName || 'No file attached'}</p>
+                                <p class="small text-white-50 mb-4" style="font-size: 0.7rem;">${doc.fileSize ? formatFileSize(doc.fileSize) : 'Size N/A'} • ${doc.date}</p>
+                                
+                                <button onclick="window.open('${doc.url}', '_blank')" class="btn w-100 py-2 small rounded bg-white bg-opacity-10 hover-bg-white hover-bg-opacity-20 text-white-50 transition-colors mt-auto">
+                                    <span class="d-flex align-items-center justify-content-center gap-2">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                        View Document
+                                    </span>
+                                </button>
                             </div>
                         </div>
                         `;
@@ -4467,10 +4697,109 @@ function openBusinessDetailModal(businessId) {
                 <div class="col-md-6"><div class="glass-card p-4" style="background: rgba(255,255,255,0.02);"><div class="small text-white-40 mb-2">Profit Margin</div><div class="h3 text-white fw-light">${profitMargin.toFixed(1)}%</div></div></div>
                 <div class="col-md-6"><div class="glass-card p-4" style="background: rgba(255,255,255,0.02);"><div class="small text-white-40 mb-2">Monthly Cash Flow</div><div class="h3 text-white fw-light">₹${(biz.cashFlow / 100000).toFixed(1)}L</div></div></div>
             </div>
+
+            <!-- Remove Button -->
+            <div class="mt-5 pt-4 border-top border-white border-opacity-10 d-flex justify-content-center">
+                <button onclick="confirmRemoveBusiness('${biz.id}')" class="btn text-danger bg-danger bg-opacity-10 border border-danger border-opacity-25 px-4 py-2 hover-bg-opacity-20 transition-all rounded-pill d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                    <span>Remove Business</span>
+                </button>
+            </div>
         </div>
     `;
     modal.style.display = 'flex';
     modal.onclick = closeBusinessDetailModal;
+}
+
+// Remove Business Logic
+function confirmRemoveBusiness(businessId) {
+    showConfirmationModal(
+        'Remove Business?',
+        'Are you sure you want to remove this business? This action cannot be undone.',
+        'Delete',
+        () => removeBusiness(businessId)
+    );
+}
+
+// Custom Glass Confirmation Modal
+function showConfirmationModal(title, message, confirmText, onConfirm) {
+    let modal = document.getElementById('confirmation-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'confirmation-modal';
+        modal.className = 'modal-overlay';
+        modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 2rem;';
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+        <div class="glass-card p-4" style="max-width: 400px; width: 100%; border: 1px solid rgba(255,255,255,0.1); background: rgba(20, 20, 24, 0.9);">
+            <div class="d-flex flex-column align-items-center text-center mb-4">
+                <div class="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-danger"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+                <h3 class="h5 text-white fw-medium mb-2">${title}</h3>
+                <p class="text-white-60 small mb-0">${message}</p>
+            </div>
+            <div class="d-flex gap-3">
+                <button id="confirm-modal-cancel" class="btn glass-button flex-fill py-2">Cancel</button>
+                <button id="confirm-modal-action" class="btn btn-danger flex-fill py-2">${confirmText}</button>
+            </div>
+        </div>
+    `;
+
+    modal.style.display = 'flex';
+
+    // Event Listeners
+    const cancelBtn = document.getElementById('confirm-modal-cancel');
+    const actionBtn = document.getElementById('confirm-modal-action');
+
+    const closeModal = () => {
+        modal.style.display = 'none';
+        cancelBtn.replaceWith(cancelBtn.cloneNode(true)); // cleanup listeners
+        actionBtn.replaceWith(actionBtn.cloneNode(true));
+    };
+
+    cancelBtn.onclick = closeModal;
+    actionBtn.onclick = async () => {
+        // Show loading state on button
+        actionBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        actionBtn.disabled = true;
+
+        try {
+            await onConfirm();
+        } catch (e) {
+            console.error(e);
+        } finally {
+            closeModal();
+        }
+    };
+
+    // Close on click outside
+    modal.onclick = (e) => {
+        if (e.target === modal) closeModal();
+    };
+}
+
+async function removeBusiness(businessId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/business/${businessId}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+
+        if (response.ok) {
+            closeBusinessDetailModal();
+            showToast('Business removed successfully', 'success');
+            await fetchBusinessData(); // Refresh data
+        } else {
+            const error = await response.json();
+            showToast(error.detail || 'Failed to remove business', 'error');
+        }
+    } catch (error) {
+        console.error('Error removing business:', error);
+        showToast('Error connecting to server', 'error');
+    }
 }
 
 function closeBusinessDetailModal() {
@@ -4483,6 +4812,7 @@ window.renderBusinessDashboard = renderBusinessDashboard;
 window.renderBusinessVentures = renderBusinessVentures;
 window.renderBusinessCashFlow = renderBusinessCashFlow;
 window.renderBusinessStatements = renderBusinessStatements;
+window.renderBusinessDocumentation = renderBusinessDocumentation;
 window.renderBusinessAIInsights = renderBusinessAIInsights;
 window.openBusinessDetailModal = openBusinessDetailModal;
 window.closeBusinessDetailModal = closeBusinessDetailModal;
@@ -4523,7 +4853,7 @@ function updateMarginDisplay() {
     }
 }
 
-function submitNewBusiness(event) {
+async function submitNewBusiness(event) {
     event.preventDefault();
 
     // Get form values
@@ -4538,87 +4868,258 @@ function submitNewBusiness(event) {
     const status = document.getElementById('biz-status').value;
     const founded = document.getElementById('biz-founded').value || null;
 
-    // Generate unique ID
-    const newId = 'biz-' + Date.now();
-
-    // Create new business object
-    const newBusiness = {
-        id: newId,
+    // Prepare payload for API (snake_case)
+    const payload = {
         name: name,
         industry: industry,
         description: description,
         ownership: ownership,
-        ownershipType: ownershipType,
         valuation: valuation,
-        annualRevenue: monthlyRevenue * 12,
-        annualProfit: monthlyProfit * 12,
-        monthlyRevenue: monthlyRevenue,
-        monthlyProfit: monthlyProfit,
-        cashFlow: monthlyProfit * 0.8, // Assume 80% of profit is cash flow
+        annual_revenue: monthlyRevenue * 12,
+        annual_profit: monthlyProfit * 12,
+        monthly_revenue: monthlyRevenue,
+        monthly_profit: monthlyProfit,
+        cash_flow: monthlyProfit * 0.8, // Assume 80% of profit is cash flow
         status: status,
         founded: founded
+        // Note: ownershipType is collected but not currently in backend schema
     };
 
-    // Add to BUSINESS_DATA
-    BUSINESS_DATA.push(newBusiness);
+    try {
+        const response = await fetch(`${API_BASE_URL}/business/`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(payload)
+        });
 
-    // Create initial transaction for the new business
-    BUSINESS_TRANSACTIONS.push({
-        id: 'cf-' + Date.now(),
-        businessId: newId,
-        businessName: name,
-        date: new Date().toISOString().split('T')[0],
-        amount: monthlyRevenue,
-        type: 'Income',
-        category: 'Business Revenue',
-        notes: 'Initial monthly revenue entry'
-    });
+        if (response.ok) {
+            const newBusiness = await response.json();
 
-    // Create stub P&L and Balance Sheet
-    BUSINESS_STATEMENTS.pl.push({
-        businessId: newId,
-        period: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-        revenue: monthlyRevenue,
-        expenses: monthlyRevenue - monthlyProfit,
-        netProfit: monthlyProfit,
-        expenseBreakdown: { operations: monthlyRevenue - monthlyProfit }
-    });
+            // Map backend response back to frontend format for local use
+            // The backend returns snake_case, frontend uses camelCase for some internal logic/display if consistent
+            // But BUSINESS_DATA in fetchBusinessData maps snake to camel, so let's match that structure
+            const mappedBusiness = {
+                id: newBusiness.id,
+                name: newBusiness.name,
+                industry: newBusiness.industry,
+                description: newBusiness.description,
+                ownership: newBusiness.ownership,
+                // ownershipType: ownershipType, // Not returned by backend, but we have it locally if needed
+                valuation: newBusiness.valuation,
+                annualRevenue: newBusiness.annual_revenue,
+                annualProfit: newBusiness.annual_profit,
+                monthlyRevenue: newBusiness.monthly_revenue,
+                monthlyProfit: newBusiness.monthly_profit,
+                cashFlow: newBusiness.cash_flow,
+                status: newBusiness.status,
+                founded: newBusiness.founded
+            };
 
-    BUSINESS_STATEMENTS.bs.push({
-        businessId: newId,
-        assets: { cash: monthlyProfit * 2, inventory: 0, equipment: valuation * 0.1 },
-        liabilities: { loans: 0, payables: 0 },
-        equity: monthlyProfit * 2 + valuation * 0.1
-    });
+            // Add to BUSINESS_DATA
+            BUSINESS_DATA.push(mappedBusiness);
 
-    // Create AI insight for new business
-    BUSINESS_AI_INSIGHTS.push({
-        id: 'ins-' + Date.now(),
-        businessId: newId,
-        type: 'New Business',
-        severity: 'info',
-        title: `${name} Added to Portfolio`,
-        description: `New ${industry} business with ${ownership}% ownership and ₹${(valuation / 10000000).toFixed(2)}Cr valuation added.`,
-        date: new Date().toISOString().split('T')[0]
-    });
+            // Create initial transaction for the new business
+            // Note: In a real app, maybe the backend creates this automatically? 
+            // For now, we'll keep the frontend creating it but it should probably also be sending to API?
+            // The original code pushed to local BUSINESS_TRANSACTIONS. 
+            // Let's create it via API as well to ensure it persists.
 
-    // Close modal and re-render all sections
-    closeAddBusinessModal();
+            const txPayload = {
+                business_id: mappedBusiness.id,
+                date: new Date().toISOString().split('T')[0],
+                amount: mappedBusiness.monthlyRevenue,
+                type: 'Income',
+                category: 'Business Revenue',
+                notes: 'Initial monthly revenue entry'
+            };
 
-    // Re-render all business sections
-    renderBusinessDashboard();
-    renderBusinessVentures();
-    renderBusinessCashFlow();
-    renderBusinessStatements();
-    renderBusinessAIInsights();
+            // Web-fire and forget interaction for the transaction to speed up UI?
+            // Or await it. Let's await to be safe.
+            try {
+                await fetch(`${API_BASE_URL}/business/transactions`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(txPayload)
+                });
 
-    console.log('New business added:', newBusiness);
+                // We should technically re-fetch all transactions or push to local list
+                // For speed, let's push a stub to local list matching frontend format
+                BUSINESS_TRANSACTIONS.push({
+                    id: 'cf-' + Date.now(), // Temporary ID until refresh
+                    businessId: mappedBusiness.id,
+                    businessName: mappedBusiness.name,
+                    date: txPayload.date,
+                    amount: txPayload.amount,
+                    type: txPayload.type,
+                    category: txPayload.category,
+                    notes: txPayload.notes
+                });
+
+            } catch (txErr) {
+                console.error("Failed to create initial transaction", txErr);
+            }
+
+            // Create stub P&L and Balance Sheet (Local only for now, assuming these are derived on backend or hardcoded stubs)
+            BUSINESS_STATEMENTS.pl.push({
+                businessId: mappedBusiness.id,
+                period: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+                revenue: mappedBusiness.monthlyRevenue,
+                expenses: mappedBusiness.monthlyRevenue - mappedBusiness.monthlyProfit,
+                netProfit: mappedBusiness.monthlyProfit,
+                expenseBreakdown: { operations: mappedBusiness.monthlyRevenue - mappedBusiness.monthlyProfit }
+            });
+
+            BUSINESS_STATEMENTS.bs.push({
+                businessId: mappedBusiness.id,
+                assets: { cash: mappedBusiness.monthlyProfit * 2, inventory: 0, equipment: mappedBusiness.valuation * 0.1 },
+                liabilities: { loans: 0, payables: 0 },
+                equity: mappedBusiness.monthlyProfit * 2 + mappedBusiness.valuation * 0.1
+            });
+
+            // Create AI insight for new business (Local only for now)
+            BUSINESS_AI_INSIGHTS.push({
+                id: 'ins-' + Date.now(),
+                businessId: mappedBusiness.id,
+                type: 'New Business',
+                severity: 'info',
+                title: `${mappedBusiness.name} Added to Portfolio`,
+                description: `New ${mappedBusiness.industry} business with ${mappedBusiness.ownership}% ownership and ₹${(mappedBusiness.valuation / 10000000).toFixed(2)}Cr valuation added.`,
+                date: new Date().toISOString().split('T')[0]
+            });
+
+            showToast("Business added successfully!", "success");
+
+            // Close modal and re-render all sections
+            closeAddBusinessModal();
+
+            // Re-render all business sections
+            renderBusinessDashboard();
+            renderBusinessVentures();
+            renderBusinessCashFlow();
+            renderBusinessStatements();
+            renderBusinessAIInsights();
+
+            console.log('New business added:', mappedBusiness);
+
+        } else {
+            const errorData = await response.json();
+            showToast(`Error adding business: ${errorData.detail || 'Unknown error'}`, 'error');
+        }
+
+    } catch (error) {
+        console.error('Error submitting new business:', error);
+        showToast("Failed to connect to server", "error");
+    }
 }
 
 // Expose Add Business modal functions
 window.openAddBusinessModal = openAddBusinessModal;
 window.closeAddBusinessModal = closeAddBusinessModal;
 window.submitNewBusiness = submitNewBusiness;
+
+// Expose Add Business modal functions
+window.openAddBusinessModal = openAddBusinessModal;
+window.closeAddBusinessModal = closeAddBusinessModal;
+window.submitNewBusiness = submitNewBusiness;
+
+// ==================== ADD TRANSACTION MODAL ====================
+
+function openAddTransactionModal() {
+    const modal = document.getElementById('add-transaction-modal');
+    if (modal) {
+        modal.style.display = 'block';
+        modal.classList.remove('hidden');
+        document.getElementById('addTransactionForm')?.reset();
+
+        // Set default date to today
+        const dateInput = document.getElementById('tx-date');
+        if (dateInput) {
+            dateInput.value = new Date().toISOString().split('T')[0];
+        }
+
+        // Populate business dropdown
+        const businessSelect = document.getElementById('tx-business');
+        if (businessSelect) {
+            businessSelect.innerHTML = '<option value="" class="text-dark">Select Business</option>';
+            BUSINESS_DATA.forEach(biz => {
+                const opt = document.createElement('option');
+                opt.value = biz.id;
+                opt.textContent = biz.name;
+                opt.className = 'text-dark';
+                businessSelect.appendChild(opt);
+            });
+        }
+    }
+}
+
+function closeAddTransactionModal() {
+    const modal = document.getElementById('add-transaction-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+    }
+}
+
+async function submitNewTransaction(event) {
+    event.preventDefault();
+
+    const businessId = document.getElementById('tx-business').value;
+    const type = document.querySelector('input[name="tx-type"]:checked').value;
+    const amount = parseFloat(document.getElementById('tx-amount').value);
+    const date = document.getElementById('tx-date').value;
+    const notes = document.getElementById('tx-notes').value;
+    const category = document.getElementById('tx-category').value;
+
+    // Find business name for local update if needed, though we reload from API
+    const biz = BUSINESS_DATA.find(b => b.id === businessId);
+    if (!biz) {
+        showToast("Please select a valid business", "error");
+        return;
+    }
+
+    // Adjust amount sign based on type
+    let finalAmount = Math.abs(amount);
+    if (type === 'Expense' || type === 'Transfer') {
+        finalAmount = -finalAmount;
+    }
+
+    const payload = {
+        business_id: businessId,
+        business_name: biz.name, // API might not strictly need this if it looks up by ID, but good for consistency
+        date: date,
+        amount: finalAmount,
+        type: type,
+        category: category,
+        notes: notes
+    };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/business/transactions`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            showToast("Transaction added successfully!", "success");
+            closeAddTransactionModal();
+
+            // Refresh Data
+            // We re-fetch everything to ensure P&L and other stats derived on backend are accurate
+            fetchBusinessData();
+        } else {
+            const error = await response.json();
+            showToast(`Error adding transaction: ${error.detail || 'Unknown error'}`, 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showToast("Failed to connect to server", "error");
+    }
+}
+
+window.openAddTransactionModal = openAddTransactionModal;
+window.closeAddTransactionModal = closeAddTransactionModal;
+window.submitNewTransaction = submitNewTransaction;
 
 // ==================== ADD DOCUMENT MODAL ====================
 
@@ -4658,39 +5159,95 @@ function closeAddDocumentModal() {
 function submitNewDocument(event) {
     event.preventDefault();
 
-    const title = document.getElementById('doc-title').value.trim();
     const businessId = document.getElementById('doc-business').value;
-    const docType = document.getElementById('doc-type').value;
-    const notes = document.getElementById('doc-notes').value.trim();
+    let docName = document.getElementById('doc-name').value;
+    const description = document.getElementById('doc-description').value.trim();
 
-    if (!title || !businessId || !docType) {
+    // Handle "Other" custom name
+    if (docName === 'Other') {
+        const customName = document.getElementById('doc-custom-name').value.trim();
+        if (customName) {
+            docName = customName;
+        } else {
+            showToast('Please specify the document name.', 'error');
+            return;
+        }
+    }
+
+    if (!businessId || !docName) {
         showToast('Please fill in all required fields.', 'error');
         return;
     }
+
+    const fileInput = document.getElementById('doc-file');
+    const file = fileInput ? fileInput.files[0] : null;
+    const fileUrl = file ? URL.createObjectURL(file) : '#';
+    const fileName = file ? file.name : 'Unknown';
+    const fileSize = file ? file.size : 0;
 
     // Create new document
     const newDoc = {
         id: 'doc-' + Date.now(),
         businessId: businessId,
-        name: title,
-        type: docType,
+        name: docName, // Use the selected type/name or custom name
+        type: document.getElementById('doc-name').value, // Keep original type for classification if needed (or just use name)
+        fileName: fileName,
+        fileSize: fileSize,
         date: new Date().toISOString().split('T')[0],
-        notes: notes
+        notes: description,
+        url: fileUrl
     };
 
-    // Add to BUSINESS_DOCUMENTS
     BUSINESS_DOCUMENTS.push(newDoc);
+
+    // Persist to localStorage
+    localStorage.setItem('aether_business_documents', JSON.stringify(BUSINESS_DOCUMENTS));
 
     // Close modal and re-render
     closeAddDocumentModal();
-    renderBusinessStatements();
+    renderBusinessDocumentation();
 
     console.log('New document added:', newDoc);
+    showToast('Document added successfully', 'success');
+}
+
+// Toggle Custom Document Name Input
+function toggleCustomDocName() {
+    const docNameSelect = document.getElementById('doc-name');
+    const customNameWrapper = document.getElementById('doc-custom-name-wrapper');
+    const customNameInput = document.getElementById('doc-custom-name');
+
+    if (docNameSelect && customNameWrapper) {
+        if (docNameSelect.value === 'Other') {
+            customNameWrapper.style.display = 'block';
+            customNameWrapper.classList.remove('hidden');
+            customNameInput.required = true;
+        } else {
+            customNameWrapper.style.display = 'none';
+            customNameWrapper.classList.add('hidden');
+            customNameInput.required = false;
+            customNameInput.value = ''; // Clear value
+        }
+    }
+}
+
+function deleteBusinessDocument(docId) {
+    if (confirm('Are you sure you want to delete this document?')) {
+        BUSINESS_DOCUMENTS = BUSINESS_DOCUMENTS.filter(d => d.id !== docId);
+
+        // Persist to localStorage
+        localStorage.setItem('aether_business_documents', JSON.stringify(BUSINESS_DOCUMENTS));
+
+        renderBusinessDocumentation();
+        showToast('Document removed', 'info');
+    }
 }
 
 window.openAddDocumentModal = openAddDocumentModal;
 window.closeAddDocumentModal = closeAddDocumentModal;
 window.submitNewDocument = submitNewDocument;
+window.deleteBusinessDocument = deleteBusinessDocument;
+window.toggleCustomDocName = toggleCustomDocName;
 
 // ==================== NETWORK CORRELATION ANIMATION ====================
 // Living constellation visualization with floating nodes, parallax, and glow
@@ -4731,6 +5288,11 @@ class NetworkCorrelationAnimation {
         const rect = this.canvas.getBoundingClientRect();
         this.width = rect.width * this.dpr;
         this.height = rect.height * this.dpr;
+
+        console.log('NetworkGraph: setupCanvas', { w: rect.width, h: rect.height, dpr: this.dpr });
+
+        if (rect.width === 0 || rect.height === 0) return;
+
         this.canvas.width = this.width;
         this.canvas.height = this.height;
         this.ctx.scale(this.dpr, this.dpr);
@@ -4754,7 +5316,21 @@ class NetworkCorrelationAnimation {
             this.hoveredNode = null;
         });
 
-        window.addEventListener('resize', () => this.setupCanvas());
+        // Use ResizeObserver for robust layout handling (handles display:none -> block transitions)
+        this.resizeObserver = new ResizeObserver(() => {
+            console.log('NetworkGraph: ResizeObserver triggered');
+            this.setupCanvas();
+        });
+        this.resizeObserver.observe(container);
+    }
+
+    destroy() {
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+        }
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+        }
     }
 
     checkHover() {
@@ -4771,13 +5347,17 @@ class NetworkCorrelationAnimation {
     }
 
     animate() {
+        if (!this.ctx) return;
+        this.animationId = requestAnimationFrame(() => this.animate());
+
         const time = performance.now() - this.startTime;
         this.update(time);
         this.draw(time);
-        this.animationId = requestAnimationFrame(() => this.animate());
     }
 
     update(time) {
+        if (!this.displayWidth || !this.displayHeight) return;
+
         const centerX = this.displayWidth / 2;
         const centerY = this.displayHeight / 2;
 
@@ -4807,6 +5387,12 @@ class NetworkCorrelationAnimation {
     }
 
     draw(time) {
+        if (!this.displayWidth || !this.displayHeight) {
+            // throttle log
+            if (Math.floor(time / 1000) % 2 === 0 && Math.random() < 0.05) console.log('NetworkGraph: Skipping draw, zero dimensions');
+            return;
+        }
+
         const ctx = this.ctx;
         ctx.clearRect(0, 0, this.displayWidth, this.displayHeight);
 
@@ -4903,38 +5489,4 @@ class NetworkCorrelationAnimation {
         ctx.fillText(node.id, x, y);
         ctx.shadowBlur = 0;
     }
-
-    destroy() {
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId);
-        }
-    }
 }
-
-// Initialize animation when crypto section becomes visible
-let networkAnimation = null;
-
-function initNetworkCorrelation() {
-    const canvas = document.getElementById('networkCorrelationCanvas');
-    if (canvas && !networkAnimation) {
-        networkAnimation = new NetworkCorrelationAnimation('networkCorrelationCanvas');
-    }
-}
-
-// Hook into crypto section activation
-const originalSwitchSource = window.switchSource;
-window.switchSource = function (source) {
-    if (originalSwitchSource) originalSwitchSource(source);
-    if (source === 'crypto') {
-        setTimeout(initNetworkCorrelation, 100);
-    }
-};
-
-// Also init if crypto is already active on page load
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        if (document.querySelector('.module-tab[data-source="crypto"].active')) {
-            initNetworkCorrelation();
-        }
-    }, 500);
-});
