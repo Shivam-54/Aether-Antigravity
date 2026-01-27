@@ -74,6 +74,31 @@ function renderSharesOverview() {
                 </div>
             </div>
 
+            <!-- Charts Grid -->
+            <div class="row g-4">
+                <!-- Sector Allocation Chart (Left) -->
+                <div class="col-lg-6">
+                    <div class="rounded-4 overflow-hidden position-relative p-4 h-100" 
+                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);">
+                        <h3 class="small fw-medium text-white-70 mb-4">Sector Allocation</h3>
+                        <div style="height: 250px; width: 100%;">
+                            <canvas id="sharesSectorChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Holdings Chart (Right) -->
+                <div class="col-lg-6">
+                    <div class="rounded-4 overflow-hidden position-relative p-4 h-100" 
+                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);">
+                        <h3 class="small fw-medium text-white-70 mb-4">Top Holdings (by Value)</h3>
+                        <div style="height: 250px; width: 100%;">
+                            <canvas id="sharesTopHoldingsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Metrics Grid -->
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3">
                 <!-- Total Value -->
@@ -144,6 +169,131 @@ function renderSharesOverview() {
     `;
 
     container.innerHTML = overviewHtml;
+
+    // --- RENDER SECTOR CHART ---
+    // 1. Calculate Sector Counts
+    const sectorCounts = {};
+    SHARES_DATA.holdings.filter(s => s.status === 'active').forEach(share => {
+        const sector = share.sector || 'Unclassified';
+        sectorCounts[sector] = (sectorCounts[sector] || 0) + 1;
+    });
+
+    const labels = Object.keys(sectorCounts);
+    const data = Object.values(sectorCounts);
+
+    // 2. Render Sector Chart if data exists
+    const ctx = document.getElementById('sharesSectorChart');
+    if (ctx && labels.length > 0) {
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: [
+                        'rgba(255, 255, 255, 0.9)',
+                        'rgba(255, 255, 255, 0.5)',
+                        'rgba(255, 255, 255, 0.2)',
+                        'rgba(255, 215, 0, 0.4)', // Gold-ish
+                        'rgba(255, 255, 255, 0.1)'
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: 'rgba(255, 255, 255, 0.7)',
+                            font: { family: 'Inter', size: 11 },
+                            boxWidth: 10,
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        padding: 12,
+                        cornerRadius: 8,
+                        displayColors: true
+                    }
+                }
+            }
+        });
+    }
+
+    // --- RENDER TOP HOLDINGS CHART ---
+    const topHoldings = SHARES_DATA.holdings
+        .filter(s => s.status === 'active')
+        .sort((a, b) => b.total_value - a.total_value)
+        .slice(0, 5);
+
+    const holdingLabels = topHoldings.map(s => s.symbol);
+    const holdingValues = topHoldings.map(s => s.total_value);
+
+    const ctxHoldings = document.getElementById('sharesTopHoldingsChart');
+    if (ctxHoldings && holdingLabels.length > 0) {
+        new Chart(ctxHoldings, {
+            type: 'bar',
+            data: {
+                labels: holdingLabels,
+                datasets: [{
+                    label: 'Total Value (₹)',
+                    data: holdingValues,
+                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                    borderRadius: 4,
+                    barThickness: 20
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Horizontal Bar Chart
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        padding: 12,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function (context) {
+                                return '₹' + context.raw.toLocaleString('en-IN');
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.4)',
+                            font: { family: 'Inter', size: 10 },
+                            callback: function (value) {
+                                return '₹' + (value / 1000).toFixed(0) + 'k';
+                            }
+                        },
+                        border: { display: false }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.8)',
+                            font: { family: 'Inter', size: 11 }
+                        },
+                        border: { display: false }
+                    }
+                }
+            }
+        });
+    }
 }
 
 // Render Shares Holdings
@@ -158,134 +308,131 @@ function renderSharesHoldings() {
         share.status === currentSharesFilter
     );
 
-    // Build the full holdings section with card, header, and table
-    let holdingsHtml = `
-        <div class="glass-premium p-4">
-            <!-- Card Header -->
-            <div class="d-flex justify-content-between align-items-start mb-4">
-                <div>
-                    <h3 class="h5 fw-medium text-white mb-1">Portfolio Holdings</h3>
-                    <p class="small text-white-50 mb-0">Detailed breakdown of your stock holdings</p>
-                </div>
-                <div class="d-flex align-items-center gap-3">
-                    <!-- Active/Sold Filter -->
-                    <div class="module-tabs">
-                        <button id="filter-active-shares" 
-                            class="module-tab ${currentSharesFilter === 'active' ? 'active' : ''}"
-                            onclick="filterShares('active')">Active (${activeCount})</button>
-                        <button id="filter-sold-shares" 
-                            class="module-tab ${currentSharesFilter === 'sold' ? 'active' : ''}"
-                            onclick="filterShares('sold')">Sold (${soldCount})</button>
-                    </div>
-                    
-                    <!-- Refresh Button Container -->
-                    <div class="d-flex flex-column align-items-center gap-1">
-                        <button onclick="refreshSharePrices()" class="btn px-3 py-2 d-flex align-items-center gap-2" 
-                            style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: rgba(255,255,255,0.7);">
-                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                            </svg>
-                            <span class="small">Refresh</span>
-                        </button>
-                        <span class="text-white-30" style="font-size: 10px;">Just now</span>
-                    </div>
-
-                    <!-- Add Share Button -->
-                    <button onclick="openAddShareModal()" class="btn-glass-add" 
-                        style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; color: white; padding: 10px 16px; display: flex; align-items: center; gap: 8px; box-shadow: 0 0 15px rgba(255,255,255,0.05);">
-                        <span>+</span>
-                        <span class="small">Add Share</span>
-                    </button>
-                </div>
+    // 1. Header Section (Title + Controls)
+    let headerHtml = `
+        <div class="d-flex justify-content-between align-items-end mb-3">
+            <div>
+                <h3 class="h5 fw-light text-white-90 mb-1">Portfolio Holdings</h3>
             </div>
+            <div class="d-flex align-items-center gap-3">
+                <!-- Active/Sold Filter -->
+                <div class="module-tabs">
+                    <button id="filter-active-shares" 
+                        class="module-tab ${currentSharesFilter === 'active' ? 'active' : ''}"
+                        onclick="filterShares('active')">Active (${activeCount})</button>
+                    <button id="filter-sold-shares" 
+                        class="module-tab ${currentSharesFilter === 'sold' ? 'active' : ''}"
+                        onclick="filterShares('sold')">Sold (${soldCount})</button>
+                </div>
+                
+                <!-- Refresh Button -->
+                <button onclick="refreshSharePrices()" class="btn px-3 py-2 d-flex align-items-center gap-2" 
+                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: rgba(255,255,255,0.7);">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    <span class="small">Refresh</span>
+                </button>
+
+                <!-- Add Share Button -->
+                <button onclick="openAddShareModal()" class="btn px-3 py-2 rounded-pill d-flex align-items-center gap-2 transition-all hover-scale-105"
+                    style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white;">
+                    <span class="fs-6 fw-light">+</span>
+                    <span>Add Share</span>
+                </button>
+            </div>
+        </div>
     `;
+
+    // 2. Table Section
+    let tableHtml = `<div class="glass-panel overflow-hidden p-0">`;
 
     if (filteredShares.length === 0) {
-        holdingsHtml += `
+        tableHtml += `
             <div class="py-5 text-center">
-                <div class="mb-3 text-white-50">No ${currentSharesFilter} shares found.</div>
+                <div class="mb-3">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-white bg-opacity-5 rounded-circle" style="width: 64px; height: 64px;">
+                        <svg width="32" height="32" fill="none" stroke="rgba(255,255,255,0.3)" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="mb-1 text-white-50">No ${currentSharesFilter} shares found</div>
                 <p class="small text-white-30">
-                    ${currentSharesFilter === 'active' ? 'Add your first share to start tracking your equity portfolio.' : 'Sold shares will appear here once you sell shares from your active holdings.'}
+                    ${currentSharesFilter === 'active' ? 'Add your first share to track performance.' : 'Sold shares will appear here.'}
                 </p>
+            </div>`;
+    } else {
+        // List Header
+        tableHtml += `
+            <div class="d-flex w-100 p-3 border-bottom border-white border-opacity-10 text-white-50 small text-uppercase">
+                <div style="width: 22%">Company</div>
+                <div style="width: 10%">Sector</div>
+                <div style="width: 8%">Quantity</div>
+                <div style="width: 11%">Avg Buy Price</div>
+                <div style="width: 11%">${currentSharesFilter === 'sold' ? 'Sale Price' : 'Current Price'}</div>
+                <div style="width: 12%">Total Value</div>
+                <div style="width: 14%">Gain/Loss</div>
+                <div class="text-end" style="width: 8%">Actions</div>
             </div>
-        </div>`;
-        container.innerHTML = holdingsHtml;
-        return;
-    }
+        `;
 
-    // Table Header
-    holdingsHtml += `
-        <div class="table-responsive">
-            <table class="table table-borderless align-middle mb-0" style="min-width: 800px; background: transparent;">
-                <thead style="background: transparent;">
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); background: transparent;">
-                        <th class="text-white-40 small fw-normal py-3" style="font-size: 0.7rem; letter-spacing: 0.05em; background: transparent;">COMPANY</th>
-                        <th class="text-white-40 small fw-normal py-3" style="font-size: 0.7rem; letter-spacing: 0.05em; background: transparent;">SECTOR</th>
-                        <th class="text-white-40 small fw-normal py-3" style="font-size: 0.7rem; letter-spacing: 0.05em; background: transparent;">QUANTITY</th>
-                        <th class="text-white-40 small fw-normal py-3" style="font-size: 0.7rem; letter-spacing: 0.05em; background: transparent;">AVG BUY PRICE</th>
-                        <th class="text-white-40 small fw-normal py-3" style="font-size: 0.7rem; letter-spacing: 0.05em; background: transparent;">${currentSharesFilter === 'sold' ? 'SALE PRICE' : 'CURRENT PRICE'}</th>
-                        <th class="text-white-40 small fw-normal py-3" style="font-size: 0.7rem; letter-spacing: 0.05em; background: transparent;">TOTAL VALUE</th>
-                        <th class="text-white-40 small fw-normal py-3" style="font-size: 0.7rem; letter-spacing: 0.05em; background: transparent;">GAIN/LOSS</th>
-                        <th class="text-white-40 small fw-normal py-3 text-end" style="font-size: 0.7rem; letter-spacing: 0.05em; background: transparent;">ACTIONS</th>
-                    </tr>
-                </thead>
-                <tbody style="background: transparent;">
-    `;
+        // List Rows
+        filteredShares.forEach(share => {
+            const gainLoss = currentSharesFilter === 'sold' && share.profit_loss !== null
+                ? share.profit_loss
+                : share.gain_loss;
+            const gainLossPercent = currentSharesFilter === 'sold' && share.sale_total_value && share.total_invested
+                ? ((share.profit_loss / share.total_invested) * 100)
+                : share.gain_loss_percent;
+            const currentPrice = currentSharesFilter === 'sold' && share.sale_price ? share.sale_price : share.current_price;
+            const totalValue = currentSharesFilter === 'sold' && share.sale_total_value ? share.sale_total_value : share.total_value;
 
-    // Table Rows
-    filteredShares.forEach(share => {
-        const gainLoss = currentSharesFilter === 'sold' && share.profit_loss !== null
-            ? share.profit_loss
-            : share.gain_loss;
-        const gainLossPercent = currentSharesFilter === 'sold' && share.profit_loss !== null
-            ? (share.sale_total_value && share.total_invested ? ((share.profit_loss / share.total_invested) * 100) : 0)
-            : share.gain_loss_percent;
-        const currentPrice = currentSharesFilter === 'sold' && share.sale_price ? share.sale_price : share.current_price;
-        const totalValue = currentSharesFilter === 'sold' && share.sale_total_value ? share.sale_total_value : share.total_value;
-
-        holdingsHtml += `
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); background: transparent;">
-                <!-- Company -->
-                <td class="py-3" style="background: transparent;">
+            tableHtml += `
+            <div class="d-flex w-100 p-3 text-white-70 small align-items-center holding-row" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <!-- Company (25%) -->
+                <div style="width: 25%">
                     <div class="d-flex align-items-center gap-3">
                         <div class="d-flex align-items-center justify-content-center rounded-circle" 
-                            style="width: 36px; height: 36px; background: rgba(255,255,255,0.1);">
+                            style="width: 36px; height: 36px; background: rgba(255,255,255,0.1); flex-shrink: 0;">
                             <span class="fw-bold text-white-70 small">${share.symbol.substring(0, 2).toUpperCase()}</span>
                         </div>
-                        <div>
-                            <div class="text-white fw-medium">${share.company_name.length > 25 ? share.company_name.substring(0, 25) + '...' : share.company_name}</div>
+                        <div class="overflow-hidden">
+                            <div class="text-white fw-medium" title="${share.company_name}">
+                                ${share.company_name.length > 20 ? share.company_name.substring(0, 20) + '...' : share.company_name}
+                            </div>
                             <div class="text-white-40 small">${share.symbol}</div>
                         </div>
                     </div>
-                </td>
-                <!-- Sector -->
-                <td class="py-3 text-white-70" style="background: transparent;">${share.sector}</td>
-                <!-- Quantity -->
-                <td class="py-3 text-white-80" style="background: transparent;">${share.quantity.toLocaleString('en-IN')}</td>
-                <!-- Avg Buy Price -->
-                <td class="py-3 text-white-70" style="background: transparent;">₹${share.avg_buy_price.toLocaleString('en-IN')}</td>
-                <!-- Current/Sale Price -->
-                <td class="py-3 text-white-80" style="background: transparent;">₹${currentPrice.toLocaleString('en-IN')}</td>
-                <!-- Total Value -->
-                <td class="py-3 text-white-90 fw-medium" style="background: transparent;">₹${totalValue.toLocaleString('en-IN')}</td>
-                <!-- Gain/Loss -->
-                <td class="py-3" style="background: transparent;">
+                </div>
+                <!-- Sector (10%) -->
+                <div style="width: 10%" class="text-white-70 text-truncate" title="${share.sector}">${share.sector}</div>
+                <!-- Quantity (8%) -->
+                <div style="width: 8%" class="text-white-80">${share.quantity.toLocaleString('en-IN')}</div>
+                <!-- Avg Buy Price (11%) -->
+                <div style="width: 11%" class="text-white-70">₹${share.avg_buy_price.toLocaleString('en-IN')}</div>
+                <!-- Current/Sale Price (11%) -->
+                <div style="width: 11%" class="text-white-80">₹${currentPrice.toLocaleString('en-IN')}</div>
+                <!-- Total Value (12%) -->
+                <div style="width: 12%" class="text-white-90 fw-medium">₹${totalValue.toLocaleString('en-IN')}</div>
+                <!-- Gain/Loss (14%) -->
+                <div style="width: 14%">
                     <div class="${gainLoss >= 0 ? 'text-success' : 'text-danger'}">
                         <span class="d-flex align-items-center gap-1">
                             <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
                                 ${gainLoss >= 0
-                ? '<path d="M5 15l7-7 7 7"></path>'
-                : '<path d="M19 9l-7 7-7-7"></path>'}
+                    ? '<path d="M5 15l7-7 7 7"></path>'
+                    : '<path d="M19 9l-7 7-7-7"></path>'}
                             </svg>
                             ₹${Math.abs(gainLoss).toLocaleString('en-IN')}
                         </span>
                         <span class="small">${gainLossPercent >= 0 ? '+' : ''}${gainLossPercent.toFixed(2)}%</span>
                     </div>
-                </td>
-                <!-- Actions -->
-                <td class="py-3 text-end" style="background: transparent;">
+                </div>
+                <!-- Actions (8%) -->
+                <div class="text-end" style="width: 8%">
+                    <div class="holding-actions d-flex gap-2 justify-content-end">
                     ${currentSharesFilter === 'active' ? `
-                        <div class="d-flex gap-2 justify-content-end">
                             <button onclick="${safeOnClick('openSellShareModal', share.id, share.symbol, share.quantity, share.total_invested)}"
                                 class="btn-icon-glass" title="Sell">
                                 <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -298,20 +445,24 @@ function renderSharesHoldings() {
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"></path>
                                 </svg>
                             </button>
-                        </div>
-                    ` : ''}
-                </td>
-            </tr>
-        `;
-    });
+                    ` : `
+                        <button onclick="${safeOnClick('openRemoveShareModal', share.id, share.symbol)}"
+                            class="btn-icon-glass text-danger" title="Delete Record">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"></path>
+                            </svg>
+                        </button>
+                    `}
+                    </div>
+                </div>
+            </div>
+            `;
+        });
+    }
 
-    holdingsHtml += `
-                </tbody>
-            </table>
-        </div>
-    </div>`;
+    tableHtml += `</div>`;
+    container.innerHTML = headerHtml + tableHtml;
 
-    container.innerHTML = holdingsHtml;
 }
 
 

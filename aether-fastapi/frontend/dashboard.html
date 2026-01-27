@@ -19,7 +19,7 @@
         rel="stylesheet">
 
     <!-- Custom CSS -->
-    <link href="css/style.css?v=60" rel="stylesheet">
+    <link href="css/style.css?v=84" rel="stylesheet">
 
 
     <style>
@@ -114,10 +114,10 @@
         }
 
         .sidebar-brand {
-            font-family: "SF Mono", "JetBrains Mono", monospace;
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.25em;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            font-size: 0.85rem;
+            font-weight: 300;
+            letter-spacing: 0.3em;
             text-transform: uppercase;
             color: rgba(255, 255, 255, 0.7);
             text-align: center;
@@ -233,16 +233,20 @@
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border-radius: 9999px;
-            padding: 0.5rem 1.25rem;
+            padding: 0 1.25rem;
+            /* Horizontal padding, height controlled explicitly */
             display: flex;
             align-items: center;
             overflow: hidden;
+            height: 36px;
+            /* text-sm standard button height */
         }
 
 
 
         #breadcrumb {
-            font-size: 0.75rem;
+            font-size: 0.85rem;
+            /* Closer to text-sm */
             color: rgba(255, 255, 255, 0.6);
             font-weight: 300;
             letter-spacing: 0.05em;
@@ -262,7 +266,8 @@
             position: relative;
             display: flex;
             gap: 0;
-            padding: 0.2rem;
+            padding: 0.25rem;
+            /* Increased slightly */
             background: linear-gradient(180deg, rgba(18, 18, 22, 0.95) 0%, rgba(12, 12, 16, 0.98) 100%);
             border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 9999px;
@@ -275,15 +280,19 @@
         }
 
         .module-tab {
-            padding: 0.5rem 1rem;
+            padding: 0.5rem 1.25rem;
+            /* Wider padding */
             background: transparent;
             border: 1px solid transparent;
             border-radius: 9999px;
             color: rgba(255, 255, 255, 0.5);
-            font-size: 0.7rem;
-            font-weight: 400;
+            font-size: 0.75rem;
+            /* text-xs */
+            font-weight: 300;
+            /* Lighter weight */
             letter-spacing: 0.02em;
-            line-height: 1;
+            line-height: 1rem;
+            /* 16px line height for 32px total height */
             cursor: pointer;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -312,33 +321,45 @@
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border-radius: 9999px;
-            padding: 0.25rem;
+            padding: 0 0.25rem 0 0;
+            /* Padding handled by flex/height */
             display: flex;
             align-items: center;
             gap: 0.75rem;
             overflow: hidden;
+            height: 36px;
+            /* text-sm standard button height */
         }
 
 
 
         .user-email {
-            font-size: 0.75rem;
+            font-size: 0.85rem;
+            /* text-sm */
             color: rgba(255, 255, 255, 0.5);
             font-weight: 300;
             letter-spacing: 0.05em;
             line-height: 1;
             padding-left: 1rem;
+            padding-right: 0.5rem;
         }
 
         .user-avatar {
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            /* Reduced from 32px */
+            height: 28px;
             border-radius: 50%;
             background: transparent;
             display: flex;
             align-items: center;
             justify-content: center;
             color: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            /* Added border to match look */
+            margin-left: auto;
+            /* Push to right if needed */
+            margin-right: 4px;
+            /* Spacing */
         }
 
         /* Content Area */
@@ -980,29 +1001,45 @@
 
                     <!-- 2. Holdings Section -->
                     <div id="crypto-section-holdings" class="crypto-section" style="display: none;">
-                        <!-- Container 1: Add Crypto -->
-                        <div class="d-flex justify-content-end mb-3">
-                            <button onclick="openAddCryptoModal()"
-                                class="btn px-3 py-2 rounded-pill d-flex align-items-center gap-2 transition-all hover-scale-105"
-                                style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white;">
-                                <span class="fs-6 fw-light">+</span>
-                                <span>Add Crypto</span>
-                            </button>
+                        <!-- Container 2: Holdings List -->
+                        <div class="d-flex justify-content-between align-items-end mb-3">
+                            <div>
+                                <h2 class="h5 fw-light text-white-90">Your Assets</h2>
+                            </div>
+                            <div class="d-flex align-items-center gap-3">
+                                <!-- Refresh Button -->
+                                <button onclick="fetchCryptoData()"
+                                    class="btn px-3 py-2 d-flex align-items-center gap-2"
+                                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: rgba(255,255,255,0.7);">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                        </path>
+                                    </svg>
+                                    <span class="small">Refresh</span>
+                                </button>
+
+                                <!-- Add Crypto Button -->
+                                <button onclick="openAddCryptoModal()"
+                                    class="btn px-3 py-2 rounded-pill d-flex align-items-center gap-2 transition-all hover-scale-105"
+                                    style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white;">
+                                    <span class="fs-6 fw-light">+</span>
+                                    <span>Add Crypto</span>
+                                </button>
+                            </div>
                         </div>
 
-                        <!-- Container 2: Holdings List -->
-                        <div class="glass-header mb-3">
-                            <h2 class="h5 fw-light text-white-90">Your Assets</h2>
-                        </div>
                         <div class="glass-panel overflow-hidden p-0">
                             <div
-                                class="row g-0 p-3 border-bottom border-white border-opacity-10 text-white-50 small text-uppercase">
-                                <div class="col-2">Asset</div>
-                                <div class="col-2">Price</div>
-                                <div class="col-2">Balance</div>
-                                <div class="col-2">Value</div>
-                                <div class="col-2">Network</div>
-                                <div class="col-2 text-end">Actions</div>
+                                class="d-flex w-100 p-3 border-bottom border-white border-opacity-10 text-white-50 small text-uppercase">
+                                <div style="width: 18%">Asset</div>
+                                <div style="width: 10%">Network</div>
+                                <div style="width: 10%">Quantity</div>
+                                <div style="width: 13%">Avg Buy Price</div>
+                                <div style="width: 13%">Current Price</div>
+                                <div style="width: 14%">Total Valuation</div>
+                                <div style="width: 14%">Gain/Loss</div>
+                                <div class="text-center" style="width: 8%">Action</div>
                             </div>
                             <div id="crypto-holdings-list">
                                 <!-- Injected by JS -->
@@ -1195,6 +1232,28 @@
                             <div id="bonds-trend-chart" style="height: 300px; width: 100%;"></div>
                         </div>
 
+                        <!-- Bond Allocation Charts -->
+                        <div class="row g-4 mb-4">
+                            <!-- Bond Type Allocation (Left) -->
+                            <div class="col-lg-6">
+                                <div class="glass-panel p-4 h-100">
+                                    <h3 class="h5 fw-light mb-4">Bond Allocation by Type</h3>
+                                    <div style="height: 250px; width: 100%;">
+                                        <canvas id="bondsTypeChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Top Bond Holdings (Right) -->
+                            <div class="col-lg-6">
+                                <div class="glass-panel p-4 h-100">
+                                    <h3 class="h5 fw-light mb-4">Top Bond Holdings</h3>
+                                    <div style="height: 250px; width: 100%;">
+                                        <canvas id="bondsTopHoldingsChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Metrics Row -->
                         <div class="row g-4">
                             <!-- Metric 1 -->
@@ -1312,7 +1371,8 @@
                             <div class="col-lg-6">
                                 <div class="glass-card p-4 h-100">
                                     <h3 class="h5 fw-light text-white-90 mb-4">Top Income Generators</h3>
-                                    <div id="bonds-top-payers-list" class="d-flex flex-column gap-3">
+                                    <div id="bonds-top-payers-list" class="d-flex flex-column gap-3 custom-scrollbar"
+                                        style="max-height: 320px; overflow-y: auto; padding-right: 8px;">
                                         <!-- Injected via JS -->
                                     </div>
                                 </div>
@@ -1658,8 +1718,8 @@
         </div>
     </div>
 
-    <script src="js/dashboard.js?v=72"></script>
-    <script src="js/shares-module.js?v=4"></script>
+    <script src="js/dashboard.js?v=90"></script>
+    <script src="js/shares-module.js?v=11"></script>
 
 
     <!-- Add Property Modal -->
@@ -1781,7 +1841,7 @@
             style="background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); pointer-events: auto;"
             onclick="closeAddCryptoModal()">
         </div>
-        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 580px; padding: 1rem;">
+        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 480px; padding: 1rem;">
             <div class="modal-glass position-relative">
                 <!-- Header -->
                 <div class="p-4 d-flex justify-content-between align-items-start">
@@ -1799,7 +1859,8 @@
                 </div>
 
                 <!-- Form -->
-                <form id="addCryptoForm" onsubmit="submitAddCrypto(event)" class="px-4 pb-4">
+                <form id="addCryptoForm" onsubmit="submitAddCrypto(event)" class="px-4 pb-4"
+                    style="max-height: 60vh; overflow-y: auto; overflow-x: hidden;">
                     <!-- Search Cryptocurrency -->
                     <div class="mb-4 position-relative">
                         <label class="modal-label">Search Cryptocurrency</label>
@@ -2738,22 +2799,153 @@
         </div>
     </div>
 
-    <!-- Remove Share Confirmation Modal -->
-    <div id="remove-share-modal" class="position-fixed top-0 start-0 w-100 h-100 hidden"
+    <!-- Sell Crypto Modal -->
+    <div id="sell-crypto-modal" class="position-fixed top-0 start-0 w-100 h-100 hidden"
         style="z-index: 9999; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); display: none;">
         <div class="d-flex align-items-center justify-content-center h-100 p-4">
-            <div class="glass-card rounded-4 p-5" style="max-width: 400px; width: 100%;">
-                <h3 class="h5 fw-light text-white mb-3">Remove Share?</h3>
-                <p class="text-white-70 mb-4">Are you sure you want to remove <span id="remove-share-name"
-                        class="text-white fw-medium"></span> from your portfolio? This action cannot be undone.</p>
+            <div class="glass-card rounded-4 p-5" style="max-width: 500px; width: 100%;">
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <h3 class="h4 fw-light text-white mb-2">Sell Crypto</h3>
+                        <p class="small text-white-50 mb-0">Record your crypto sale</p>
+                    </div>
+                    <button type="button" onclick="closeSellCryptoModal()" class="btn-close btn-close-white"
+                        aria-label="Close"></button>
+                </div>
 
-                <input type="hidden" id="remove-share-id">
+                <form id="sell-crypto-form" onsubmit="submitSellCrypto(event)">
+                    <input type="hidden" id="sell-crypto-id">
 
-                <div class="d-flex gap-3">
-                    <button type="button" onclick="closeRemoveShareModal()"
-                        class="btn glass-button flex-fill">Cancel</button>
-                    <button type="button" onclick="confirmRemoveShare()"
-                        class="btn btn-danger flex-fill">Remove</button>
+                    <div class="mb-3">
+                        <div class="text-white-70 small mb-2">Asset</div>
+                        <div class="text-white fw-medium" id="sell-crypto-name"></div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small text-uppercase text-white-50"
+                            style="letter-spacing: 0.1em; font-size: 0.7rem;">
+                            Quantity to Sell (Max: <span id="sell-crypto-max-qty">0</span>)
+                        </label>
+                        <input type="number" id="sell-crypto-quantity" class="form-control glass-input"
+                            placeholder="0.00" min="0.00000001" step="any" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small text-uppercase text-white-50"
+                            style="letter-spacing: 0.1em; font-size: 0.7rem;">
+                            Sale Price per Unit (₹)
+                        </label>
+                        <input type="number" id="sell-crypto-price" class="form-control glass-input" placeholder="50000"
+                            min="0.01" step="0.01" required>
+                    </div>
+
+                    <div class="glass-card p-3 mb-4" id="sell-crypto-preview">
+                        <div class="small text-white-50 mb-2">Sale Summary</div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-white-50 small">Total Sale Value:</span>
+                            <span class="text-white small" id="sell-crypto-total-value">₹0</span>
+                        </div>
+                        <div class="d-flex justify-content-between pt-2 border-top"
+                            style="border-color: rgba(255,255,255,0.1) !important;">
+                            <span class="text-white-70">Profit/Loss:</span>
+                            <span class="fw-medium" id="sell-crypto-profit-loss">₹0</span>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-danger glass-button py-3">
+                            Confirm Sale
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remove Crypto Confirmation Modal -->
+    <div id="remove-crypto-modal" class="position-fixed top-0 start-0 w-100 h-100"
+        style="z-index: 1055; display: none;">
+        <div class="position-absolute w-100 h-100"
+            style="background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); pointer-events: auto;"
+            onclick="closeRemoveCryptoModal()">
+        </div>
+        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 420px; padding: 1rem;">
+            <div class="modal-glass position-relative">
+                <!-- Header -->
+                <div class="p-4 d-flex justify-content-between align-items-start">
+                    <div>
+                        <h2 class="h5 fw-light text-white mb-1" style="letter-spacing: -0.01em;">Remove Crypto?</h2>
+                        <p class="small mb-0" style="color: rgba(255, 255, 255, 0.45);">This action cannot be undone</p>
+                    </div>
+                    <button onclick="closeRemoveCryptoModal()" class="modal-close-btn" type="button">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Content -->
+                <div class="px-4 pb-4">
+                    <p class="text-white-70 mb-4">Are you sure you want to remove <span id="remove-crypto-name"
+                            class="text-white fw-medium"></span> from your portfolio?</p>
+
+                    <input type="hidden" id="remove-crypto-id">
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-3">
+                        <button type="button" onclick="closeRemoveCryptoModal()"
+                            class="modal-btn-secondary flex-1 w-50">Cancel</button>
+                        <button type="button" onclick="confirmRemoveCrypto()"
+                            class="modal-btn-primary flex-1 w-50 d-flex align-items-center justify-content-center gap-2"
+                            style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #ef4444;">
+                            Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remove Share Confirmation Modal -->
+    <div id="remove-share-modal" class="position-fixed top-0 start-0 w-100 h-100" style="z-index: 1055; display: none;">
+        <div class="position-absolute w-100 h-100"
+            style="background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); pointer-events: auto;"
+            onclick="closeRemoveShareModal()">
+        </div>
+        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 420px; padding: 1rem;">
+            <div class="modal-glass position-relative">
+                <!-- Header -->
+                <div class="p-4 d-flex justify-content-between align-items-start">
+                    <div>
+                        <h2 class="h5 fw-light text-white mb-1" style="letter-spacing: -0.01em;">Remove Share?</h2>
+                        <p class="small mb-0" style="color: rgba(255, 255, 255, 0.45);">This action cannot be undone</p>
+                    </div>
+                    <button onclick="closeRemoveShareModal()" class="modal-close-btn" type="button">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Content -->
+                <div class="px-4 pb-4">
+                    <p class="text-white-70 mb-4">Are you sure you want to remove <span id="remove-share-name"
+                            class="text-white fw-medium"></span> from your portfolio?</p>
+
+                    <input type="hidden" id="remove-share-id">
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-3">
+                        <button type="button" onclick="closeRemoveShareModal()"
+                            class="modal-btn-secondary flex-1 w-50">Cancel</button>
+                        <button type="button" onclick="confirmRemoveShare()"
+                            class="modal-btn-primary flex-1 w-50 d-flex align-items-center justify-content-center gap-2"
+                            style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #ef4444;">
+                            Remove
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2779,12 +2971,15 @@
                                 class="text-danger">*</span></label>
                         <select id="bond-type" class="form-select glass-input py-3 mb-4" required>
                             <option value="" selected disabled>Choose category...</option>
-                            <option value="Government">Government</option>
-                            <option value="Corporate">Corporate</option>
-                            <option value="Treasury">Treasury</option>
-                            <option value="Municipal">Municipal</option>
-                            <option value="Agency">Agency</option>
-                            <option value="Sovereign">Sovereign</option>
+                            <option value="Government">Government (Treasury / Sovereign)</option>
+                            <option value="Corporate">Corporate (Investment Grade / High Yield)</option>
+                            <option value="Municipal">Municipal Bond</option>
+                            <option value="Agency">Agency Bond (GSE)</option>
+                            <option value="Zero-Coupon">Zero-Coupon Bond</option>
+                            <option value="Inflation-Linked">Inflation-Linked (TIPS)</option>
+                            <option value="Convertible">Convertible Bond</option>
+                            <option value="Green">Green / ESG Bond</option>
+                            <option value="Floating Rate">Floating Rate Note (FRN)</option>
                         </select>
                         <div class="d-grid">
                             <button type="button" class="btn btn-primary glass-button py-3"
@@ -2868,6 +3063,11 @@
                 </form>
             </div>
         </div>
+    </div>
+
+    <!-- Bond Detail Modal -->
+    <div id="bond-detail-modal" class="position-fixed top-0 start-0 w-100 h-100" style="z-index: 1055; display: none;">
+        <!-- Injected via JS -->
     </div>
 
     <!-- ========== BUSINESS MODULE MODALS ========== -->

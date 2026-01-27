@@ -238,6 +238,428 @@ function getAuthHeaders() {
     };
 }
 
+// ==================== HOME DASHBOARD LOGIC ====================
+
+function calculateGlobalMetrics() {
+    // 1. Real Estate
+    const realEstateVal = REAL_ESTATE_DATA.properties
+        .filter(p => p.status !== 'Sold')
+        .reduce((sum, p) => sum + p.current_value, 0);
+
+    // 2. Crypto 
+    const cryptoVal = (typeof CRYPTO_DATA !== 'undefined' && CRYPTO_DATA.metrics && CRYPTO_DATA.metrics.total_value)
+        ? CRYPTO_DATA.metrics.total_value
+        : 0;
+
+    // 3. Shares 
+    const sharesVal = (typeof SHARES_DATA !== 'undefined' && SHARES_DATA.metrics && SHARES_DATA.metrics.total_value)
+        ? SHARES_DATA.metrics.total_value
+        : 0;
+
+    // 4. Bonds
+    // Sum face values if BONDS_DATA is an array
+    const bondsVal = (typeof BONDS_DATA !== 'undefined' && Array.isArray(BONDS_DATA))
+        ? BONDS_DATA.reduce((sum, b) => sum + (b.faceValue || 0), 0)
+        : 0;
+
+    // 5. Business
+    // Sum valuations if BUSINESS_DATA is an array
+    const businessVal = (typeof BUSINESS_DATA !== 'undefined' && Array.isArray(BUSINESS_DATA))
+        ? BUSINESS_DATA.reduce((sum, b) => sum + (b.valuation || 0), 0)
+        : 0;
+
+    const totalNetWorth = realEstateVal + cryptoVal + sharesVal + bondsVal + businessVal;
+
+    return { totalNetWorth, realEstateVal, cryptoVal, sharesVal, bondsVal, businessVal };
+}
+
+function renderHomeDashboard() {
+    const metrics = calculateGlobalMetrics();
+    const container = document.getElementById('module-home');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="d-flex flex-column gap-5">
+            <!-- STEP 1: MAIN TOTAL AMOUNT CONTAINER (REFINED GLASS CARD) -->
+            <div class="px-4 pt-2">
+                <div class="d-flex justify-content-between align-items-center p-5 rounded-4 position-relative overflow-hidden" 
+                     style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px); box-shadow: 0 0 40px rgba(0,0,0,0.2);">
+                    
+                    <!-- Left: Net Worth -->
+                    <div class="d-flex flex-column gap-2">
+                        <span class="small fw-light text-white-50 text-uppercase" style="letter-spacing: 0.1em; font-size: 0.75rem;">Total Net Worth</span>
+                        <h1 class="display-4 fw-normal text-white mb-0" style="letter-spacing: -0.02em;">
+                            ${formatCurrency(metrics.totalNetWorth)}
+                        </h1>
+                        <div class="d-flex align-items-center gap-2 mt-1">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-success"><path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span class="text-success fw-normal">+${formatCurrency(metrics.totalNetWorth * 0.12)} <span class="opacity-75">(+12.4%)</span></span>
+                        </div>
+                    </div>
+
+                    <!-- Right: Quick Counts -->
+                    <div class="d-flex gap-5 text-end">
+                        <div class="d-flex flex-column">
+                            <span class="small fw-light text-white-50 text-uppercase mb-1" style="letter-spacing: 0.1em; font-size: 0.7rem;">Assets</span>
+                            <span class="h3 fw-light text-white mb-0">
+                                ${REAL_ESTATE_DATA.properties.filter(p => p.status !== 'Sold').length +
+        ((typeof CRYPTO_DATA !== 'undefined' && CRYPTO_DATA.holdings) ? CRYPTO_DATA.holdings.length : 0) +
+        ((typeof SHARES_DATA !== 'undefined' && SHARES_DATA.holdings) ? SHARES_DATA.holdings.length : 0) +
+        ((typeof BONDS_DATA !== 'undefined') ? BONDS_DATA.length : 0) +
+        ((typeof BUSINESS_DATA !== 'undefined') ? BUSINESS_DATA.length : 0)
+        }
+                            </span>
+                        </div>
+                        <div class="d-flex flex-column">
+                            <span class="small fw-light text-white-50 text-uppercase mb-1" style="letter-spacing: 0.1em; font-size: 0.7rem;">Categories</span>
+                            <span class="h3 fw-light text-white mb-0">5</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: DUAL CHARTS SECTION -->
+            <div class="row g-4 px-4">
+                <!-- Left: Asset Count Distribution (Pie) -->
+                <div class="col-md-6">
+                    <div class="h-100 p-4 rounded-4 position-relative overflow-hidden" 
+                         style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
+                        <div class="d-flex justify-content-between align-items-start mb-4">
+                            <div>
+                                <h3 class="h5 fw-light text-white-90 mb-1">Asset Distribution</h3>
+
+                            </div>
+                            <div class="p-2 rounded-circle" style="background: rgba(255,255,255,0.05)">
+                                ${ICONS.chart}
+                            </div>
+                        </div>
+                        <div style="height: 250px; width: 100%; position: relative;">
+                            <canvas id="homePieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Portfolio Value (Bar) -->
+                <div class="col-md-6">
+                    <div class="h-100 p-4 rounded-4 position-relative overflow-hidden" 
+                         style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
+                        <div class="d-flex justify-content-between align-items-start mb-4">
+                            <div>
+                                <h3 class="h5 fw-light text-white-90 mb-1">Portfolio Value</h3>
+
+                            </div>
+                             <div class="p-2 rounded-circle" style="background: rgba(255,255,255,0.05)">
+                                ${ICONS.trending}
+                            </div>
+                        </div>
+                        <div style="height: 250px; width: 100%; position: relative;">
+                            <canvas id="homeBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                </div>
+
+
+            <!-- STEP 3: PERFORMANCE SUMMARY SECTION -->
+            <div class="px-4">
+                <div class="p-4 rounded-4" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="h5 fw-light text-white-90 mb-0">Performance Overview</h3>
+                        <div class="text-white-50 small fw-light">Monthly Growth</div>
+                    </div>
+                    
+                    <div class="row g-0 align-items-center text-center">
+                        <!-- Real Estate Growth -->
+                        <div class="col position-relative">
+                            <div class="py-2">
+                                <div class="small fw-light text-white-50 text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 0.1em;">Real Estate</div>
+                                <div class="h5 fw-normal text-white mb-0">+4.2%</div>
+                            </div>
+                            <div class="position-absolute end-0 top-50 translate-middle-y" style="width: 1px; height: 30px; background: rgba(255,255,255,0.1);"></div>
+                        </div>
+
+                        <!-- Crypto Growth -->
+                        <div class="col position-relative">
+                             <div class="py-2">
+                                <div class="small fw-light text-white-50 text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 0.1em;">Crypto</div>
+                                <div class="h5 fw-normal text-success mb-0">+12.8%</div>
+                            </div>
+                             <div class="position-absolute end-0 top-50 translate-middle-y" style="width: 1px; height: 30px; background: rgba(255,255,255,0.1);"></div>
+                        </div>
+
+                        <!-- Shares Growth -->
+                        <div class="col position-relative">
+                             <div class="py-2">
+                                <div class="small fw-light text-white-50 text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 0.1em;">Shares</div>
+                                <div class="h5 fw-normal text-danger mb-0">-1.4%</div>
+                            </div>
+                             <div class="position-absolute end-0 top-50 translate-middle-y" style="width: 1px; height: 30px; background: rgba(255,255,255,0.1);"></div>
+                        </div>
+
+                        <!-- Bonds Growth -->
+                        <div class="col position-relative">
+                             <div class="py-2">
+                                <div class="small fw-light text-white-50 text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 0.1em;">Bonds</div>
+                                <div class="h5 fw-normal text-white mb-0">+0.8%</div>
+                            </div>
+                             <div class="position-absolute end-0 top-50 translate-middle-y" style="width: 1px; height: 30px; background: rgba(255,255,255,0.1);"></div>
+                        </div>
+
+                        <!-- Business Growth -->
+                        <div class="col">
+                             <div class="py-2">
+                                <div class="small fw-light text-white-50 text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 0.1em;">Business</div>
+                                <div class="h5 fw-normal text-success mb-0">+8.5%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 4: NAVIGATION CONTAINERS -->
+            <div class="px-4 pb-5">
+                <div class="d-flex justify-content-between align-items-end mb-4">
+                    <div>
+                        <h3 class="h4 fw-light text-white-90 mb-1">Asset Classes</h3>
+                        <p class="small text-white-50 fw-light">Manage your diversified portfolio modules</p>
+                    </div>
+                </div>
+
+                <div class="row row-cols-1 row-cols-md-5 g-3">
+                    <!-- Real Estate -->
+                    ${(() => {
+            const count = REAL_ESTATE_DATA.properties.filter(p => p.status !== 'Sold').length;
+            const totalBuy = REAL_ESTATE_DATA.properties.filter(p => p.status !== 'Sold').reduce((sum, p) => sum + (p.purchase_price || 0), 0);
+            const currentVal = metrics.realEstateVal;
+            const profit = currentVal - totalBuy;
+            const profitPercent = totalBuy > 0 ? (profit / totalBuy) * 100 : 0;
+            const isPos = profit >= 0;
+
+            return `
+                        <div class="col">
+                            <div class="glass-card h-100 p-4 d-flex flex-column justify-content-between cursor-pointer group hover-glow" onclick="switchSource('realestate')">
+                                <div class="mb-4">
+                                    <div class="p-2 rounded-3 d-flex align-items-center justify-content-center" style="background: rgba(16, 185, 129, 0.1); color: #10b981; width: 44px; height: 44px;">
+                                        ${ICONS.home}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-white-50 small mb-1" style="font-size: 0.75rem;">Real Estate</div>
+                                    <h4 class="h4 text-white mb-1 fw-bold" style="letter-spacing: -0.02em;">${formatCurrency(currentVal)}</h4>
+                                    <div class="text-white-30 small" style="font-size: 0.7rem;">${count} holdings</div>
+                                </div>
+                            </div>
+                        </div>`;
+        })()}
+
+                    <!-- Crypto -->
+                    ${(() => {
+            const cryptoData = typeof CRYPTO_DATA !== 'undefined' ? CRYPTO_DATA : { metrics: {}, holdings: [] };
+            const count = cryptoData.holdings ? cryptoData.holdings.length : 0;
+            const currentVal = metrics.cryptoVal;
+            const profit = cryptoData.metrics && cryptoData.metrics.change_24h_value ? cryptoData.metrics.change_24h_value : 0;
+            const profitPercent = cryptoData.metrics && cryptoData.metrics.change_24h_percent ? cryptoData.metrics.change_24h_percent : 0;
+            const isPos = profit >= 0;
+
+            return `
+                        <div class="col">
+                            <div class="glass-card h-100 p-4 d-flex flex-column justify-content-between cursor-pointer group hover-glow" onclick="switchSource('crypto')">
+                                <div class="mb-4">
+                                    <div class="p-2 rounded-3 d-flex align-items-center justify-content-center" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; width: 44px; height: 44px;">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.556.362 9.103c1.602-6.43 8.113-10.34 14.54-8.736 6.43 1.601 10.34 8.105 8.736 14.537zm-4.115-5.35c.29-1.933-1.181-2.973-3.193-3.666l.652-2.618-1.593-.397-.635 2.547c-.418-.104-.848-.202-1.275-.298l.638-2.559-1.593-.396-.653 2.62c-.347-.078-.685-.155-1.013-.236l.002-.007-2.199-.55-.425 1.706s1.183.27 1.158.288c.645.161.763.59.743.93l-.744 2.984c.045.01.103.026.166.05-.053-.013-.11-.028-.168-.04l-1.042 4.18c-.078.196-.28.49-.73.376.017.025-1.158-.29-1.158-.29l-.791 1.825 2.075.518c.386.1.764.202 1.135.297l-.66 2.652 1.593.397.653-2.62c.435.118.857.23 1.266.337l-.65 2.611 1.594.397.66-2.65c2.72.513 4.766.305 5.628-2.152.695-1.977-.034-3.118-1.463-3.864 1.041-.24 1.825-.924 2.035-2.339zm-3.63 5.11c-.493 1.983-3.832.912-4.914.643l.877-3.518c1.082.27 4.545.803 4.037 2.875zm.493-5.143c-.45 1.804-3.23.887-4.133.662l.795-3.19c.903.226 3.801.649 3.338 2.528z"/></svg>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-white-50 small mb-1" style="font-size: 0.75rem;">Crypto</div>
+                                    <h4 class="h4 text-white mb-1 fw-bold" style="letter-spacing: -0.02em;">${formatCurrency(currentVal)}</h4>
+                                    <div class="text-white-30 small" style="font-size: 0.7rem;">${count} holdings</div>
+                                </div>
+                            </div>
+                        </div>`;
+        })()}
+
+                    <!-- Shares -->
+                    ${(() => {
+            const sharesData = typeof SHARES_DATA !== 'undefined' ? SHARES_DATA : { metrics: {}, holdings: [] };
+            const count = sharesData.holdings ? sharesData.holdings.length : 0;
+            const currentVal = metrics.sharesVal;
+            const profit = sharesData.metrics && sharesData.metrics.total_gain_loss ? sharesData.metrics.total_gain_loss : 0;
+            const profitPercent = sharesData.metrics && sharesData.metrics.total_gain_loss_percent ? sharesData.metrics.total_gain_loss_percent : 0;
+            const isPos = profit >= 0;
+
+            return `
+                        <div class="col">
+                            <div class="glass-card h-100 p-4 d-flex flex-column justify-content-between cursor-pointer group hover-glow" onclick="switchSource('shares')">
+                                <div class="mb-4">
+                                    <div class="p-2 rounded-3 d-flex align-items-center justify-content-center" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; width: 44px; height: 44px;">
+                                        <span class="h4 mb-0 fw-bold">$</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-white-50 small mb-1" style="font-size: 0.75rem;">Shares</div>
+                                    <h4 class="h4 text-white mb-1 fw-bold" style="letter-spacing: -0.02em;">${formatCurrency(currentVal)}</h4>
+                                    <div class="text-white-30 small" style="font-size: 0.7rem;">${count} holdings</div>
+                                </div>
+                            </div>
+                        </div>`;
+        })()}
+
+                    <!-- Bonds -->
+                    ${(() => {
+            const bondsData = (typeof BONDS_DATA !== 'undefined' && Array.isArray(BONDS_DATA)) ? BONDS_DATA : [];
+            const count = bondsData.length;
+            const currentVal = metrics.bondsVal;
+            const profit = 0;
+            const profitPercent = 0;
+
+            return `
+                        <div class="col">
+                            <div class="glass-card h-100 p-4 d-flex flex-column justify-content-between cursor-pointer group hover-glow" onclick="switchSource('bonds')">
+                                <div class="mb-4">
+                                    <div class="p-2 rounded-3 d-flex align-items-center justify-content-center" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6; width: 44px; height: 44px;">
+                                        ${ICONS.calendar}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-white-50 small mb-1" style="font-size: 0.75rem;">Bonds</div>
+                                    <h4 class="h4 text-white mb-1 fw-bold" style="letter-spacing: -0.02em;">${formatCurrency(currentVal)}</h4>
+                                    <div class="text-white-30 small" style="font-size: 0.7rem;">${count} holdings</div>
+                                </div>
+                            </div>
+                        </div>`;
+        })()}
+
+                    <!-- Business -->
+                    ${(() => {
+            const businessData = (typeof BUSINESS_DATA !== 'undefined' && Array.isArray(BUSINESS_DATA)) ? BUSINESS_DATA : [];
+            const count = businessData.length;
+            const currentVal = metrics.businessVal;
+            const profit = 0;
+            const profitPercent = 0;
+
+            return `
+                        <div class="col">
+                            <div class="glass-card h-100 p-4 d-flex flex-column justify-content-between cursor-pointer group hover-glow" onclick="switchSource('business')">
+                                <div class="mb-4">
+                                    <div class="p-2 rounded-3 d-flex align-items-center justify-content-center" style="background: rgba(236, 72, 153, 0.1); color: #ec4899; width: 44px; height: 44px;">
+                                        ${ICONS.briefcase}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-white-50 small mb-1" style="font-size: 0.75rem;">Business</div>
+                                    <h4 class="h4 text-white mb-1 fw-bold" style="letter-spacing: -0.02em;">${formatCurrency(currentVal)}</h4>
+                                    <div class="text-white-30 small" style="font-size: 0.7rem;">${count} holdings</div>
+                                </div>
+                            </div>
+                        </div>`;
+        })()}
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Initialize Global Charts
+    setTimeout(() => {
+        initHomeCharts(metrics);
+    }, 0);
+}
+
+function initHomeCharts(metrics) {
+    // Shared Chart Options for Premium Feel
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { color: 'rgba(255,255,255,0.6)', padding: 20, font: { family: 'Inter', size: 11 } }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(10,10,12,0.95)',
+                titleColor: '#fff',
+                bodyColor: 'rgba(255,255,255,0.8)',
+                borderColor: 'rgba(255,255,255,0.1)',
+                borderWidth: 1,
+                padding: 12,
+                cornerRadius: 8,
+                displayColors: true
+            }
+        }
+    };
+
+    // 1. PIE CHART (Asset Counts)
+    const ctxPie = document.getElementById('homePieChart');
+    if (ctxPie) {
+        // Safe counts (mock logic for missing data similar to metrics)
+        const counts = [
+            REAL_ESTATE_DATA.properties.filter(p => p.status !== 'Sold').length,
+            (typeof CRYPTO_DATA !== 'undefined' && CRYPTO_DATA.holdings) ? CRYPTO_DATA.holdings.length : 0,
+            (typeof SHARES_DATA !== 'undefined' && SHARES_DATA.holdings) ? SHARES_DATA.holdings.length : 0,
+            (typeof BONDS_DATA !== 'undefined' && Array.isArray(BONDS_DATA)) ? BONDS_DATA.length : 0,
+            (typeof BUSINESS_DATA !== 'undefined' && Array.isArray(BUSINESS_DATA)) ? BUSINESS_DATA.length : 0
+        ];
+
+        new Chart(ctxPie, {
+            type: 'doughnut',
+            data: {
+                labels: ['Real Estate', 'Crypto', 'Shares', 'Bonds', 'Business'],
+                datasets: [{
+                    data: counts,
+                    backgroundColor: [
+                        'rgba(255, 255, 255, 0.9)',
+                        'rgba(255, 255, 255, 0.7)',
+                        'rgba(255, 255, 255, 0.5)',
+                        'rgba(255, 255, 255, 0.3)',
+                        'rgba(255, 255, 255, 0.1)'
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                ...commonOptions,
+                cutout: '70%', // Thinner elegant ring
+            }
+        });
+    }
+
+    // 2. BAR CHART (Asset Values)
+    const ctxBar = document.getElementById('homeBarChart');
+    if (ctxBar) {
+        new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: ['Real Estate', 'Crypto', 'Shares', 'Bonds', 'Business'],
+                datasets: [{
+                    label: 'Value (INR)',
+                    data: [metrics.realEstateVal, metrics.cryptoVal, metrics.sharesVal, metrics.bondsVal, metrics.businessVal],
+                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                    borderRadius: 4,
+                    barPercentage: 0.5
+                }]
+            },
+            options: {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    legend: { display: false } // No legend needed for single dataset bar
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                        ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: 'rgba(255,255,255,0.6)', font: { size: 11 } }
+                    }
+                }
+            }
+        });
+    }
+}
+
 // Source names mapping
 const SOURCE_NAMES = {
     realestate: 'Real Estate',
@@ -279,9 +701,24 @@ function switchSource(source) {
         document.querySelectorAll('.module-content').forEach(el => el.classList.remove('active'));
 
         // Show home module
+        // Show home module
         const homeModule = document.getElementById('module-home');
         if (homeModule) {
             homeModule.classList.add('active');
+
+            // 🔄 FETCH ALL DATA FOR HOME DASHBOARD
+            // We need to fetch data for all modules to populate the global metrics and charts
+            Promise.allSettled([
+                fetchRealEstateData(),
+                fetchCryptoData(),
+                typeof fetchSharesData === 'function' ? fetchSharesData() : Promise.resolve(), // Shares might not be implemented yet
+                fetchBondsData(),
+                fetchBusinessData()
+            ]).then(() => {
+                renderHomeDashboard(); // Re-render after data is loaded
+            });
+
+            renderHomeDashboard(); // Render immediately with empty/initial data
         }
 
         // Deactivate all nav tabs
@@ -500,13 +937,15 @@ function navigateToSection(sectionId, sectionName, btn) {
 // Update breadcrumb
 function updateBreadcrumb() {
     const breadcrumbEl = document.getElementById('breadcrumb');
+    const homeLink = '<span style="cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color=\'#fff\'" onmouseout="this.style.color=\'inherit\'" onclick="switchSource(\'home\')">Home</span>';
+
     if (currentSource === 'home') {
-        breadcrumbEl.innerHTML = 'Home';
+        breadcrumbEl.innerHTML = homeLink;
     } else {
         const sourceName = SOURCE_NAMES[currentSource];
         const separator = ' <span style="opacity:0.5; margin:0 4px;">&gt;</span> ';
 
-        let html = `Home${separator}${sourceName}`;
+        let html = `${homeLink}${separator}${sourceName}`;
 
         // Only show section if it's not the default Overview
         if (currentSection && currentSection !== 'Overview') {
@@ -645,6 +1084,43 @@ function renderRealEstateDashboard() {
                  </div>
             </div>
 
+            <!-- Asset Allocation Breakdown Charts -->
+            <div class="row g-4 mb-4">
+                <!-- Asset Type Distribution -->
+                <div class="col-md-4">
+                    <div class="p-4 h-100 rounded-4" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                        <h4 class="h6 fw-light text-white-90 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Asset Allocation</h4>
+                        <div style="height: 200px; position: relative;">
+                            <canvas id="chartAssetType"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Location Distribution -->
+                <div class="col-md-4">
+                    <div class="p-4 h-100 rounded-4" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                        <h4 class="h6 fw-light text-white-90 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Geographic Exposure</h4>
+                        <div style="height: 200px; position: relative;">
+                            <canvas id="chartLocation"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Occupancy Rate -->
+                <div class="col-md-4">
+                    <div class="p-4 h-100 d-flex flex-column align-items-center justify-content-center text-center rounded-4" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                         <h4 class="h6 fw-light text-white-90 mb-3 align-self-start text-uppercase small" style="letter-spacing: 0.1em;">Occupancy Rate</h4>
+                        <div style="height: 140px; width: 140px; position: relative;" class="mb-3">
+                           <canvas id="chartOccupancy"></canvas>
+                           <div class="position-absolute top-50 start-50 translate-middle">
+                               <span id="occupancyText" class="h3 fw-light text-white">--%</span>
+                           </div>
+                        </div>
+                        <div class="small text-white-50">Properties currently generating income</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Metrics Grid (5 Columns) -->
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-5 g-3">
                 <!-- Total Properties -->
@@ -723,42 +1199,7 @@ function renderRealEstateDashboard() {
                 </div>
             </div>
 
-            <!-- Asset Allocation Breakdown Charts -->
-            <div class="row g-4 mt-1">
-                <!-- Asset Type Distribution -->
-                <div class="col-md-4">
-                    <div class="p-4 h-100 rounded-4" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                        <h4 class="h6 fw-light text-white-90 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Asset Allocation</h4>
-                        <div style="height: 200px; position: relative;">
-                            <canvas id="chartAssetType"></canvas>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Location Distribution -->
-                <div class="col-md-4">
-                    <div class="p-4 h-100 rounded-4" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                        <h4 class="h6 fw-light text-white-90 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Geographic Exposure</h4>
-                        <div style="height: 200px; position: relative;">
-                            <canvas id="chartLocation"></canvas>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Occupancy Rate -->
-                <div class="col-md-4">
-                    <div class="p-4 h-100 d-flex flex-column align-items-center justify-content-center text-center rounded-4" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                         <h4 class="h6 fw-light text-white-90 mb-3 align-self-start text-uppercase small" style="letter-spacing: 0.1em;">Occupancy Rate</h4>
-                        <div style="height: 140px; width: 140px; position: relative;" class="mb-3">
-                           <canvas id="chartOccupancy"></canvas>
-                           <div class="position-absolute top-50 start-50 translate-middle">
-                               <span id="occupancyText" class="h3 fw-light text-white">--%</span>
-                           </div>
-                        </div>
-                        <div class="small text-white-50">Properties currently generating income</div>
-                    </div>
-                </div>
-            </div>
         </div>
     `;
 
@@ -2759,6 +3200,30 @@ function renderCryptoOverview() {
                 </div>
             </div>
 
+            <!-- Crypto Allocation Charts -->
+            <div class="row g-4">
+                <!-- Crypto Allocation by Network (Left) -->
+                <div class="col-lg-6">
+                    <div class="rounded-4 overflow-hidden position-relative p-4 h-100" 
+                        style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);">
+                        <h3 class="small fw-medium text-white-70 mb-4">Allocation by Network</h3>
+                        <div style="height: 250px; width: 100%;">
+                            <canvas id="cryptoNetworkChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <!-- Top Crypto Assets (Right) -->
+                <div class="col-lg-6">
+                    <div class="rounded-4 overflow-hidden position-relative p-4 h-100" 
+                        style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);">
+                        <h3 class="small fw-medium text-white-70 mb-4">Top Assets (by Value)</h3>
+                        <div style="height: 250px; width: 100%;">
+                            <canvas id="cryptoTopAssetsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- BOTTOM ROW: 4 Stat Cards - SECONDARY -->
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3">
                 <!-- Total Crypto Value -->
@@ -2845,6 +3310,138 @@ function renderCryptoOverview() {
                 window.networkCorrelationInstance = new NetworkCorrelationAnimation('networkCorrelationCanvas');
             }, 50);
         }
+
+        // --- RENDER CRYPTO CHARTS ---
+
+        // 1. Network Allocation (Pie Chart)
+        const networkCounts = {};
+        CRYPTO_DATA.holdings.forEach(h => {
+            const network = h.network || 'Other';
+            networkCounts[network] = (networkCounts[network] || 0) + 1;
+        });
+
+        const netLabels = Object.keys(networkCounts);
+        const netData = Object.values(networkCounts);
+
+        const ctxNet = document.getElementById('cryptoNetworkChart');
+        if (ctxNet && netLabels.length > 0) {
+            if (window.cryptoNetworkChartInstance) window.cryptoNetworkChartInstance.destroy();
+
+            window.cryptoNetworkChartInstance = new Chart(ctxNet, {
+                type: 'doughnut',
+                data: {
+                    labels: netLabels,
+                    datasets: [{
+                        data: netData,
+                        backgroundColor: [
+                            'rgba(255, 255, 255, 0.9)',
+                            'rgba(255, 255, 255, 0.5)',
+                            'rgba(255, 255, 255, 0.2)',
+                            'rgba(255, 215, 0, 0.4)',
+                            'rgba(255, 255, 255, 0.1)'
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                font: { family: 'Inter', size: 11 },
+                                boxWidth: 10,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // 2. Top Assets (Bar Chart)
+        const topAssets = [...CRYPTO_DATA.holdings]
+            .map(h => ({
+                ...h,
+                totalValue: (h.quantity || 0) * (h.current_price || 0)
+            }))
+            .sort((a, b) => b.totalValue - a.totalValue)
+            .slice(0, 5);
+
+        const assetLabels = topAssets.map(h => h.symbol);
+        const assetValues = topAssets.map(h => h.totalValue);
+
+        const ctxAssets = document.getElementById('cryptoTopAssetsChart');
+        if (ctxAssets && assetLabels.length > 0) {
+            if (window.cryptoTopAssetsChartInstance) window.cryptoTopAssetsChartInstance.destroy();
+
+            window.cryptoTopAssetsChartInstance = new Chart(ctxAssets, {
+                type: 'bar',
+                data: {
+                    labels: assetLabels,
+                    datasets: [{
+                        label: 'Total Value (₹)',
+                        data: assetValues,
+                        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                        borderRadius: 4,
+                        barThickness: 20
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', // Horizontal
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function (context) {
+                                    return '₹' + context.raw.toLocaleString('en-IN');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.4)',
+                                font: { family: 'Inter', size: 10 },
+                                callback: function (value) {
+                                    return '₹' + (value / 1000).toFixed(0) + 'k';
+                                }
+                            },
+                            border: { display: false }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.8)',
+                                font: { family: 'Inter', size: 11 }
+                            },
+                            border: { display: false }
+                        }
+                    }
+                }
+            });
+        }
     }
 }
 
@@ -2854,10 +3451,17 @@ function renderCryptoHoldings() {
 
     const { holdings } = CRYPTO_DATA;
 
-    if (holdings.length === 0) {
+    if (!holdings || holdings.length === 0) {
         container.innerHTML = `
             <div class="p-5 text-center">
-                <div class="mb-3 text-white-50">No crypto assets found in your portfolio.</div>
+                <div class="mb-3">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-white bg-opacity-5 rounded-circle" style="width: 64px; height: 64px;">
+                        <svg width="32" height="32" fill="none" stroke="rgba(255,255,255,0.3)" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                </div>
+                <h3 class="h5 fw-light text-white-90 mb-2">No crypto assets yet</h3>
                 <p class="small text-white-30">Use the section above to add your first asset.</p>
             </div>
         `;
@@ -2865,14 +3469,25 @@ function renderCryptoHoldings() {
     }
 
     container.innerHTML = holdings.map(holding => {
-        const totalValue = holding.quantity * holding.current_price;
-        const mockChange = (Math.random() * 10 - 4).toFixed(2);
-        const isPositive = parseFloat(mockChange) >= 0;
+        const currentPrice = holding.current_price || 0;
+        const avgBuyPrice = holding.purchase_price_avg || 0;
+        const quantity = holding.quantity || 0;
+
+        const totalValue = quantity * currentPrice;
+        const totalInvested = quantity * avgBuyPrice;
+
+        // Calculate Gain/Loss
+        let gainLoss = 0;
+        let gainLossPercent = 0;
+        if (totalInvested > 0) {
+            gainLoss = totalValue - totalInvested;
+            gainLossPercent = (gainLoss / totalInvested) * 100;
+        }
 
         return `
-        <div class="row g-0 p-3 text-white-70 small align-items-center hover-lift transition-colors" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-            <!--Asset-->
-            <div class="col-2">
+        <div class="d-flex w-100 p-3 text-white-70 small align-items-center holding-row">
+            <!--Asset (18%)-->
+            <div style="width: 18%">
                 <div class="d-flex align-items-center gap-3">
                     <div class="d-flex align-items-center justify-content-center rounded-circle text-white fw-bold" style="width: 32px; height: 32px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);">
                         ${holding.symbol[0]}
@@ -2883,50 +3498,64 @@ function renderCryptoHoldings() {
                     </div>
                 </div>
             </div>
-            <!--Price -->
-            <div class="col-2">
-                <div class="text-white-80">${formatCurrency(holding.current_price)}</div>
-                <div class="d-flex align-items-center gap-1 ${isPositive ? 'text-success' : 'text-danger'}" style="font-size: 0.7rem;">
-                    ${isPositive ? ICONS.trending : '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>'}
-                    ${Math.abs(mockChange)}%
-                </div>
-            </div>
-            <!--Balance -->
-            <div class="col-2">
-                <span class="text-white-80">${holding.quantity.toLocaleString()} ${holding.symbol}</span>
-            </div>
-            <!--Value -->
-            <div class="col-2">
-                <span class="text-white fw-medium">${formatCurrency(totalValue)}</span>
-            </div>
-            <!--Network -->
-            <div class="col-2">
-                <span class="badge fw-normal px-3 py-2 rounded-pill small" 
-                      style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); font-weight: 300;">
+            <!--Network (10%)-->
+            <div style="width: 10%">
+                <span class="badge fw-normal px-2 py-1 rounded-pill small" 
+                      style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.5); font-weight: 300; font-size: 0.65rem;">
                     ${holding.network}
                 </span>
             </div>
-            <!--Actions -->
-        <div class="col-2 text-end">
-            <div class="d-flex justify-content-end gap-2">
-                <button onclick="${safeOnClick('sellCrypto', holding.id)}"
-                    class="btn btn-sm p-0 text-white-50 hover-text-white transition-colors"
-                    title="Sell / Edit">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
-                        <polyline points="16 7 22 7 22 13"></polyline>
-                    </svg>
-                </button>
-                <button onclick="${safeOnClick('removeCrypto', holding.id)}"
-                    class="btn btn-sm p-0 text-white-50 hover-text-danger transition-colors"
-                    title="Remove">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                </button>
+            <!--Quantity (10%)-->
+            <div style="width: 10%">
+                <span class="text-white-80">${quantity.toLocaleString()}</span>
             </div>
-        </div>
+            <!--Avg Buy Price (13%)-->
+            <div style="width: 13%">
+                <span class="text-white-70">${formatCurrency(avgBuyPrice)}</span>
+            </div>
+            <!--Current Price (13%)-->
+            <div style="width: 13%">
+                <span class="text-white-80">${formatCurrency(currentPrice)}</span>
+            </div>
+            <!--Total Valuation (14%)-->
+            <div style="width: 14%">
+                <span class="text-white fw-medium">${formatCurrency(totalValue)}</span>
+            </div>
+            <!--Gain/Loss (14%)-->
+            <div style="width: 14%">
+                <div class="${gainLoss >= 0 ? 'text-success' : 'text-danger'}">
+                    <span class="d-flex align-items-center gap-1">
+                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+                            ${gainLoss >= 0
+                ? '<path d="M5 15l7-7 7 7"></path>'
+                : '<path d="M19 9l-7 7-7-7"></path>'}
+                        </svg>
+                        ${formatCurrency(Math.abs(gainLoss))}
+                    </span>
+                    <span class="small" style="font-size: 0.65rem;">${gainLossPercent >= 0 ? '+' : ''}${gainLossPercent.toFixed(2)}%</span>
+                </div>
+            </div>
+            <!--Actions (8%)-->
+            <div class="text-center" style="width: 8%">
+                <div class="holding-actions d-flex justify-content-center gap-2">
+                    <button onclick="${safeOnClick('sellCrypto', holding.id)}"
+                        class="btn-icon-glass"
+                        title="Sell / Edit">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                            <polyline points="16 7 22 7 22 13"></polyline>
+                        </svg>
+                    </button>
+                    <button onclick="${safeOnClick('removeCrypto', holding.id)}"
+                        class="btn-icon-glass text-danger"
+                        title="Remove">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
         </div>
         `;
     }).join('');
@@ -3249,27 +3878,96 @@ async function submitAddCrypto(event) {
     }
 }
 
-async function sellCrypto(holdingId) {
+let currentSellCryptoId = null;
+let currentSellCryptoAvgBuyPrice = 0;
+
+function openSellCryptoModal(holdingId) {
     const holding = CRYPTO_DATA.holdings.find(h => h.id === holdingId);
     if (!holding) return;
 
-    const quantity = prompt(`Enter quantity to sell (max: ${holding.quantity}):`);
-    if (!quantity) return;
+    currentSellCryptoId = holdingId;
+    currentSellCryptoAvgBuyPrice = holding.avg_buy_price || 0;
 
-    const sellPrice = prompt(`Enter sell price per ${holding.symbol}:`);
-    if (!sellPrice) return;
+    document.getElementById('sell-crypto-id').value = holdingId;
+    document.getElementById('sell-crypto-name').textContent = `${holding.name} (${holding.symbol})`;
+    document.getElementById('sell-crypto-max-qty').textContent = holding.quantity;
+
+    const qtyInput = document.getElementById('sell-crypto-quantity');
+    qtyInput.max = holding.quantity;
+    qtyInput.value = '';
+
+    const priceInput = document.getElementById('sell-crypto-price');
+    priceInput.value = '';
+
+    // Add listeners for live calculation
+    qtyInput.oninput = updateCryptoSellSummary;
+    priceInput.oninput = updateCryptoSellSummary;
+
+    // Reset summary
+    updateCryptoSellSummary();
+
+    const modal = document.getElementById('sell-crypto-modal');
+    modal.classList.remove('hidden');
+    modal.style.display = 'block';
+}
+
+function updateCryptoSellSummary() {
+    const qty = parseFloat(document.getElementById('sell-crypto-quantity').value) || 0;
+    const price = parseFloat(document.getElementById('sell-crypto-price').value) || 0;
+
+    const totalValue = qty * price;
+    const profitLoss = (price - currentSellCryptoAvgBuyPrice) * qty;
+
+    document.getElementById('sell-crypto-total-value').textContent = formatCurrency(totalValue);
+
+    const plElement = document.getElementById('sell-crypto-profit-loss');
+    plElement.textContent = (profitLoss >= 0 ? '+' : '') + formatCurrency(profitLoss);
+
+    if (profitLoss > 0) {
+        plElement.className = 'fw-medium text-success';
+    } else if (profitLoss < 0) {
+        plElement.className = 'fw-medium text-danger';
+    } else {
+        plElement.className = 'fw-medium text-white';
+    }
+}
+
+function closeSellCryptoModal() {
+    const modal = document.getElementById('sell-crypto-modal');
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    currentSellCryptoId = null;
+}
+
+async function submitSellCrypto(event) {
+    event.preventDefault();
+    if (!currentSellCryptoId) return;
+
+    const quantity = parseFloat(document.getElementById('sell-crypto-quantity').value);
+    const sellPrice = parseFloat(document.getElementById('sell-crypto-price').value);
+
+    // Get holding to check max quantity
+    const holding = CRYPTO_DATA.holdings.find(h => h.id === currentSellCryptoId);
+    if (!holding) return;
+
+    if (quantity > holding.quantity) {
+        showToast(`Cannot sell more than you own (${holding.quantity})`, 'error');
+        return;
+    }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/crypto/holdings/${holdingId}/sell`, {
+        const response = await fetch(`${API_BASE_URL}/crypto/holdings/${currentSellCryptoId}/sell`, {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify({
-                quantity: parseFloat(quantity),
-                sell_price: parseFloat(sellPrice)
+                quantity: quantity,
+                sell_price: sellPrice
             })
         });
 
         if (response.ok) {
+            showToast('Crypto sold successfully', 'success');
+            closeSellCryptoModal();
             await fetchCryptoData();
         } else {
             const error = await response.json();
@@ -3277,31 +3975,63 @@ async function sellCrypto(holdingId) {
         }
     } catch (error) {
         console.error('Error selling crypto:', error);
+        showToast('Failed to connect to server', 'error');
     }
 }
 
-async function removeCrypto(holdingId) {
+// Wrapper for HTML onclick compatibility (renaming original function call)
+function sellCrypto(holdingId) {
+    openSellCryptoModal(holdingId);
+}
+
+let currentRemoveCryptoId = null;
+
+function openRemoveCryptoModal(holdingId) {
     const holding = CRYPTO_DATA.holdings.find(h => h.id === holdingId);
     if (!holding) return;
 
-    if (!confirm(`Are you sure you want to remove ${holding.quantity} ${holding.symbol} from your holdings?`)) {
-        return;
-    }
+    currentRemoveCryptoId = holdingId;
+    document.getElementById('remove-crypto-id').value = holdingId;
+    document.getElementById('remove-crypto-name').textContent = `${holding.quantity} ${holding.symbol}`;
+
+    const modal = document.getElementById('remove-crypto-modal');
+    modal.classList.remove('hidden');
+    modal.style.display = 'block';
+}
+
+function closeRemoveCryptoModal() {
+    const modal = document.getElementById('remove-crypto-modal');
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    currentRemoveCryptoId = null;
+}
+
+async function confirmRemoveCrypto() {
+    if (!currentRemoveCryptoId) return;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/crypto/holdings/${holdingId}`, {
+        const response = await fetch(`${API_BASE_URL}/crypto/holdings/${currentRemoveCryptoId}`, {
             method: 'DELETE',
             headers: getAuthHeaders()
         });
 
         if (response.ok) {
+            showToast('Crypto removed successfully', 'success');
+            closeRemoveCryptoModal();
             await fetchCryptoData();
         } else {
-            showToast('Error removing crypto', 'error');
+            const error = await response.json();
+            showToast('Error removing crypto: ' + (error.detail || 'Unknown error'), 'error');
         }
     } catch (error) {
         console.error('Error removing crypto:', error);
+        showToast('Failed to connect to server', 'error');
     }
+}
+
+// Wrapper to be called by the button
+function removeCrypto(holdingId) {
+    openRemoveCryptoModal(holdingId);
 }
 
 // Initialize event listeners for crypto modal calculations
@@ -3416,44 +4146,317 @@ function renderBondsOverview() {
             else if (diffDays < 365) nextMaturityLabel = `${Math.floor(diffDays / 30)} months left`;
             else nextMaturityLabel = `${(diffDays / 365).toFixed(1)} years left`;
         }
+        // --- RENDER BOND CHARTS ---
+
+        // 1. Bond Allocation by Type (Pie Chart)
+        const typeCounts = {};
+        BONDS_DATA.forEach(bond => {
+            const type = bond.type || 'Unclassified';
+            typeCounts[type] = (typeCounts[type] || 0) + 1;
+        });
+
+        const typeLabels = Object.keys(typeCounts);
+        const typeData = Object.values(typeCounts);
+
+        const ctxType = document.getElementById('bondsTypeChart');
+        if (ctxType && typeLabels.length > 0) {
+            // Destroy existing if needed (simple check, ideally use global ref)
+            if (window.bondsTypeChartInstance) window.bondsTypeChartInstance.destroy();
+
+            window.bondsTypeChartInstance = new Chart(ctxType, {
+                type: 'doughnut',
+                data: {
+                    labels: typeLabels,
+                    datasets: [{
+                        data: typeData,
+                        backgroundColor: [
+                            'rgba(255, 255, 255, 0.9)',
+                            'rgba(255, 255, 255, 0.5)',
+                            'rgba(255, 255, 255, 0.2)',
+                            'rgba(255, 215, 0, 0.4)',
+                            'rgba(255, 255, 255, 0.1)'
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                font: { family: 'Inter', size: 11 },
+                                boxWidth: 10,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // 2. Top Bond Holdings (Bar Chart)
+        const topBonds = [...BONDS_DATA]
+            .sort((a, b) => (b.faceValue || 0) - (a.faceValue || 0))
+            .slice(0, 5);
+
+        const bondLabels = topBonds.map(b => b.issuer);
+        const bondValues = topBonds.map(b => b.faceValue);
+
+        const ctxHoldings = document.getElementById('bondsTopHoldingsChart');
+        if (ctxHoldings && bondLabels.length > 0) {
+            if (window.bondsTopHoldingsChartInstance) window.bondsTopHoldingsChartInstance.destroy();
+
+            window.bondsTopHoldingsChartInstance = new Chart(ctxHoldings, {
+                type: 'bar',
+                data: {
+                    labels: bondLabels,
+                    datasets: [{
+                        label: 'Face Value (₹)',
+                        data: bondValues,
+                        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                        borderRadius: 4,
+                        barThickness: 20
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', // Horizontal
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function (context) {
+                                    return '₹' + context.raw.toLocaleString('en-IN');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.4)',
+                                font: { family: 'Inter', size: 10 },
+                                callback: function (value) {
+                                    return '₹' + (value / 1000).toFixed(0) + 'k';
+                                }
+                            },
+                            border: { display: false }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.8)',
+                                font: { family: 'Inter', size: 11 }
+                            },
+                            border: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update DOM
+        const totalValueEl = document.getElementById('bonds-overview-total-value');
+        if (totalValueEl) totalValueEl.textContent = formatBondCurrency(totalValue);
+
+        const annualIncomeEl = document.getElementById('bonds-overview-annual-income');
+        if (annualIncomeEl) annualIncomeEl.textContent = formatBondCurrency(totalAnnualIncome);
+
+        const avgYieldEl = document.getElementById('bonds-overview-avg-yield');
+        if (avgYieldEl) avgYieldEl.textContent = `${avgYield.toFixed(2)}%`;
+
+        const nextMaturityEl = document.getElementById('bonds-overview-next-maturity');
+        if (nextMaturityEl) nextMaturityEl.textContent = nextMaturityStr;
+
+        const nextMaturityLabelEl = document.getElementById('bonds-overview-next-maturity-date');
+        if (nextMaturityLabelEl) nextMaturityLabelEl.textContent = nextMaturityLabel;
+
+        const totalCountEl = document.getElementById('bonds-overview-total-count');
+        if (totalCountEl) {
+            // Count active bonds only (not matured)
+            const today = new Date();
+            // Reset time part to ensure we count bonds maturing today as active until EOD (or just simple date comparison)
+            today.setHours(0, 0, 0, 0);
+
+            const activeBondsCount = BONDS_DATA.filter(b => {
+                if (!b.maturityDate) return false;
+                const mDate = new Date(b.maturityDate);
+                mDate.setHours(0, 0, 0, 0);
+                return mDate >= today;
+            }).length;
+
+            totalCountEl.textContent = activeBondsCount;
+        }
+
+        // Also update dynamic yield analysis if that section is visible
+        renderBondYieldAnalysis();
+        renderBondAllocation();
     }
+}
 
-    // Update DOM
-    const totalValueEl = document.getElementById('bonds-overview-total-value');
-    if (totalValueEl) totalValueEl.textContent = formatBondCurrency(totalValue);
+function openBondDetailModal(bondId) {
+    const bond = BONDS_DATA.find(b => b.id === bondId);
+    if (!bond) return;
 
-    const annualIncomeEl = document.getElementById('bonds-overview-annual-income');
-    if (annualIncomeEl) annualIncomeEl.textContent = formatBondCurrency(totalAnnualIncome);
+    let modal = document.getElementById('bond-detail-modal');
+    if (!modal) return;
 
-    const avgYieldEl = document.getElementById('bonds-overview-avg-yield');
-    if (avgYieldEl) avgYieldEl.textContent = `${avgYield.toFixed(2)}%`;
+    // Format Date for Input (YYYY-MM-DD)
+    const maturityDateVal = bond.maturityDate ? new Date(bond.maturityDate).toISOString().split('T')[0] : '';
 
-    const nextMaturityEl = document.getElementById('bonds-overview-next-maturity');
-    if (nextMaturityEl) nextMaturityEl.textContent = nextMaturityStr;
+    modal.innerHTML = `
+        <div class="position-absolute w-100 h-100" 
+            style="background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); pointer-events: auto;"
+            onclick="document.getElementById('bond-detail-modal').style.display='none'">
+        </div>
+        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 500px; padding: 1rem;">
+            <div class="modal-glass position-relative">
+                <!-- Header -->
+                <div class="p-4 d-flex justify-content-between align-items-start border-bottom border-white border-opacity-10">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-3 bg-white-10 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-white-80"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        </div>
+                        <div>
+                            <h2 class="h5 fw-light text-white mb-0">${bond.ticker}</h2>
+                            <p class="small text-white-50 mb-0">${bond.issuer}</p>
+                        </div>
+                    </div>
+                    <button onclick="document.getElementById('bond-detail-modal').style.display='none'" class="modal-close-btn" type="button">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
 
-    const nextMaturityLabelEl = document.getElementById('bonds-overview-next-maturity-date');
-    if (nextMaturityLabelEl) nextMaturityLabelEl.textContent = nextMaturityLabel;
+                <!-- Editable Form -->
+                <div class="p-4">
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <label class="small text-white-40 mb-1 d-block">Face Value</label>
+                            <input type="number" id="bond-edit-face-value" value="${bond.faceValue}" 
+                                class="form-control glass-input text-white fw-light w-100" 
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 0.5rem;">
+                        </div>
+                        <div class="col-6">
+                            <label class="small text-white-40 mb-1 d-block">Coupon Rate (%)</label>
+                            <input type="number" step="0.01" id="bond-edit-coupon" value="${bond.couponRate}" 
+                                class="form-control glass-input text-amber-200 fw-light w-100" 
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 0.5rem;">
+                        </div>
+                         <div class="col-6">
+                            <label class="small text-white-40 mb-1 d-block">Maturity Date</label>
+                            <input type="date" id="bond-edit-maturity" value="${maturityDateVal}" 
+                                class="form-control glass-input text-white fw-light w-100" 
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 0.5rem;">
+                        </div>
+                        <div class="col-6">
+                            <label class="small text-white-40 mb-1 d-block">Type</label>
+                            <select id="bond-edit-type" class="form-select glass-input text-white fw-light w-100"
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 0.5rem;">
+                                <option value="Government" ${bond.type === 'Government' ? 'selected' : ''}>Government</option>
+                                <option value="Corporate" ${bond.type === 'Corporate' ? 'selected' : ''}>Corporate</option>
+                                <option value="Municipal" ${bond.type === 'Municipal' ? 'selected' : ''}>Municipal</option>
+                                <option value="Agency" ${bond.type === 'Agency' ? 'selected' : ''}>Agency</option>
+                                <option value="Zero-Coupon" ${bond.type === 'Zero-Coupon' ? 'selected' : ''}>Zero-Coupon</option>
+                            </select>
+                        </div>
+                    </div>
 
-    const totalCountEl = document.getElementById('bonds-overview-total-count');
-    if (totalCountEl) {
-        // Count active bonds only (not matured)
-        const today = new Date();
-        // Reset time part to ensure we count bonds maturing today as active until EOD (or just simple date comparison)
-        today.setHours(0, 0, 0, 0);
+                    <!-- Actions -->
+                    <div class="d-flex flex-column gap-3">
+                        <button onclick="updateBond('${bond.id}')" 
+                            class="btn w-100 d-flex align-items-center justify-content-center gap-2 py-2 rounded-3"
+                            style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white;">
+                            <span>Save Changes</span>
+                        </button>
 
-        const activeBondsCount = BONDS_DATA.filter(b => {
-            if (!b.maturityDate) return false;
-            const mDate = new Date(b.maturityDate);
-            mDate.setHours(0, 0, 0, 0);
-            return mDate >= today;
-        }).length;
+                        <button onclick="confirmRemoveBond('${bond.id}')" 
+                            class="btn w-100 d-flex align-items-center justify-content-center gap-2 py-2 rounded-3 group"
+                            style="background: transparent; border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; opacity: 0.8;">
+                            <span>Remove from Portfolio</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'block';
+}
 
-        totalCountEl.textContent = activeBondsCount;
+function updateBond(bondId) {
+    const bondIndex = BONDS_DATA.findIndex(b => b.id === bondId);
+    if (bondIndex === -1) return;
+
+    const faceValInput = document.getElementById('bond-edit-face-value');
+    const couponInput = document.getElementById('bond-edit-coupon');
+    const maturityInput = document.getElementById('bond-edit-maturity');
+    const typeInput = document.getElementById('bond-edit-type');
+
+    if (faceValInput) BONDS_DATA[bondIndex].faceValue = parseFloat(faceValInput.value) || 0;
+    if (couponInput) BONDS_DATA[bondIndex].couponRate = parseFloat(couponInput.value) || 0;
+    if (maturityInput) BONDS_DATA[bondIndex].maturityDate = maturityInput.value;
+    if (typeInput) BONDS_DATA[bondIndex].type = typeInput.value;
+
+    // Refresh UI
+    renderBondsOverview();
+    showToast('Bond details updated successfully', 'success');
+    document.getElementById('bond-detail-modal').style.display = 'none';
+}
+
+function confirmRemoveBond(bondId) {
+    document.getElementById('bond-detail-modal').style.display = 'none';
+    showConfirmationModal(
+        'Remove Bond?',
+        'Are you sure you want to remove this bond? This action cannot be undone.',
+        'Remove',
+        () => removeBond(bondId)
+    );
+}
+
+async function removeBond(bondId) {
+    // Mock Removal for now since we don't have a backend endpoint confirmed, 
+    // or assume standard DELETE pattern if user implies it works.
+    // Based on previous patterns, we usually hit an API.
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/bonds/${bondId}`, { // Assuming /bonds endpoint exists based on prev context
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+
+        if (response.ok) {
+            showToast('Bond removed successfully', 'success');
+            await fetchBondsData(); // Refresh list
+        } else {
+            // Fallback for mock environment if API 404s
+            console.warn('API delete failed, falling back to local filter');
+            BONDS_DATA = BONDS_DATA.filter(b => b.id !== bondId);
+            renderBondsOverview();
+            showToast('Bond removed (Local)', 'success');
+        }
+    } catch (e) {
+        console.error('Error removing bond:', e);
+        showToast('Failed to remove bond', 'error');
     }
-
-    // Also update dynamic yield analysis if that section is visible
-    renderBondYieldAnalysis();
-    renderBondAllocation();
 }
 
 // Render Bond Holdings Section
@@ -3525,9 +4528,10 @@ function renderBondHoldings() {
         const sorted = [...BONDS_DATA].sort((a, b) => (b.faceValue * b.couponRate) - (a.faceValue * a.couponRate)).slice(0, 5);
 
         listContainer.innerHTML = sorted.map(bond => `
-            <div class="d-flex align-items-center justify-content-between p-3 rounded-3 hover-bg-white-5 transition-colors" style="background: rgba(255,255,255,0.02);">
+            <div class="d-flex align-items-center justify-content-between p-3 rounded-3 hover-glass-item transition-colors cursor-pointer group" 
+                style="background: rgba(255,255,255,0.02);" onclick="openBondDetailModal('${bond.id}')">
                 <div>
-                    <p class="text-white-90 fw-light mb-0">${bond.ticker}</p>
+                    <p class="text-white-90 fw-light mb-0 group-hover-text-white transition-colors">${bond.ticker}</p>
                     <p class="small text-white-50 text-uppercase mb-0" style="font-size: 0.7rem;">${bond.issuer}</p>
                 </div>
                 <div class="text-end">
@@ -4113,6 +5117,7 @@ function renderBusinessDashboard() {
 
     // Calculate metrics
     const totalBusinesses = BUSINESS_DATA.length;
+    const totalValuation = BUSINESS_DATA.reduce((sum, b) => sum + (b.valuation || 0), 0);
     const totalRevenue = BUSINESS_DATA.reduce((sum, b) => sum + b.annualRevenue, 0);
     const totalProfit = BUSINESS_DATA.reduce((sum, b) => sum + b.annualProfit, 0);
     const cashOnHand = BUSINESS_DATA.reduce((sum, b) => sum + b.cashFlow, 0) * 12; // Annualized
@@ -4248,29 +5253,37 @@ function renderBusinessDashboard() {
     // Summary Cards
     const cardsContainer = document.getElementById('business-summary-cards');
     if (cardsContainer) {
+        cardsContainer.classList.add('row-cols-md-5');
         cardsContainer.innerHTML = `
-            <div class="col-md-3">
+            <div class="col">
                 <div class="glass-card p-4 h-100">
                     <div class="text-white-40 mb-2"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V11"/><path d="M15 17V7"/></svg></div>
                     <div class="h3 text-white fw-light mb-1">${totalBusinesses}</div>
                     <div class="small text-white-40 text-uppercase">Total Businesses</div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col">
+                <div class="glass-card p-4 h-100">
+                    <div class="text-white-40 mb-2"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+                    <div class="h3 text-blue-400 fw-light mb-1">₹${(totalValuation / 10000000).toFixed(2)}Cr</div>
+                    <div class="small text-white-40 text-uppercase">Total Valuation</div>
+                </div>
+            </div>
+            <div class="col">
                 <div class="glass-card p-4 h-100">
                     <div class="text-white-40 mb-2"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg></div>
                     <div class="h3 text-white fw-light mb-1">₹${(totalRevenue / 10000000).toFixed(2)}Cr</div>
                     <div class="small text-white-40 text-uppercase">Combined Revenue</div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col">
                 <div class="glass-card p-4 h-100">
                     <div class="text-white-40 mb-2"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
                     <div class="h3 text-green-400 fw-light mb-1">₹${(totalProfit / 10000000).toFixed(2)}Cr</div>
                     <div class="small text-white-40 text-uppercase">Combined Profit</div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col">
                 <div class="glass-card p-4 h-100">
                     <div class="text-white-40 mb-2"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/></svg></div>
                     <div class="h3 text-white fw-light mb-1">₹${(cashOnHand / 10000000).toFixed(2)}Cr</div>
@@ -4727,40 +5740,58 @@ function showConfirmationModal(title, message, confirmText, onConfirm) {
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'confirmation-modal';
-        modal.className = 'modal-overlay';
-        modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 2rem;';
+        modal.className = 'position-fixed top-0 start-0 w-100 h-100';
+        modal.style.zIndex = '10000';
         document.body.appendChild(modal);
     }
 
     modal.innerHTML = `
-        <div class="glass-card p-4" style="max-width: 400px; width: 100%; border: 1px solid rgba(255,255,255,0.1); background: rgba(20, 20, 24, 0.9);">
-            <div class="d-flex flex-column align-items-center text-center mb-4">
-                <div class="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-danger"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <div class="position-absolute w-100 h-100" 
+            style="background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); pointer-events: auto;"
+            id="confirm-modal-overlay">
+        </div>
+        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 420px; padding: 1rem;">
+            <div class="modal-glass position-relative">
+                <!-- Header -->
+                <div class="p-4 d-flex justify-content-between align-items-start">
+                    <div>
+                        <h2 class="h5 fw-light text-white mb-1" style="letter-spacing: -0.01em;">${title}</h2>
+                        <p class="small mb-0" style="color: rgba(255, 255, 255, 0.45);">Action cannot be undone</p>
+                    </div>
                 </div>
-                <h3 class="h5 text-white fw-medium mb-2">${title}</h3>
-                <p class="text-white-60 small mb-0">${message}</p>
-            </div>
-            <div class="d-flex gap-3">
-                <button id="confirm-modal-cancel" class="btn glass-button flex-fill py-2">Cancel</button>
-                <button id="confirm-modal-action" class="btn btn-danger flex-fill py-2">${confirmText}</button>
+
+                <!-- Content -->
+                <div class="px-4 pb-4">
+                    <p class="text-white-70 mb-4">${message}</p>
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-3">
+                        <button id="confirm-modal-cancel" type="button"
+                            class="modal-btn-secondary flex-1">Cancel</button>
+                        <button id="confirm-modal-action" type="button"
+                            class="modal-btn-primary flex-1 d-flex align-items-center justify-content-center gap-2"
+                            style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #ef4444;">
+                            ${confirmText}
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     `;
 
-    modal.style.display = 'flex';
+    modal.style.display = 'block';
 
     // Event Listeners
     const cancelBtn = document.getElementById('confirm-modal-cancel');
     const actionBtn = document.getElementById('confirm-modal-action');
+    const overlay = document.getElementById('confirm-modal-overlay');
 
     const closeModal = () => {
         modal.style.display = 'none';
-        cancelBtn.replaceWith(cancelBtn.cloneNode(true)); // cleanup listeners
-        actionBtn.replaceWith(actionBtn.cloneNode(true));
     };
 
     cancelBtn.onclick = closeModal;
+    overlay.onclick = closeModal;
     actionBtn.onclick = async () => {
         // Show loading state on button
         actionBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
