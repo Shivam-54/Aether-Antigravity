@@ -161,17 +161,19 @@ def delete_business(business_id: UUID, db: Session = Depends(get_db), current_us
 
 @router.get("/transactions/all", response_model=List[TransactionResponse])
 def get_all_transactions(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    """Get all transactions for the current user"""
-    transactions = db.query(BusinessTransaction).filter(BusinessTransaction.user_id == current_user.id).all()
+    """Get all transactions for the current user (Optimized)"""
+    # Use JOIN to fetch transaction + business name in one query
+    results = db.query(BusinessTransaction, Business.name).join(
+        Business, BusinessTransaction.business_id == Business.id
+    ).filter(BusinessTransaction.user_id == current_user.id).all()
     
-    result = []
-    for tx in transactions:
-        business = db.query(Business).filter(Business.id == tx.business_id).first()
-        result.append({
+    response = []
+    for tx, business_name in results:
+        response.append({
             "id": tx.id,
             "user_id": tx.user_id,
             "business_id": tx.business_id,
-            "business_name": business.name if business else None,
+            "business_name": business_name,
             "date": tx.date,
             "amount": tx.amount,
             "type": tx.type,
@@ -179,7 +181,7 @@ def get_all_transactions(db: Session = Depends(get_db), current_user: User = Dep
             "notes": tx.notes
         })
     
-    return result
+    return response
 
 
 @router.get("/{business_id}/transactions", response_model=List[TransactionResponse])

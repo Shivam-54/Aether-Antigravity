@@ -19,7 +19,7 @@
         rel="stylesheet">
 
     <!-- Custom CSS -->
-    <link href="css/style.css?v=84" rel="stylesheet">
+    <link href="css/style.css?v=85" rel="stylesheet">
 
 
     <style>
@@ -83,9 +83,8 @@
         /* SIDEBAR — COMMAND CONSOLE */
         .sidebar-container {
             position: relative;
-            background: linear-gradient(180deg, rgba(14, 14, 18, 0.98) 0%, rgba(8, 8, 12, 0.99) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
             padding: 1.5rem 0.75rem;
             backdrop-filter: blur(12px);
@@ -94,10 +93,7 @@
             flex-direction: column;
             gap: 0.5rem;
             height: 100%;
-            box-shadow:
-                inset 1px 0 0 rgba(255, 255, 255, 0.03),
-                inset 0 1px 0 rgba(255, 255, 255, 0.04),
-                8px 0 32px rgba(0, 0, 0, 0.4);
+            box-shadow: inset 0 0 14px 0 rgba(255, 255, 255, 0.02), 0 0 32px 0 rgba(255, 255, 255, 0.04);
             overflow: hidden;
         }
 
@@ -374,12 +370,12 @@
         /* GLASS CARD — INSTITUTIONAL TERMINAL */
         .glass-card {
             position: relative;
-            background: var(--glass-fill);
-            border: var(--glass-edge-highlight);
-            border-radius: 16px;
-            backdrop-filter: var(--glass-blur);
-            -webkit-backdrop-filter: var(--glass-blur);
-            box-shadow: var(--glass-outer-shadow);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: none;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
             overflow: hidden;
@@ -454,6 +450,49 @@
             outline: none !important;
             box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05) !important;
         }
+
+        /* Override browser autocomplete white background */
+        .modal-glass-input:-webkit-autofill,
+        .modal-glass-input:-webkit-autofill:hover,
+        .modal-glass-input:-webkit-autofill:focus,
+        .modal-glass-input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 100px rgba(30, 30, 30, 1) inset !important;
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.92) !important;
+            background-color: rgba(30, 30, 30, 1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            caret-color: rgba(255, 255, 255, 0.92) !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+
+
+        /* Network Selection Buttons */
+        .modal-network-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 0.6rem 1.2rem;
+            font-size: 0.85rem;
+            font-weight: 400;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .modal-network-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .modal-network-btn.selected {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 1);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+        }
+
+
 
         /* 🔒 BUTTONS — HEAVY, SOFT, LUXURY PRESS */
         .modal-btn-primary {
@@ -546,6 +585,14 @@
             color: white;
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.12);
         }
+
+        .glass-button.selected {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 1);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+        }
+
 
         /* 🔒 GLASS CAPSULE — LOCKED */
         .glass-capsule {
@@ -1050,33 +1097,49 @@
                     <!-- 3. On-Chain Activity Section -->
                     <div id="crypto-section-on-chain" class="crypto-section" style="display: none;">
                         <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2">On-Chain Activity</h2>
-                            <p class="text-white-50 fw-light">Recent transactions across your wallets</p>
+                            <h2 class="h3 fw-light mb-2">Transaction History</h2>
+                            <p class="text-white-50 fw-light">Your crypto buy and sell activity</p>
                         </div>
-                        <div class="glass-card overflow-hidden p-0">
-                            <div
-                                class="row g-0 p-3 border-bottom border-white border-opacity-10 text-white-50 small text-uppercase">
-                                <div class="col-2">Type</div>
-                                <div class="col-2">Asset</div>
-                                <div class="col-2">Amount</div>
-                                <div class="col-2">Value</div>
-                                <div class="col-2">Wallet</div>
-                                <div class="col-2">Status</div>
-                            </div>
-                            <div id="crypto-transactions-list">
-                                <!-- Injected by JS -->
-                            </div>
+
+                        <!-- Activity Feed -->
+                        <div id="crypto-transactions-list">
+                            <!-- Injected by JS -->
                         </div>
                     </div>
 
                     <!-- 4. Wallets Section -->
                     <div id="crypto-section-wallets" class="crypto-section" style="display: none;">
-                        <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2">Connected Wallets</h2>
-                            <p class="text-white-50 fw-light">Manage your wallet connections</p>
+                        <div class="glass-header mb-4 d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="h3 fw-light mb-2">Connected Wallets</h2>
+                                <p class="text-white-50 fw-light mb-0">Manage your wallet connections</p>
+                            </div>
+                            <button class="glass-button px-4 py-2" onclick="openAddWalletModal()">
+                                + Add Wallet
+                            </button>
                         </div>
+
+                        <!-- Wallet Cards Grid -->
                         <div id="crypto-wallets-grid" class="row g-4">
-                            <!-- Injected by JS -->
+                            <!-- Empty State -->
+                            <div id="wallets-empty-state" class="col-12">
+                                <div class="glass-card glass-empty-state">
+                                    <div class="glass-empty-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                                            stroke-linecap="round" stroke-linejoin="round" class="text-white-50">
+                                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                                        </svg>
+                                    </div>
+                                    <h3 class="h4 fw-light text-white-90 mb-2">No wallets connected</h3>
+                                    <p class="text-white-50 fw-light mb-3">Add your crypto wallet addresses to track
+                                        balances</p>
+                                    <button class="glass-button px-4 py-2" onclick="openAddWalletModal()">
+                                        + Add Your First Wallet
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -1495,19 +1558,26 @@
                         </div>
 
                         <!-- 0. Performance Chart -->
-                        <div class="rounded-4 overflow-hidden position-relative mb-4"
-                            style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 2rem;">
-                            <div class="d-flex align-items-center justify-content-between mb-4">
+                        <!-- 0. Performance Chart -->
+                        <div class="glass-card p-4 p-md-5 mb-4 position-relative overflow-hidden">
+                            <!-- Decorative Glow -->
+                            <div class="position-absolute top-0 end-0 w-50 h-50 rounded-circle"
+                                style="background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%); filter: blur(50px); pointer-events: none;">
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-between mb-4 position-relative">
                                 <div>
-                                    <h3 class="small fw-medium text-white-70">Revenue & Profit Trend</h3>
-                                    <p class="small text-white-40 mb-0">Projected 12-month performance</p>
+                                    <h3 class="small fw-medium text-white-70 text-uppercase tracking-wider mb-1">
+                                        Performance</h3>
+                                    <h2 class="h3 fw-light text-white mb-0">Revenue & Profit</h2>
                                 </div>
                                 <div class="d-flex gap-2">
-                                    <button class="px-3 py-1 rounded-pill small"
-                                        style="background: rgba(255,255,255,0.1); color: white; border: none;">1Y</button>
+                                    <button
+                                        class="px-3 py-1 rounded-pill small transition-colors text-white-70 hover-white"
+                                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Yearly</button>
                                 </div>
                             </div>
-                            <div style="height: 300px; position: relative;">
+                            <div style="height: 350px; position: relative;">
                                 <canvas id="businessRevenueChart"></canvas>
                             </div>
                         </div>
@@ -1718,8 +1788,11 @@
         </div>
     </div>
 
-    <script src="js/dashboard.js?v=90"></script>
-    <script src="js/shares-module.js?v=11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/dashboard.js?v=154"></script>
+    <script src="js/crypto-transactions.js?v=6"></script>
+    <script src="js/crypto-wallets.js?v=8"></script>
+    <script src="js/shares-module.js?v=12"></script>
 
 
     <!-- Add Property Modal -->
@@ -1774,13 +1847,47 @@
                             </select>
                         </div>
 
-                        <!-- Address -->
-                        <div class="mb-3">
-                            <label class="form-label small text-uppercase text-white-50"
-                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Address *</label>
-                            <input type="text" id="propAddress" class="form-control glass-input text-white fw-light"
-                                placeholder="e.g., Mumbai, Maharashtra" required autocomplete="off"
-                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+
+                        <!-- State & City -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small text-uppercase text-white-50"
+                                    style="letter-spacing: 0.1em; font-size: 0.7rem;">State *</label>
+                                <select id="propState" class="form-select glass-input text-white fw-light" required
+                                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                                    <option value="" class="text-dark">Select State</option>
+                                    <option value="Andhra Pradesh" class="text-dark">Andhra Pradesh</option>
+                                    <option value="Assam" class="text-dark">Assam</option>
+                                    <option value="Bihar" class="text-dark">Bihar</option>
+                                    <option value="Chandigarh" class="text-dark">Chandigarh</option>
+                                    <option value="Chhattisgarh" class="text-dark">Chhattisgarh</option>
+                                    <option value="Delhi" class="text-dark">Delhi</option>
+                                    <option value="Goa" class="text-dark">Goa</option>
+                                    <option value="Gujarat" class="text-dark">Gujarat</option>
+                                    <option value="Haryana" class="text-dark">Haryana</option>
+                                    <option value="Himachal Pradesh" class="text-dark">Himachal Pradesh</option>
+                                    <option value="Jharkhand" class="text-dark">Jharkhand</option>
+                                    <option value="Karnataka" class="text-dark">Karnataka</option>
+                                    <option value="Kerala" class="text-dark">Kerala</option>
+                                    <option value="Madhya Pradesh" class="text-dark">Madhya Pradesh</option>
+                                    <option value="Maharashtra" class="text-dark">Maharashtra</option>
+                                    <option value="Odisha" class="text-dark">Odisha</option>
+                                    <option value="Punjab" class="text-dark">Punjab</option>
+                                    <option value="Rajasthan" class="text-dark">Rajasthan</option>
+                                    <option value="Tamil Nadu" class="text-dark">Tamil Nadu</option>
+                                    <option value="Telangana" class="text-dark">Telangana</option>
+                                    <option value="Uttar Pradesh" class="text-dark">Uttar Pradesh</option>
+                                    <option value="Uttarakhand" class="text-dark">Uttarakhand</option>
+                                    <option value="West Bengal" class="text-dark">West Bengal</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small text-uppercase text-white-50"
+                                    style="letter-spacing: 0.1em; font-size: 0.7rem;">City *</label>
+                                <input type="text" id="propCity" class="form-control glass-input text-white fw-light"
+                                    placeholder="e.g., Mumbai" required autocomplete="off"
+                                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                            </div>
                         </div>
 
                         <!-- Prices -->
@@ -1841,7 +1948,7 @@
             style="background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); pointer-events: auto;"
             onclick="closeAddCryptoModal()">
         </div>
-        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 480px; padding: 1rem;">
+        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 650px; padding: 1rem;">
             <div class="modal-glass position-relative">
                 <!-- Header -->
                 <div class="p-4 d-flex justify-content-between align-items-start">
@@ -1996,6 +2103,135 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Wallet Modal -->
+    <div id="add-wallet-modal" class="position-fixed top-0 start-0 w-100 h-100 hidden"
+        style="z-index: 1055; display: none;">
+        <div class="position-absolute w-100 h-100"
+            style="background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); pointer-events: auto;"
+            onclick="closeAddWalletModal()">
+        </div>
+        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 600px; padding: 1rem;">
+            <div class="modal-glass position-relative">
+                <!-- Header -->
+                <div class="p-4 d-flex justify-content-between align-items-start">
+                    <div>
+                        <h2 class="h4 fw-light text-white mb-1" style="letter-spacing: -0.01em;">Add Wallet</h2>
+                        <p class="small mb-0" style="color: rgba(255, 255, 255, 0.45);">Connect your crypto wallet
+                            address</p>
+                    </div>
+                    <button onclick="closeAddWalletModal()" class="modal-close-btn" type="button">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Form -->
+                <form id="add-wallet-form" onsubmit="submitAddWallet(event)" class="px-4 pb-4">
+                    <!-- Wallet  Name -->
+                    <div class="mb-4">
+                        <label class="modal-label">Wallet Name <span class="text-danger">*</span></label>
+                        <input type="text" id="walletName" class="form-control modal-glass-input"
+                            placeholder="e.g., My Main Wallet, Trading Wallet..." required>
+                    </div>
+
+                    <!-- Wallet Address -->
+                    <div class="mb-4">
+                        <label class="modal-label">Wallet Address <span class="text-danger">*</span></label>
+                        <input type="text" id="walletAddress" class="form-control modal-glass-input"
+                            placeholder="0x... or wallet address" required>
+                        <small class="d-block mt-1" style="color: rgba(255, 255, 255, 0.3); font-size: 0.75rem;">
+                            Paste your public wallet address
+                        </small>
+                    </div>
+
+                    <!-- Network Selection -->
+                    <div class="mb-4">
+                        <label class="modal-label">Network <span class="text-danger">*</span></label>
+                        <input type="hidden" id="walletNetwork" required>
+                        <div id="walletNetworkOptions" class="d-flex flex-wrap gap-3">
+                            <button type="button" class="modal-network-btn"
+                                onclick="selectWalletNetwork('Bitcoin')">Bitcoin</button>
+                            <button type="button" class="modal-network-btn"
+                                onclick="selectWalletNetwork('Ethereum')">Ethereum</button>
+                            <button type="button" class="modal-network-btn"
+                                onclick="selectWalletNetwork('Solana')">Solana</button>
+                            <button type="button" class="modal-network-btn"
+                                onclick="selectWalletNetwork('Cardano')">Cardano</button>
+                            <button type="button" class="modal-network-btn"
+                                onclick="selectWalletNetwork('Polkadot')">Polkadot</button>
+                            <button type="button" class="modal-network-btn"
+                                onclick="selectWalletNetwork('Polygon')">Polygon</button>
+                            <button type="button" class="modal-network-btn"
+                                onclick="selectWalletNetwork('Arbitrum')">Arbitrum</button>
+                            <button type="button" class="modal-network-btn"
+                                onclick="selectWalletNetwork('Optimism')">Optimism</button>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-3 pt-2">
+                        <button type="button" onclick="closeAddWalletModal()"
+                            class="modal-btn-secondary flex-1 w-50">Cancel</button>
+                        <button type="submit"
+                            class="modal-btn-primary flex-1 w-50 d-flex align-items-center justify-content-center gap-2">
+                            <span>+</span> Add Wallet
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Wallet Confirmation Modal -->
+    <div id="delete-wallet-modal" class="position-fixed top-0 start-0 w-100 h-100 hidden"
+        style="z-index: 1055; display: none;">
+        <div class="position-absolute w-100 h-100"
+            style="background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); pointer-events: auto;"
+            onclick="closeDeleteWalletModal()">
+        </div>
+        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 450px; padding: 1rem;">
+            <div class="modal-glass position-relative">
+                <!-- Header -->
+                <div class="p-4 d-flex justify-content-between align-items-start">
+                    <div>
+                        <h2 class="h5 fw-light text-white mb-1" style="letter-spacing: -0.01em;">Delete Wallet</h2>
+                        <p class="small mb-0" style="color: rgba(255, 255, 255, 0.45);">This action cannot be undone</p>
+                    </div>
+                    <button onclick="closeDeleteWalletModal()" class="modal-close-btn" type="button">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Content -->
+                <div class="px-4 pb-4">
+                    <p class="mb-4" style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">
+                        Are you sure you want to remove this wallet from your connected wallets?
+                    </p>
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-3">
+                        <button type="button" onclick="closeDeleteWalletModal()"
+                            class="modal-btn-secondary flex-1 w-50">Cancel</button>
+                        <button type="button" onclick="confirmDeleteWallet()" class="flex-1 w-50" style="background: linear-gradient(180deg, rgba(220, 38, 38, 0.2) 0%, rgba(220, 38, 38, 0.1) 100%); 
+                                   border: 1px solid rgba(220, 38, 38, 0.3); 
+                                   border-radius: 12px; 
+                                   color: rgba(255, 100, 100, 0.95); 
+                                   padding: 0.8rem 1.5rem; 
+                                   font-weight: 500; 
+                                   transition: all 0.2s;">
+                            Delete Wallet
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2315,8 +2551,21 @@
                 </div>
 
                 <!-- Form -->
-                <div class="p-4">
+                <div class="p-4" style="max-height: 70vh; overflow-y: auto;">
                     <form id="uploadDocumentForm" onsubmit="submitUploadDocument(event)">
+                        <!-- Property Status Filter -->
+                        <div class="mb-3">
+                            <label class="form-label small text-uppercase text-white-50"
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Property Status</label>
+                            <select id="docPropertyStatus" class="form-select glass-input text-white fw-light" required
+                                onchange="filterPropertiesByStatus()"
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                                <option value="" class="text-dark">Select status...</option>
+                                <option value="active" class="text-dark">Active Properties</option>
+                                <option value="sold" class="text-dark">Sold Properties</option>
+                            </select>
+                        </div>
+
                         <!-- Property Selection -->
                         <div class="mb-3">
                             <label class="form-label small text-uppercase text-white-50"
@@ -2342,6 +2591,15 @@
                                 </option>
                                 <option value="Other" class="text-dark">Other</option>
                             </select>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label class="form-label small text-uppercase text-white-50"
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Description (Optional)</label>
+                            <textarea id="docDescription" class="form-control glass-input text-white fw-light" rows="3"
+                                placeholder="Add notes or description about this document..."
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; resize: none;"></textarea>
                         </div>
 
                         <!-- File Upload -->

@@ -379,7 +379,7 @@ body::after {
 
 /* Glass Card Focus State - For interactive containers */
 .glass-card:focus-within {
-    border-color: rgba(0, 212, 170, 0.20);
+    border-color: rgba(255, 255, 255, 0.20);
     box-shadow:
         var(--glass-inner-shadow),
         var(--glass-outer-shadow),
@@ -423,7 +423,7 @@ body::after {
     background: rgba(255, 255, 255, 0.06) !important;
     border-color: rgba(255, 255, 255, 0.20) !important;
     /* 🔒 WARM GLOW FOCUS */
-    box-shadow: 0 0 18px rgba(0, 212, 170, 0.15) !important;
+    box-shadow: 0 0 18px rgba(255, 255, 255, 0.15) !important;
     outline: none !important;
 }
 
@@ -460,7 +460,7 @@ body::after {
 .form-select:focus {
     background-color: rgba(255, 255, 255, 0.06) !important;
     border-color: rgba(255, 255, 255, 0.20) !important;
-    box-shadow: 0 0 18px rgba(0, 212, 170, 0.15) !important;
+    box-shadow: 0 0 18px rgba(255, 255, 255, 0.15) !important;
     outline: none !important;
 }
 
@@ -483,7 +483,7 @@ body::after {
     background: rgba(255, 255, 255, 0.06) !important;
     border-color: rgba(255, 255, 255, 0.20) !important;
     /* 🔒 WARM GLOW FOCUS */
-    box-shadow: 0 0 18px rgba(0, 212, 170, 0.15) !important;
+    box-shadow: 0 0 18px rgba(255, 255, 255, 0.15) !important;
     outline: none !important;
 }
 

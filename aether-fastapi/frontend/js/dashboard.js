@@ -230,6 +230,11 @@ let currentSection = null; // No section when on home
 // API Configuration
 const API_BASE_URL = 'http://localhost:8000/api';
 
+// Supabase Configuration
+const SUPABASE_URL = 'https://dxymgwcybdlzskdwdlzb.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4eW1nd2N5YmRsenNrZHdkbHpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4MTYxMjYsImV4cCI6MjA4MzM5MjEyNn0.0RnHD3v5dok7BP5SNUXmy_WDJFexI5Y2bGi18lLxgBk';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 function getAuthHeaders() {
     const token = localStorage.getItem('access_token');
     return {
@@ -1176,7 +1181,7 @@ function renderRealEstateDashboard() {
                             <div class="text-white-50 mb-1">${ICONS.piggyBank}</div>
                             <div>
                                 <p class="small text-uppercase text-white-50 mb-1" style="letter-spacing: 0.1em; font-size: 0.65rem;">Appreciation</p>
-                                <h3 class="h4 fw-light text-white-90 mb-1">${metrics.avgAppreciation.toFixed(1)}%</h3>
+                                <h3 class="h4 fw-light mb-1" style="color: ${metrics.avgAppreciation >= 0 ? '#10b981' : '#ef4444'}">${metrics.avgAppreciation >= 0 ? '+' : ''}${metrics.avgAppreciation.toFixed(1)}%</h3>
                                 <p class="small fw-light text-white-50" style="font-size: 0.75rem;">Since acquisition</p>
                             </div>
                         </div>
@@ -1676,16 +1681,20 @@ async function submitAddProperty(event) {
 
     const name = document.getElementById('propName').value;
     const type = document.getElementById('propType').value;
-    const address = document.getElementById('propAddress').value;
+    const city = document.getElementById('propCity').value;
+    const state = document.getElementById('propState').value;
     const purchasePrice = parseFloat(document.getElementById('propPurchasePrice').value);
     const currentPrice = parseFloat(document.getElementById('propCurrentPrice').value);
     const lng = parseFloat(document.getElementById('propLng').value) || 0;
     const lat = parseFloat(document.getElementById('propLat').value) || 0;
 
+    // Combine city and state for location/address
+    const fullAddress = `${city}, ${state}`;
+
     const payload = {
         name: name,
-        location: address.split(',')[0] || address,
-        address: address,
+        location: fullAddress,  // "City, State" format for chart
+        address: fullAddress,   // Store full address
         purchase_price: purchasePrice,
         current_value: currentPrice,
         type: type,
@@ -2294,21 +2303,35 @@ function closeUploadDocumentModal() {
 }
 
 // Populate property dropdown with user's properties
-function populatePropertyDropdown() {
+function populatePropertyDropdown(statusFilter = null) {
     const dropdown = document.getElementById('docProperty');
     if (!dropdown) return;
 
     // Clear existing options except the first one
     dropdown.innerHTML = '<option value="" class="text-dark">Select a property...</option>';
 
-    // Add properties from REAL_ESTATE_DATA
+    // Add properties from REAL_ESTATE_DATA based on status filter
     REAL_ESTATE_DATA.properties.forEach(property => {
+        // Filter by status if specified
+        if (statusFilter) {
+            const propertyStatus = property.status.toLowerCase();
+            if (statusFilter === 'active' && propertyStatus === 'sold') return;
+            if (statusFilter === 'sold' && propertyStatus !== 'sold') return;
+        }
+
         const option = document.createElement('option');
         option.value = property.id;
         option.textContent = property.name;
         option.className = 'text-dark';
         dropdown.appendChild(option);
     });
+}
+
+// Filter properties by status
+function filterPropertiesByStatus() {
+    const statusSelect = document.getElementById('docPropertyStatus');
+    const status = statusSelect ? statusSelect.value : null;
+    populatePropertyDropdown(status);
 }
 
 // Update filename display when file is selected
@@ -2329,6 +2352,7 @@ async function submitUploadDocument(event) {
 
     const propertyId = document.getElementById('docProperty').value;
     const docType = document.getElementById('docType').value;
+    const description = document.getElementById('docDescription')?.value || '';
     const fileInput = document.getElementById('docFile');
     const file = fileInput.files[0];
 
@@ -2344,54 +2368,69 @@ async function submitUploadDocument(event) {
     }
 
     try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('property_id', propertyId);
-        formData.append('document_type', docType);
+        // Get property name for display
+        const property = REAL_ESTATE_DATA.properties.find(p => String(p.id) === String(propertyId));
+        const propertyName = property ? property.name : 'Unknown Property';
 
-        const token = localStorage.getItem('access_token');
-        const response = await fetch(`${API_BASE_URL}/realestate/documents/upload`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-                // Don't set Content-Type - let browser set it automatically for FormData
-            },
-            body: formData
-        });
+        // Upload to Supabase Storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `property-documents/${propertyId}/${fileName}`;
 
-        if (!response.ok) {
-            throw new Error('Failed to upload document');
+        const { data, error: uploadError } = await supabaseClient
+            .storage
+            .from('documents')
+            .upload(filePath, file);
+
+        if (uploadError) {
+            throw uploadError;
         }
 
-        const result = await response.json();
-        console.log('✓ Document uploaded successfully', result);
+        // Get Public URL
+        const { data: { publicUrl } } = supabaseClient
+            .storage
+            .from('documents')
+            .getPublicUrl(filePath);
 
-        // Close modal and refresh documents list
+        // Create document object with Supabase URL
+        const newDoc = {
+            id: 'doc-' + Date.now(),
+            property_id: property ? property.id : propertyId,
+            property_name: propertyName,
+            document_type: docType,
+            description: description,
+            file_name: file.name,
+            file_size: file.size,
+            uploaded_at: new Date().toISOString(),
+            url: publicUrl,
+            storage_path: filePath // Store path for future deletion
+        };
+
+        // Save metadata to localStorage
+        let documents = JSON.parse(localStorage.getItem('aether_realestate_documents') || '[]');
+        documents.push(newDoc);
+        localStorage.setItem('aether_realestate_documents', JSON.stringify(documents));
+
+        // Close modal and refresh display
         closeUploadDocumentModal();
-        await fetchDocuments();
+        renderDocuments(documents);
+
+        showToast('Document uploaded successfully', 'success');
+        console.log('✓ Document uploaded to Supabase', newDoc);
 
     } catch (error) {
         console.error('Error uploading document:', error);
-        showToast('Failed to upload document. Please try again.', 'error');
+        showToast(`Failed to upload: ${error.message}`, 'error');
     }
 }
 
-// Fetch documents from backend
-async function fetchDocuments() {
+// Fetch documents from localStorage
+function fetchDocuments() {
     try {
-        const response = await fetch(`${API_BASE_URL}/realestate/documents/`, {
-            headers: getAuthHeaders()
-        });
-
-        if (response.ok) {
-            const documents = await response.json();
-            renderDocuments(documents);
-        } else {
-            console.error('Failed to fetch documents');
-            renderDocuments([]);
-        }
+        const documents = JSON.parse(localStorage.getItem('aether_realestate_documents') || '[]');
+        renderDocuments(documents);
     } catch (error) {
-        console.error('Error fetching documents:', error);
+        console.error('Error loading documents:', error);
         renderDocuments([]);
     }
 }
@@ -2401,70 +2440,152 @@ function renderDocuments(documents) {
     const container = document.getElementById('documents-list');
     if (!container) return;
 
-    if (documents.length === 0) {
+    if (!documents.length) {
         container.innerHTML = `
-            <div class="col-12">
-                <div class="glass-card text-center py-5">
-                    <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="mx-auto mb-3" style="opacity: 0.3;">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+            <div class="col-12 text-center py-5">
+                <div class="mb-3 text-white-20">
+                    <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    <p class="text-white-50 mb-0">No documents uploaded yet</p>
-                    <p class="small text-white-50">Upload property documents to keep them organized</p>
                 </div>
+                <h3 class="h5 text-white-50">No documents uploaded yet</h3>
+                <p class="small text-white-30">Upload property documents to keep them organized</p>
             </div>
         `;
         return;
     }
 
-    container.innerHTML = documents.map(doc => {
-        const property = REAL_ESTATE_DATA.properties.find(p => p.id === doc.property_id);
-        const propertyName = property ? property.name : 'Unknown Property';
-        const uploadDate = doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleDateString() : 'N/A';
+    // Group documents by property
+    const groupedDocs = documents.reduce((acc, doc) => {
+        const propName = doc.property_name || 'General Documents';
+        if (!acc[propName]) acc[propName] = [];
+        acc[propName].push(doc);
+        return acc;
+    }, {});
 
-        // Get file icon based on type
-        const fileIcon = getFileIcon(doc.file_name);
-        const fileSize = doc.file_size ? formatFileSize(doc.file_size) : '';
+    // Sort properties alphabetically
+    const sortedProperties = Object.keys(groupedDocs).sort();
 
-        return `
-            <div class="col-md-6 col-lg-4">
-                <div class="glass-card p-3 h-100 d-flex flex-column">
-                    <div class="d-flex align-items-start gap-3 mb-3">
-                        <div class="p-2 rounded-3" style="background: rgba(255,255,255,0.05);">
-                            ${fileIcon}
+    // Generate HTML
+    container.innerHTML = sortedProperties.map(propName => {
+        const propDocs = groupedDocs[propName];
+
+        const cardsHtml = propDocs.map(doc => {
+            const uploadDate = doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleDateString() : 'N/A';
+            const fileIcon = getFileIcon(doc.file_name);
+            const fileSize = doc.file_size ? formatFileSize(doc.file_size) : '';
+
+            return `
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="glass-card h-100 p-4 d-flex flex-column position-relative overflow-hidden transition-colors"
+                         style="transition: background 0.3s ease;"
+                         onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                         onmouseout="this.style.background='rgba(255,255,255,0.02)'">
+                        
+                        <!-- Top Row: Icon and Delete -->
+                        <div class="d-flex justify-content-between align-items-start mb-4">
+                            <div class="p-3 d-flex align-items-center justify-content-center" 
+                                 style="width: 48px; height: 48px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                                <div style="transform: scale(1.1); opacity: 0.8;">
+                                    ${fileIcon}
+                                </div>
+                            </div>
+                            <button onclick="event.stopPropagation(); deleteRealEstateDocument('${doc.id}')" 
+                                    class="btn p-0 text-danger opacity-50 hover-opacity-100 transition-colors"
+                                    style="border: none;"
+                                    title="Delete Document">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
                         </div>
-                        <div class="flex-1">
-                            <h5 class="small fw-medium text-white-90 mb-1">${doc.document_type}</h5>
-                            <p class="small text-white-50 mb-0" style="font-size: 0.75rem;">${propertyName}</p>
-                        </div>
-                        <button onclick="${safeOnClick('deleteDocument', doc.id)}" class="btn btn-sm p-1 text-white-50 hover-text-danger" title="Delete">
-                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
-                        </button>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <p class="small text-white-70 mb-1 text-truncate" title="${doc.file_name}">${doc.file_name}</p>
-                        <p class="small text-white-50 mb-0" style="font-size: 0.7rem;">${fileSize} • ${uploadDate}</p>
-                    </div>
 
-                    <div class="mt-auto">
-                        <button onclick="${safeOnClick('viewDocument', doc.file_url)}" class="glass-button w-100 py-2 rounded-3 small d-flex align-items-center justify-content-center gap-2 border-0">
-                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                            </svg>
+                        <!-- Content -->
+                        <div class="mb-4">
+                            <h3 class="h6 text-white fw-medium mb-1 text-truncate" title="${doc.document_type}">${doc.document_type}</h3>
+                            <div class="d-flex flex-column gap-1">
+                                <span class="small text-white-40 text-truncate" style="font-size: 0.75rem;">${doc.file_name}</span>
+                                ${doc.description ? `<p class="small text-white-50 mb-2 mt-2" style="font-size: 0.75rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${doc.description}</p>` : ''}
+                                <div class="d-flex align-items-center gap-2 small text-white-30 mt-1" style="font-size: 0.7rem;">
+                                    <span>${fileSize}</span>
+                                    <span>•</span>
+                                    <span>${uploadDate}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Button -->
+                        <button data-doc-url="${doc.url}" data-doc-name="${doc.document_type}" 
+                                class="view-document-btn mt-auto btn w-100 py-2 text-white-50 hover-text-white transition-all small fw-medium"
+                                style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px;"
+                                onmouseover="this.style.background='rgba(255,255,255,0.08)'"
+                                onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                             View Document
                         </button>
                     </div>
                 </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="col-12 mb-5">
+                <div class="d-flex align-items-center mb-4 pb-2 border-bottom" style="border-color: rgba(255,255,255,0.05) !important;">
+                    <h3 class="h5 text-white fw-medium mb-0">${propName}</h3>
+                    <span class="ms-3 badge rounded-pill bg-white bg-opacity-10 text-white-50 fw-normal border border-white border-opacity-10">
+                        ${propDocs.length} ${propDocs.length === 1 ? 'Doc' : 'Docs'}
+                    </span>
+                </div>
+                <div class="row g-4">
+                    ${cardsHtml}
+                </div>
             </div>
         `;
     }).join('');
+
+    // Attach event listeners to view document buttons
+    container.querySelectorAll('.view-document-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const url = this.getAttribute('data-doc-url');
+            const name = this.getAttribute('data-doc-name');
+            openDocumentViewer(url, name);
+        });
+    });
+}
+
+// Delete Real Estate document
+function deleteRealEstateDocument(docId) {
+    showConfirmationModal(
+        'Delete Document?',
+        'Are you sure you want to delete this document? This action cannot be undone.',
+        'Delete',
+        async () => {
+            try {
+                let documents = JSON.parse(localStorage.getItem('aether_realestate_documents') || '[]');
+                const docToDelete = documents.find(d => d.id === docId);
+
+                if (docToDelete && docToDelete.storage_path) {
+                    // Delete from Supabase
+                    const { error } = await supabaseClient
+                        .storage
+                        .from('documents')
+                        .remove([docToDelete.storage_path]);
+
+                    if (error) {
+                        console.error('Error deleting from Supabase:', error);
+                        showToast('Warning: Could not delete file from cloud', 'error');
+                    }
+                }
+
+                // Remove from local metadata
+                documents = documents.filter(d => d.id !== docId);
+                localStorage.setItem('aether_realestate_documents', JSON.stringify(documents));
+                renderDocuments(documents);
+                showToast('Document removed', 'success');
+
+            } catch (error) {
+                console.error('Error deleting document:', error);
+                showToast('Failed to delete document', 'error');
+            }
+        }
+    );
 }
 
 // Get file icon based on file extension
@@ -2854,7 +2975,7 @@ function loadAssetAllocationCharts(properties) {
 
     // 1. Process Data
     const typeCount = {};
-    const cityCount = {};
+    const stateCount = {}; // Changed from cityCount to stateCount
     let rentedCount = 0;
     let totalCount = 0;
 
@@ -2868,19 +2989,112 @@ function loadAssetAllocationCharts(properties) {
         const type = p.type || 'Other';
         typeCount[type] = (typeCount[type] || 0) + 1;
 
-        // Location (City)
-        // Extract city from address "123 St, City, State" - naive but works for now
-        let city = 'Unknown';
-        if (p.address && p.address.includes(',')) {
-            const parts = p.address.split(',');
-            // Assuming "Street, City, Zip"
-            if (parts.length >= 2) {
-                city = parts[parts.length - 2].trim();
+        // Location (State) - Intelligent extraction with city-to-state mapping
+        let state = 'Unknown';
+
+        // City to State mapping for common Indian cities
+        const cityToState = {
+            'mumbai': 'Maharashtra',
+            'thane': 'Maharashtra',
+            'pune': 'Maharashtra',
+            'nagpur': 'Maharashtra',
+            'delhi': 'Delhi',
+            'bangalore': 'Karnataka',
+            'bengaluru': 'Karnataka',
+            'mysore': 'Karnataka',
+            'chennai': 'Tamil Nadu',
+            'hyderabad': 'Telangana',
+            'kolkata': 'West Bengal',
+            'ahmedabad': 'Gujarat',
+            'surat': 'Gujarat',
+            'vadodara': 'Gujarat',
+            'rajkot': 'Gujarat',
+            'jaipur': 'Rajasthan',
+            'lucknow': 'Uttar Pradesh',
+            'kanpur': 'Uttar Pradesh',
+            'chandigarh': 'Chandigarh',
+            'kochi': 'Kerala',
+            'thiruvananthapuram': 'Kerala',
+            'bhopal': 'Madhya Pradesh',
+            'indore': 'Madhya Pradesh',
+            'patna': 'Bihar',
+            'guwahati': 'Assam',
+            'bhubaneswar': 'Odisha',
+            'visakhapatnam': 'Andhra Pradesh',
+            'vijayawada': 'Andhra Pradesh'
+        };
+
+        if (p.location && p.location.trim()) {
+            const locationStr = p.location.trim();
+
+            // Try to extract state from comma-separated format
+            if (locationStr.includes(',')) {
+                const parts = locationStr.split(',').map(s => s.trim());
+                // Get the last part which should be the state
+                const lastPart = parts[parts.length - 1];
+
+                // Check if last part looks like a state (not a number/pincode)
+                if (lastPart && !/^\d+$/.test(lastPart)) {
+                    state = lastPart;
+                } else if (parts.length >= 2) {
+                    // If last part is pincode, try second to last
+                    state = parts[parts.length - 2];
+                }
             } else {
-                city = parts[0].trim();
+                // No comma - check if it's a known city
+                const locationLower = locationStr.toLowerCase();
+                if (cityToState[locationLower]) {
+                    state = cityToState[locationLower];
+                } else {
+                    // Use as-is if not in mapping
+                    state = locationStr;
+                }
+            }
+
+            // Normalize state names to proper capitalization
+            const stateNormalization = {
+                'maharashtra': 'Maharashtra',
+                'gujarat': 'Gujarat',
+                'gujrat': 'Gujarat', // Common misspelling
+                'karnataka': 'Karnataka',
+                'tamil nadu': 'Tamil Nadu',
+                'tamilnadu': 'Tamil Nadu',
+                'telangana': 'Telangana',
+                'andhra pradesh': 'Andhra Pradesh',
+                'andhrapradesh': 'Andhra Pradesh',
+                'delhi': 'Delhi',
+                'west bengal': 'West Bengal',
+                'westbengal': 'West Bengal',
+                'rajasthan': 'Rajasthan',
+                'uttar pradesh': 'Uttar Pradesh',
+                'uttarpradesh': 'Uttar Pradesh',
+                'up': 'Uttar Pradesh',
+                'madhya pradesh': 'Madhya Pradesh',
+                'madhyapradesh': 'Madhya Pradesh',
+                'mp': 'Madhya Pradesh',
+                'kerala': 'Kerala',
+                'punjab': 'Punjab',
+                'haryana': 'Haryana',
+                'bihar': 'Bihar',
+                'odisha': 'Odisha',
+                'orissa': 'Odisha',
+                'assam': 'Assam',
+                'jharkhand': 'Jharkhand',
+                'chhattisgarh': 'Chhattisgarh',
+                'goa': 'Goa',
+                'himachal pradesh': 'Himachal Pradesh',
+                'himachalpradesh': 'Himachal Pradesh',
+                'uttarakhand': 'Uttarakhand',
+                'chandigarh': 'Chandigarh'
+            };
+
+            const stateLower = state.toLowerCase();
+            if (stateNormalization[stateLower]) {
+                state = stateNormalization[stateLower];
             }
         }
-        cityCount[city] = (cityCount[city] || 0) + 1;
+
+        stateCount[state] = (stateCount[state] || 0) + 1;
 
         // Occupancy
         if (p.status === 'Rented') rentedCount++;
@@ -2921,10 +3135,10 @@ function loadAssetAllocationCharts(properties) {
         ctxLoc.chart = new Chart(ctxLoc, {
             type: 'bar',
             data: {
-                labels: Object.keys(cityCount),
+                labels: Object.keys(stateCount),
                 datasets: [{
                     label: 'Properties',
-                    data: Object.values(cityCount),
+                    data: Object.values(stateCount),
                     backgroundColor: '#FFFFFF',
                     hoverBackgroundColor: 'rgba(255, 255, 255, 0.8)',
                     borderRadius: 6,
@@ -3118,6 +3332,7 @@ async function fetchCryptoData() {
         // Render after fetching (always render, even in DEV_MODE with empty data)
         renderCryptoOverview();
         renderCryptoHoldings();
+        renderCryptoTransactions();
     } catch (error) {
         console.error('Error fetching crypto data:', error);
         // In DEV_MODE, still render UI even on network error
@@ -3251,7 +3466,7 @@ function renderCryptoOverview() {
                             <div class="text-white-50 mb-1">${ICONS.trending}</div>
                             <div>
                                 <p class="small text-uppercase text-white-50 mb-1" style="letter-spacing: 0.1em; font-size: 0.65rem;">Portfolio Return</p>
-                                <h3 class="h4 fw-light ${metrics.avg_portfolio_return >= 0 ? 'text-success' : 'text-danger'} mb-1">
+                                <h3 class="h4 fw-light mb-1" style="color: ${metrics.avg_portfolio_return >= 0 ? '#10b981' : '#ef4444'}">
                                     ${metrics.avg_portfolio_return >= 0 ? '+' : ''}${metrics.avg_portfolio_return.toFixed(1)}%
                                 </h3>
                                 <p class="small fw-light text-white-50" style="font-size: 0.75rem;">All-time weighted</p>
@@ -3455,7 +3670,7 @@ function renderCryptoHoldings() {
         container.innerHTML = `
             <div class="p-5 text-center">
                 <div class="mb-3">
-                    <div class="d-inline-flex align-items-center justify-content-center bg-white bg-opacity-5 rounded-circle" style="width: 64px; height: 64px;">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 64px; height: 64px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);">
                         <svg width="32" height="32" fill="none" stroke="rgba(255,255,255,0.3)" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -3586,10 +3801,9 @@ function closeAddCryptoModal() {
     }
 }
 
-// CoinCap API Constants
-const COINCAP_API_BASE = 'https://api.coincap.io/v2';
-const COINCAP_API_KEY = '38af8494b535f54c74ad1932bb3026ca2c000e14df571ecad3e98f1bbbcde77a'; // Your CoinCap API key
-const USD_TO_INR_RATE = 83.12;
+// Crypto API Constants (CoinGecko)
+const COINGECKO_API_BASE = 'https://api.coingecko.com/api/v3';
+const USD_TO_INR_RATE = 87.50; // Updated approximate rate
 
 // Search state
 let cryptoSearchTimeout = null;
@@ -3635,36 +3849,26 @@ function handleCryptoSearch(query) {
  * Search CoinCap API for cryptocurrencies
  */
 async function searchCryptoAPI(query) {
-    const response = await fetch(`${COINCAP_API_BASE}/assets?limit=100`, {
-        headers: {
-            'Authorization': `Bearer ${COINCAP_API_KEY}`
-        }
-    });
+    const response = await fetch(`${COINGECKO_API_BASE}/search?query=${encodeURIComponent(query)}`);
 
     if (!response.ok) {
-        throw new Error(`CoinCap API error: ${response.status}`);
+        throw new Error(`CoinGecko API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const assets = data.data;
+    const coins = data.coins || [];
 
-    // Filter by query (name or symbol)
-    const normalizedQuery = query.toLowerCase();
-    const filtered = assets.filter(asset => {
-        const name = asset.name.toLowerCase();
-        const symbol = asset.symbol.toLowerCase();
-        return name.includes(normalizedQuery) || symbol.includes(normalizedQuery);
-    });
-
-    // Take top 10 results
-    return filtered.slice(0, 10).map(asset => ({
-        id: asset.id,
-        name: asset.name,
-        symbol: asset.symbol,
-        priceUsd: parseFloat(asset.priceUsd),
-        priceInr: parseFloat(asset.priceUsd) * USD_TO_INR_RATE,
-        changePercent24Hr: parseFloat(asset.changePercent24Hr) || 0,
-        rank: parseInt(asset.rank)
+    // Map CoinGecko results to our format
+    // Note: Search API doesn't return price, so we'll fetch it on selection
+    return coins.slice(0, 8).map(coin => ({
+        id: coin.id,
+        name: coin.name,
+        symbol: coin.symbol,
+        priceUsd: 0, // Placeholder
+        priceInr: 0, // Placeholder
+        changePercent24Hr: 0, // Placeholder
+        rank: coin.market_cap_rank,
+        thumb: coin.thumb // CoinGecko gives us a logo too!
     }));
 }
 
@@ -3681,22 +3885,17 @@ function renderCryptoSearchResults(results) {
     }
 
     container.innerHTML = results.map(crypto => {
-        const changeClass = crypto.changePercent24Hr >= 0 ? 'text-success' : 'text-danger';
-        const changeSign = crypto.changePercent24Hr >= 0 ? '+' : '';
-
         return `
-        <button type="button" onclick="${safeOnClick('selectCrypto', crypto.id, crypto.symbol, crypto.name, crypto.priceInr, crypto.changePercent24Hr)}"
-            class="w-100 d-flex align-items-center justify-content-between p-3 border-bottom border-white border-opacity-5 text-start hover-bg-light transition-colors"
+        <button type="button" onclick="selectCrypto('${crypto.id}', '${crypto.symbol}', '${crypto.name}')"
+            class="w-100 d-flex align-items-center p-3 border-bottom border-white border-opacity-5 text-start hover-bg-light transition-colors"
             style="background: transparent; border: none; cursor: pointer;">
-            <div>
+            <img src="${crypto.thumb}" alt="${crypto.symbol}" class="rounded-circle me-3" width="24" height="24">
+            <div class="flex-1">
                 <div class="text-white fw-medium">${crypto.name}</div>
                 <div class="text-white-50 small">${crypto.symbol.toUpperCase()}</div>
             </div>
             <div class="text-end">
-                <div class="text-white fw-medium">${formatCurrency(crypto.priceInr)}</div>
-                <div class="small ${changeClass}">
-                    ${changeSign}${Math.abs(crypto.changePercent24Hr).toFixed(2)}%
-                </div>
+                <span class="badge bg-white bg-opacity-10 text-white-50">#${crypto.rank}</span>
             </div>
         </button>
         `;
@@ -3708,13 +3907,69 @@ function renderCryptoSearchResults(results) {
 /**
  * Select a crypto from search results and populate form
  */
-function selectCrypto(id, symbol, name, priceInr, changePercent) {
+/**
+ * Select a crypto from search results and populate form
+ */
+async function selectCrypto(id, symbol, name) {
     selectedCryptoId = id;
 
     // Populate form fields
     document.getElementById('cryptoSymbol').value = symbol.toUpperCase();
     document.getElementById('cryptoName').value = name;
-    document.getElementById('cryptoCurrentPrice').value = priceInr.toFixed(2);
+
+    // Show loading state for price
+    const priceInput = document.getElementById('cryptoCurrentPrice');
+    priceInput.value = '';
+    priceInput.placeholder = 'Fetching price...';
+    priceInput.style.opacity = '0.5';
+
+    // Clear search and hide dropdown
+    document.getElementById('cryptoSearch').value = '';
+    document.getElementById('cryptoSearchResults').classList.add('d-none');
+
+    // Fetch Price
+    try {
+        console.log('🔄 Fetching price for:', id);
+        const response = await fetch(`${COINGECKO_API_BASE}/simple/price?ids=${id}&vs_currencies=inr`);
+
+        console.log('📡 Response status:', response.status, response.statusText);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ API Error Response:', errorText);
+            throw new Error(`Price fetch failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('📊 Price data received:', data);
+
+        const price = data[id]?.inr || 0;
+
+        if (price === 0) {
+            console.warn('⚠️ Price is 0 or not found in response');
+            throw new Error('Price not available');
+        }
+
+        priceInput.value = price.toFixed(2);
+        console.log('✅ Price set to:', price.toFixed(2));
+
+        // Update price timestamp
+        const now = new Date().toLocaleTimeString();
+        const updateTimeEl = document.getElementById('priceUpdateTime');
+        if (updateTimeEl) updateTimeEl.textContent = `Updated: ${now}`;
+
+    } catch (error) {
+        console.error('❌ Error fetching price:', error);
+        console.error('Error details:', {
+            message: error.message,
+            cryptoId: id,
+            apiUrl: `${COINGECKO_API_BASE}/simple/price?ids=${id}&vs_currencies=inr`
+        });
+        priceInput.placeholder = 'Enter manually';
+        showToast('Could not fetch latest price. Please enter manually.', 'warning');
+    } finally {
+        priceInput.style.opacity = '1';
+    }
 
     // Try to auto-select network based on symbol
     const networkMap = {
@@ -3741,21 +3996,11 @@ function selectCrypto(id, symbol, name, priceInr, changePercent) {
             btn.classList.add('glass-button');
         });
     }
-
-    // Clear search and hide dropdown
-    document.getElementById('cryptoSearch').value = '';
-    document.getElementById('cryptoSearchResults').classList.add('d-none');
-
-    // Update price timestamp
-    const now = new Date().toLocaleTimeString();
-    const updateTimeEl = document.getElementById('priceUpdateTime');
-    if (updateTimeEl) updateTimeEl.textContent = `Updated: ${now}`;
-
     // Reset calculations
     calculateCryptoTotals();
 
     // Focus on quantity field
-    document.getElementById('cryptoQuantity').focus();
+    document.getElementById('cryptoQuantity')?.focus();
 }
 
 /**
@@ -3807,20 +4052,15 @@ async function refreshCryptoPrice() {
     const updateTimeField = document.getElementById('priceUpdateTime');
 
     try {
-        // Show loading state
         if (priceField) priceField.style.opacity = '0.5';
 
-        const response = await fetch(`${COINCAP_API_BASE}/assets/${selectedCryptoId}`, {
-            headers: {
-                'Authorization': `Bearer ${COINCAP_API_KEY}`
-            }
-        });
+        // Use CoinGecko API
+        const response = await fetch(`${COINGECKO_API_BASE}/simple/price?ids=${selectedCryptoId}&vs_currencies=inr`);
         if (!response.ok) throw new Error('Failed to fetch price');
 
         const data = await response.json();
-        const asset = data.data;
+        const priceInr = data[selectedCryptoId]?.inr || 0;
 
-        const priceInr = parseFloat(asset.priceUsd) * USD_TO_INR_RATE;
         if (priceField) priceField.value = priceInr.toFixed(2);
 
         // Update timestamp
@@ -3862,6 +4102,16 @@ async function submitAddCrypto(event) {
         });
 
         if (response.ok) {
+            // Log buy transaction
+            logCryptoTransaction(
+                'buy',
+                formData.name,
+                formData.symbol,
+                formData.quantity,
+                formData.purchase_price_avg,
+                formData.network
+            );
+
             closeAddCryptoModal();
             await fetchCryptoData();
         } else {
@@ -3966,6 +4216,17 @@ async function submitSellCrypto(event) {
         });
 
         if (response.ok) {
+            // Log sell transaction
+            logCryptoTransaction(
+                'sell',
+                holding.name,
+                holding.symbol,
+                quantity,
+                sellPrice,
+                holding.network || '',
+                holding.purchase_price_avg || holding.avg_buy_price || 0
+            );
+
             showToast('Crypto sold successfully', 'success');
             closeSellCryptoModal();
             await fetchCryptoData();
@@ -4689,6 +4950,14 @@ function generateBusinessStatements() {
         const revenue = bizTx.filter(tx => tx.type === 'Income').reduce((sum, tx) => sum + tx.amount, 0);
 
         const expenses = bizTx.filter(tx => tx.type === 'Expense').reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+        // Aggregate expenses by category for breakdown
+        const expenseBreakdown = {};
+        bizTx.filter(tx => tx.type === 'Expense').forEach(tx => {
+            const cat = tx.category || 'Uncategorized';
+            expenseBreakdown[cat] = (expenseBreakdown[cat] || 0) + Math.abs(tx.amount);
+        });
+
         const netProfit = revenue - expenses;
 
         BUSINESS_STATEMENTS.pl.push({
@@ -4697,7 +4966,7 @@ function generateBusinessStatements() {
             revenue: revenue,
             expenses: expenses,
             netProfit: netProfit,
-            expenseBreakdown: { operations: expenses }
+            expenseBreakdown: expenseBreakdown
         });
 
         // Calculate Balance Sheet (Simplified estimation)
@@ -4729,13 +4998,15 @@ function generateBusinessStatements() {
 // Business Data Fetcher
 async function fetchBusinessData() {
     try {
-        // Fetch business ventures
-        const response = await fetch(`${API_BASE_URL}/business/`, {
-            headers: getAuthHeaders()
-        });
+        // Fetch business ventures and transactions in parallel for performance
+        const [bizResponse, txResponse] = await Promise.all([
+            fetch(`${API_BASE_URL}/business/`, { headers: getAuthHeaders() }),
+            fetch(`${API_BASE_URL}/business/transactions/all`, { headers: getAuthHeaders() })
+        ]);
 
-        if (response.ok) {
-            const businesses = await response.json();
+        // Process Business Data
+        if (bizResponse.ok) {
+            const businesses = await bizResponse.json();
             // Map API response to frontend format
             BUSINESS_DATA = businesses.map(biz => ({
                 id: biz.id,
@@ -4753,18 +5024,14 @@ async function fetchBusinessData() {
                 description: biz.description
             }));
             console.log('Business data fetched successfully:', BUSINESS_DATA.length);
-        } else if (response.status === 401) {
+        } else if (bizResponse.status === 401) {
             logout();
             return;
         } else {
             console.error('Failed to fetch business ventures');
         }
 
-        // Fetch business transactions
-        const txResponse = await fetch(`${API_BASE_URL}/business/transactions/all`, {
-            headers: getAuthHeaders()
-        });
-
+        // Process Transactions
         if (txResponse.ok) {
             const transactions = await txResponse.json();
             BUSINESS_TRANSACTIONS = transactions.map(tx => ({
@@ -4778,6 +5045,8 @@ async function fetchBusinessData() {
                 notes: tx.notes
             }));
             console.log('Business transactions fetched:', BUSINESS_TRANSACTIONS.length);
+        } else {
+            console.error('Failed to fetch business transactions');
         }
 
         // Generate dynamic statements
@@ -4882,24 +5151,20 @@ function selectCryptoNetwork(network, btnElement) {
     if (container) {
         // Reset all buttons
         container.querySelectorAll('button').forEach(btn => {
-            btn.classList.remove('bg-white', 'text-black');
-            btn.classList.add('glass-button');
+            btn.classList.remove('selected');
 
             // Handles auto-selection case where btnElement is null
             if (!btnElement && btn.textContent.trim() === network) {
-                btn.classList.remove('glass-button');
-                btn.classList.add('bg-white', 'text-black');
+                btn.classList.add('selected');
             }
             if (!btnElement && network === 'Binance Smart Chain' && btn.textContent.trim() === 'BSC') {
-                btn.classList.remove('glass-button');
-                btn.classList.add('bg-white', 'text-black');
+                btn.classList.add('selected');
             }
         });
 
         // Highlight clicked button
         if (btnElement) {
-            btnElement.classList.remove('glass-button');
-            btnElement.classList.add('bg-white', 'text-black');
+            btnElement.classList.add('selected');
         }
     }
 }
@@ -5121,25 +5386,35 @@ function renderBusinessDashboard() {
     const totalRevenue = BUSINESS_DATA.reduce((sum, b) => sum + b.annualRevenue, 0);
     const totalProfit = BUSINESS_DATA.reduce((sum, b) => sum + b.annualProfit, 0);
     const cashOnHand = BUSINESS_DATA.reduce((sum, b) => sum + b.cashFlow, 0) * 12; // Annualized
-    const avgOwnership = BUSINESS_DATA.reduce((sum, b) => sum + b.ownership, 0) / totalBusinesses;
+    const avgOwnership = BUSINESS_DATA.reduce((sum, b) => sum + b.ownership, 0) / (totalBusinesses || 1);
     const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
-    let healthStatus = 'Healthy';
-    if (profitMargin < 10) healthStatus = 'At Risk';
-    else if (profitMargin < 20) healthStatus = 'Stable';
 
-    // 0. Render Chart
+    let healthStatus = 'Healthy';
+    let healthScore = 92; // Mock score based on margin
+    if (profitMargin < 10) { healthStatus = 'At Risk'; healthScore = 45; }
+    else if (profitMargin < 20) { healthStatus = 'Stable'; healthScore = 75; }
+
+    // 0. Render Chart (Premium)
     const chartCtx = document.getElementById('businessRevenueChart');
     if (chartCtx) {
         if (window.businessRevenueChartInstance) {
             window.businessRevenueChartInstance.destroy();
         }
 
+        const ctx = chartCtx.getContext('2d');
+        const gradientRevenue = ctx.createLinearGradient(0, 0, 0, 300);
+        gradientRevenue.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
+        gradientRevenue.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+        const gradientProfit = ctx.createLinearGradient(0, 0, 0, 300);
+        gradientProfit.addColorStop(0, 'rgba(16, 185, 129, 0.15)'); // Green-500
+        gradientProfit.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
         // Generate Mock Trend Data (12 Months)
         const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
         // Base monthly values from annual totals (approx)
         const baseMonthlyRevenue = totalRevenue / 12;
-        const baseMonthlyProfit = totalProfit / 12;
 
         // Create a realistic-looking curve with some randomness
         const revenueData = labels.map((_, i) => {
@@ -5147,10 +5422,7 @@ function renderBusinessDashboard() {
             return baseMonthlyRevenue * (0.8 + (i * 0.05)) * (0.95 + Math.random() * 0.1);
         });
 
-        const profitData = labels.map((_, i) => {
-            // Profit follows revenue but with variable margin
-            return revenueData[i] * (profitMargin / 100) * (0.9 + Math.random() * 0.2);
-        });
+        const profitData = revenueData.map(r => r * (profitMargin / 100) * (0.9 + Math.random() * 0.2));
 
         window.businessRevenueChartInstance = new Chart(chartCtx, {
             type: 'line',
@@ -5161,49 +5433,60 @@ function renderBusinessDashboard() {
                         label: 'Revenue',
                         data: revenueData,
                         borderColor: '#ffffff',
-                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        backgroundColor: gradientRevenue,
                         borderWidth: 2,
                         tension: 0.4,
                         fill: true,
                         pointBackgroundColor: '#ffffff',
                         pointRadius: 0,
-                        pointHoverRadius: 4
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#ffffff',
+                        pointHoverBorderColor: '#ffffff'
                     },
                     {
                         label: 'Profit',
                         data: profitData,
-                        borderColor: '#4ade80', // green-400
-                        backgroundColor: 'rgba(74, 222, 128, 0.05)',
+                        borderColor: '#10b981', // green-400
+                        backgroundColor: gradientProfit,
                         borderWidth: 2,
                         tension: 0.4,
                         fill: true,
-                        pointBackgroundColor: '#4ade80',
+                        pointBackgroundColor: '#10b981',
                         pointRadius: 0,
-                        pointHoverRadius: 4
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#10b981',
+                        pointHoverBorderColor: '#10b981'
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
                 plugins: {
                     legend: {
                         position: 'top',
                         align: 'end',
                         labels: {
-                            color: 'rgba(255, 255, 255, 0.7)',
-                            font: { size: 11, family: "'Inter', sans-serif" },
+                            color: 'rgba(255, 255, 255, 0.6)',
+                            font: { size: 12, family: "'Inter', sans-serif" },
                             usePointStyle: true,
                             boxWidth: 8
                         }
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(18, 18, 22, 0.95)',
+                        backgroundColor: 'rgba(5, 5, 5, 0.9)',
                         titleColor: '#fff',
                         bodyColor: 'rgba(255, 255, 255, 0.8)',
                         borderColor: 'rgba(255, 255, 255, 0.1)',
                         borderWidth: 1,
                         padding: 12,
+                        titleFont: { family: "'Inter', sans-serif", size: 13 },
+                        bodyFont: { family: "'Inter', sans-serif", size: 12 },
+                        cornerRadius: 12,
                         displayColors: true,
                         callbacks: {
                             label: function (context) {
@@ -5222,24 +5505,25 @@ function renderBusinessDashboard() {
                 scales: {
                     x: {
                         grid: {
-                            color: 'rgba(255, 255, 255, 0.05)',
-                            borderColor: 'transparent'
+                            display: false
                         },
                         ticks: {
                             color: 'rgba(255, 255, 255, 0.4)',
-                            font: { size: 10, family: "'Inter', sans-serif" }
+                            font: { size: 11, family: "'Inter', sans-serif" }
                         }
                     },
                     y: {
                         grid: {
-                            color: 'rgba(255, 255, 255, 0.05)',
-                            borderColor: 'transparent'
+                            color: 'rgba(255, 255, 255, 0.03)',
+                            borderDash: [5, 5],
+                            drawBorder: false
                         },
+                        border: { display: false },
                         ticks: {
                             color: 'rgba(255, 255, 255, 0.4)',
-                            font: { size: 10, family: "'Inter', sans-serif" },
+                            font: { size: 11, family: "'Inter', sans-serif" },
                             callback: function (value) {
-                                if (value >= 10000000) return '₹' + (value / 10000000).toFixed(1) + 'Cr';
+                                if (value >= 10000000) return '₹' + (value / 10000000).toFixed(0) + 'Cr';
                                 if (value >= 100000) return '₹' + (value / 100000).toFixed(0) + 'L';
                                 return '₹' + value;
                             }
@@ -5250,132 +5534,180 @@ function renderBusinessDashboard() {
         });
     }
 
-    // Summary Cards
+    // Summary Cards (Premium)
     const cardsContainer = document.getElementById('business-summary-cards');
     if (cardsContainer) {
-        cardsContainer.classList.add('row-cols-md-5');
-        cardsContainer.innerHTML = `
-            <div class="col">
-                <div class="glass-card p-4 h-100">
-                    <div class="text-white-40 mb-2"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V11"/><path d="M15 17V7"/></svg></div>
-                    <div class="h3 text-white fw-light mb-1">${totalBusinesses}</div>
-                    <div class="small text-white-40 text-uppercase">Total Businesses</div>
-                </div>
-            </div>
-            <div class="col">
-                <div class="glass-card p-4 h-100">
-                    <div class="text-white-40 mb-2"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-                    <div class="h3 text-blue-400 fw-light mb-1">₹${(totalValuation / 10000000).toFixed(2)}Cr</div>
-                    <div class="small text-white-40 text-uppercase">Total Valuation</div>
-                </div>
-            </div>
-            <div class="col">
-                <div class="glass-card p-4 h-100">
-                    <div class="text-white-40 mb-2"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg></div>
-                    <div class="h3 text-white fw-light mb-1">₹${(totalRevenue / 10000000).toFixed(2)}Cr</div>
-                    <div class="small text-white-40 text-uppercase">Combined Revenue</div>
-                </div>
-            </div>
-            <div class="col">
-                <div class="glass-card p-4 h-100">
-                    <div class="text-white-40 mb-2"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
-                    <div class="h3 text-green-400 fw-light mb-1">₹${(totalProfit / 10000000).toFixed(2)}Cr</div>
-                    <div class="small text-white-40 text-uppercase">Combined Profit</div>
-                </div>
-            </div>
-            <div class="col">
-                <div class="glass-card p-4 h-100">
-                    <div class="text-white-40 mb-2"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/></svg></div>
-                    <div class="h3 text-white fw-light mb-1">₹${(cashOnHand / 10000000).toFixed(2)}Cr</div>
-                    <div class="small text-white-40 text-uppercase">Cash on Hand</div>
-                </div>
-            </div>
-        `;
-    }
+        cardsContainer.className = 'row g-3 mb-4 row-cols-2 row-cols-md-5';
 
-    // Health Indicator
-    const healthContainer = document.getElementById('business-health-indicator');
-    if (healthContainer) {
-        const healthColor = healthStatus === 'Healthy' ? 'bg-green-400' : healthStatus === 'Stable' ? 'bg-blue-400' : 'bg-red-400';
-        healthContainer.innerHTML = `
-            <h3 class="h6 fw-light text-white mb-3">Portfolio Health</h3>
-            <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle ${healthColor}" style="width: 12px; height: 12px; box-shadow: 0 0 8px currentColor;"></div>
-                <span class="text-white-90 fw-medium">${healthStatus}</span>
-                <span class="text-white-40 small">Overall profit margin: ${profitMargin.toFixed(1)}%</span>
-            </div>
-        `;
-    }
+        const metrics = [
+            { label: 'Ventures', value: totalBusinesses, icon: '<path d="M3 21h18M5 18h14M7 15h10M9 12h6"/>', sub: 'Active' },
+            { label: 'Valuation', value: '₹' + (totalValuation / 10000000).toFixed(1) + 'Cr', icon: '<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>', sub: '+12.5%' },
+            { label: 'Revenue', value: '₹' + (totalRevenue / 10000000).toFixed(1) + 'Cr', icon: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline>', sub: 'Combined' },
+            { label: 'Profit', value: '₹' + (totalProfit / 10000000).toFixed(1) + 'Cr', icon: '<circle cx="12" cy="12" r="10"/><path d="M16 8l-4 4-4-4"/>', sub: 'Net', color: 'text-green-400' },
+            { label: 'Cash Flow', value: '₹' + (cashOnHand / 10000000).toFixed(1) + 'Cr', icon: '<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>', sub: 'On Hand' }
+        ];
 
-    // Business Grid
-    const gridContainer = document.getElementById('business-dashboard-grid');
-    if (gridContainer) {
-        gridContainer.innerHTML = BUSINESS_DATA.slice(0, 4).map(biz => `
-            <div class="col-md-6">
-                <div class="glass-card p-4 h-100 hover-lift" style="cursor: pointer;" onclick="openBusinessDetailModal('${biz.id}')">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <div class="rounded-3 bg-white-10 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-white-80"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
-                        </div>
-                        <div>
-                            <h4 class="h6 text-white mb-0">${biz.name}</h4>
-                            <span class="small text-white-40">${biz.industry}</span>
-                        </div>
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-4"><div class="small text-white-40">Revenue</div><div class="text-white">₹${(biz.monthlyRevenue / 100000).toFixed(1)}L</div></div>
-                        <div class="col-4"><div class="small text-white-40">Profit</div><div class="text-green-400">₹${(biz.monthlyProfit / 100000).toFixed(1)}L</div></div>
-                        <div class="col-4"><div class="small text-white-40">Status</div><div class="text-white-90">${biz.status}</div></div>
-                    </div>
+        cardsContainer.innerHTML = metrics.map(m => `
+            <div class="col">
+                <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
+                     style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                     onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                     onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                     
+                     <div class="d-flex justify-content-between align-items-start mb-3">
+                         <div class="text-white-50"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${m.icon}</svg></div>
+                         <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">${m.sub}</span>
+                     </div>
+                     <div>
+                         <div class="h4 mb-0 fw-light ${m.color || 'text-white'}">${m.value}</div>
+                         <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">${m.label}</div>
+                     </div>
                 </div>
             </div>
         `).join('');
     }
-}
 
+    // Health Indicator (Premium Gauge)
+    const healthContainer = document.getElementById('business-health-indicator');
+    if (healthContainer) {
+        healthContainer.innerHTML = `
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h3 class="h6 fw-light text-white mb-0">Portfolio Health Score</h3>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-green-400 fw-medium h4 mb-0">${healthScore}</span>
+                    <span class="text-white-30 small">/100</span>
+                </div>
+            </div>
+            <div class="progress mb-3 p-1 glass-card" style="height: 12px; background: rgba(255,255,255,0.02); border-radius: 20px;">
+                <div class="progress-bar" 
+                     style="width: ${healthScore}%; background: linear-gradient(90deg, #10b981 0%, #34d399 100%); border-radius: 20px; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);"></div>
+            </div>
+            <div class="d-flex justify-content-between text-white-40 small mt-2" style="font-size: 0.75rem;">
+                <span class="d-flex align-items-center gap-2"><div class="rounded-circle bg-green-400" style="width:6px;height:6px;"></div> Based on strong profit margins</span>
+                <span class="text-white-60 font-monospace">STATUS: ${healthStatus.toUpperCase()}</span>
+            </div>
+        `;
+    }
+
+    // Business Grid (Premium Micro-Cards)
+    const gridContainer = document.getElementById('business-dashboard-grid');
+    if (gridContainer) {
+        gridContainer.innerHTML = BUSINESS_DATA.slice(0, 4).map(biz => `
+           <div class="col-md-6">
+                <div class="glass-card p-4 h-100 hover-lift position-relative overflow-hidden transition-colors" 
+                     style="cursor: pointer; transition: background 0.3s ease;"
+                     onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                     onmouseout="this.style.background='rgba(255,255,255,0.03)'"
+                     onclick="openBusinessDetailModal('${biz.id}')">
+                    
+                    <div class="d-flex align-items-center gap-4 mb-4">
+                        <div class="d-flex align-items-center justify-content-center text-white-90 fs-4 fw-light" 
+                             style="width: 56px; height: 56px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; font-family: var(--font-primary);">
+                            ${biz.name.charAt(0)}
+                        </div>
+                        <div>
+                            <h4 class="h5 text-white fw-light mb-1">${biz.name}</h4>
+                            <span class="badge fw-light px-2 py-1" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); font-size: 0.75rem;">${biz.industry}</span>
+                        </div>
+                        <div class="ms-auto opacity-50">
+                            <svg class="text-white" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between p-3 rounded-4" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03);">
+                        <div class="text-center px-2">
+                             <div class="small text-white-30 text-uppercase tracking-wider mb-1" style="font-size: 0.6rem;">Revenue</div>
+                             <div class="text-white fw-medium">₹${(biz.monthlyRevenue / 100000).toFixed(1)}L</div>
+                        </div>
+                        <div class="vr bg-white-10 my-1"></div>
+                         <div class="text-center px-2">
+                             <div class="small text-white-30 text-uppercase tracking-wider mb-1" style="font-size: 0.6rem;">Profit</div>
+                             <div class="text-green-400 fw-medium">₹${(biz.monthlyProfit / 100000).toFixed(1)}L</div>
+                        </div>
+                        <div class="vr bg-white-10 my-1"></div>
+                         <div class="text-center px-2">
+                             <div class="small text-white-30 text-uppercase tracking-wider mb-1" style="font-size: 0.6rem;">Valuation</div>
+                             <div class="text-white fw-medium">₹${(biz.valuation / 10000000).toFixed(1)}Cr</div>
+                        </div>
+                    </div>
+                </div>
+           </div> 
+        `).join('');
+    }
+}
 function renderBusinessVentures() {
     console.log('Rendering Business Ventures...');
     const container = document.getElementById('business-ventures-grid');
     if (!container) return;
 
-    const statusColors = {
-        'Growing': 'bg-green-500-10 text-green-400 border-green-500-20',
-        'Stable': 'bg-blue-500-10 text-blue-400 border-blue-500-20',
-        'Declining': 'bg-red-500-10 text-red-400 border-red-500-20'
+    const statusConfig = {
+        'Growing': { bg: 'rgba(16, 185, 129, 0.1)', text: '#10b981' },
+        'Stable': { bg: 'rgba(59, 130, 246, 0.1)', text: '#3b82f6' },
+        'Declining': { bg: 'rgba(239, 68, 68, 0.1)', text: '#ef4444' }
     };
 
     container.innerHTML = BUSINESS_DATA.map(biz => {
         const profitMargin = biz.annualRevenue > 0 ? (biz.annualProfit / biz.annualRevenue) * 100 : 0;
-        const statusClass = statusColors[biz.status] || 'bg-white-10 text-white-60';
+        const status = statusConfig[biz.status] || { bg: 'rgba(255,255,255,0.05)', text: '#999' };
 
         return `
-        <div class="col-md-6">
-            <div class="glass-card p-4 h-100 hover-lift" style="cursor: pointer;" onclick="openBusinessDetailModal('${biz.id}')">
+        <div class="col-lg-6">
+            <div class="glass-card p-4 position-relative overflow-hidden transition-colors" 
+                 style="cursor: pointer; transition: background 0.3s ease;" 
+                 onclick="openBusinessDetailModal('${biz.id}')"
+                 onmouseover="this.style.background='rgba(255,255,255,0.05)'"
+                 onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                 
+                <!-- Header: Icon + Name + Status Badge -->
                 <div class="d-flex align-items-start justify-content-between mb-4">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="rounded-3 bg-white-10 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-white-80"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/></svg>
+                        <div class="d-flex align-items-center justify-content-center text-white fs-4 fw-light" 
+                             style="width: 56px; height: 56px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+                            ${biz.name.charAt(0)}
                         </div>
                         <div>
-                            <h4 class="h5 text-white mb-0">${biz.name}</h4>
-                            <span class="small text-white-40">${biz.industry}</span>
+                            <h4 class="h5 text-white fw-light mb-1">${biz.name}</h4>
+                            <div class="text-white-40 small">${biz.industry}</div>
                         </div>
                     </div>
-                    <span class="badge rounded-pill px-3 py-2 small ${statusClass}" style="border: 1px solid rgba(255,255,255,0.1);">${biz.status}</span>
+                    <div class="badge px-3 py-2 fw-light rounded-pill" 
+                         style="background: ${status.bg}; color: ${status.text}; font-size: 0.7rem;">
+                        ${biz.status}
+                    </div>
                 </div>
-                <div class="row g-3">
-                    <div class="col"><div class="small text-white-40">Ownership</div><div class="text-white">${biz.ownership}%</div></div>
-                    <div class="col"><div class="small text-white-40">Valuation</div><div class="text-white">₹${(biz.valuation / 10000000).toFixed(2)}Cr</div></div>
-                    <div class="col"><div class="small text-white-40">Revenue</div><div class="text-white">₹${(biz.monthlyRevenue / 100000).toFixed(1)}L</div></div>
-                    <div class="col"><div class="small text-white-40">Profit</div><div class="text-green-400">₹${(biz.monthlyProfit / 100000).toFixed(1)}L</div></div>
-                    <div class="col"><div class="small text-white-40">Margin</div><div class="text-white">${profitMargin.toFixed(1)}%</div></div>
+                
+                <!-- Horizontal Metrics Row (Old Website Style) -->
+                <div class="d-flex gap-3 p-3 rounded-3 border" style="background: rgba(0,0,0,0.15); border-color: rgba(255,255,255,0.05) !important;">
+                    <div class="text-center flex-fill">
+                        <div class="text-white-30 text-uppercase mb-1" style="font-size: 0.6rem; letter-spacing: 0.05em;">Ownership</div>
+                        <div class="text-white fw-medium">${biz.ownership}%</div>
+                    </div>
+                    <div class="vr bg-white-10"></div>
+                    <div class="text-center flex-fill">
+                        <div class="text-white-30 text-uppercase mb-1" style="font-size: 0.6rem; letter-spacing: 0.05em;">Valuation</div>
+                        <div class="text-white fw-medium">₹${(biz.valuation / 10000000).toFixed(2)}Cr</div>
+                    </div>
+                    <div class="vr bg-white-10"></div>
+                    <div class="text-center flex-fill">
+                        <div class="text-white-30 text-uppercase mb-1" style="font-size: 0.6rem; letter-spacing: 0.05em;">Monthly Revenue</div>
+                        <div class="text-white fw-medium">₹${(biz.monthlyRevenue / 100000).toFixed(2)}L</div>
+                    </div>
+                    <div class="vr bg-white-10"></div>
+                    <div class="text-center flex-fill">
+                        <div class="text-white-30 text-uppercase mb-1" style="font-size: 0.6rem; letter-spacing: 0.05em;">Monthly Profit</div>
+                        <div class="text-green-400 fw-medium">₹${(biz.monthlyProfit / 100000).toFixed(2)}L</div>
+                    </div>
+                    <div class="vr bg-white-10"></div>
+                    <div class="text-center flex-fill">
+                        <div class="text-white-30 text-uppercase mb-1" style="font-size: 0.6rem; letter-spacing: 0.05em;">Margin</div>
+                        <div class="${profitMargin >= 20 ? 'text-green-400' : profitMargin >= 10 ? 'text-white' : 'text-red-400'} fw-medium">${profitMargin.toFixed(1)}%</div>
+                    </div>
                 </div>
             </div>
         </div>
         `;
     }).join('');
 }
-
 function renderBusinessCashFlow() {
     console.log('Rendering Business Cash Flow...');
 
@@ -5402,6 +5734,20 @@ function renderBusinessCashFlow() {
         return bizMatch && typeMatch;
     }).sort((a, b) => new Date(b.date) - new Date(a.date));
 
+    // Calculate Totals based on filtered data OR all data? Usually filtered.
+    // Logic: Income/Investment are Inflows. Expense/Transfer are Outflows.
+    const totalIncome = filtered.reduce((sum, tx) => {
+        const isIncome = tx.type === 'Income' || tx.type === 'Investment' || (tx.category && tx.category.includes('Revenue'));
+        return isIncome ? sum + Math.abs(tx.amount) : sum;
+    }, 0);
+
+    const totalExpense = filtered.reduce((sum, tx) => {
+        const isExpense = tx.type === 'Expense' || tx.type === 'Transfer' || !((tx.type === 'Income' || tx.type === 'Investment' || (tx.category && tx.category.includes('Revenue'))));
+        return isExpense ? sum + Math.abs(tx.amount) : sum;
+    }, 0);
+
+    const netFlow = totalIncome - totalExpense;
+
     const container = document.getElementById('business-cf-transactions');
     if (!container) return;
 
@@ -5409,6 +5755,33 @@ function renderBusinessCashFlow() {
         container.innerHTML = '<div class="p-5 text-center text-white-40">No transactions found</div>';
         return;
     }
+
+    // Generate Summary Cards HTML
+    const summaryHtml = `
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="glass-card p-4 h-100 d-flex flex-column justify-content-center align-items-center text-center">
+                    <span class="small text-white-40 text-uppercase tracking-wider mb-2">Net Cash Flow</span>
+                    <h3 class="fw-light mb-0" style="color: ${netFlow >= 0 ? '#10b981' : '#ef4444'};">${netFlow >= 0 ? '+' : '-'}₹${(Math.abs(netFlow) / 100000).toFixed(2)}L</h3>
+                </div>
+            </div>
+            <div class="col-6 col-md-4">
+                <div class="glass-card p-4 h-100 d-flex flex-column justify-content-center align-items-center text-center">
+                    <span class="text-green-400 small text-uppercase tracking-wider mb-2">Total In</span>
+                    <h4 class="text-white fw-light mb-0">₹${(totalIncome / 100000).toFixed(2)}L</h4>
+                </div>
+            </div>
+            <div class="col-6 col-md-4">
+                <div class="glass-card p-4 h-100 d-flex flex-column justify-content-center align-items-center text-center">
+                    <span class="text-red-400 small text-uppercase tracking-wider mb-2">Total Out</span>
+                    <h4 class="text-white fw-light mb-0">₹${(totalExpense / 100000).toFixed(2)}L</h4>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="h5 text-white fw-medium mb-0">Recent Transactions</h3>
+        </div>
+    `;
 
     // Group transactions by business
     const groupedByBusiness = {};
@@ -5430,38 +5803,45 @@ function renderBusinessCashFlow() {
     };
 
     // Render cards
-    // Render cards
-    container.innerHTML = Object.values(groupedByBusiness).map(group => `
+    const listHtml = Object.values(groupedByBusiness).map(group => `
         <div class="glass-card mb-4 p-0 overflow-hidden">
-            <div class="p-4 d-flex align-items-center justify-content-between" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
-                <span class="fw-medium text-white">${group.name}</span>
-                <span class="badge bg-white-5 text-white-40 rounded-pill small px-2" style="font-size: 0.7rem; font-weight: 400;">${group.transactions.length} Entries</span>
+            <div class="px-4 py-3 d-flex align-items-center justify-content-between" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                <span class="fw-medium text-white" style="font-size: 0.95rem; letter-spacing: 0.01em;">${group.name}</span>
+                <span class="text-white-40" style="font-size: 0.75rem; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 20px;">${group.transactions.length} Entries</span>
             </div>
-            <div>
+            <div class="p-3">
                 ${group.transactions.map(tx => {
-        const isPositive = tx.amount > 0;
-        const colorClass = typeColors[tx.type] || 'bg-white-10 text-white-60';
-        const textColor = isPositive ? 'text-green-400' : 'text-red-400';
+        const isIncome = tx.type === 'Income' || tx.type === 'Investment' || (tx.category && tx.category.includes('Revenue'));
+        const amountColor = isIncome ? '#10b981' : '#ef4444';
 
         return `
-                    <div class="p-4 last:border-0" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center ${colorClass}" style="width: 40px; height: 40px;">
-                                    ${isPositive ?
-                '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>' :
-                '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 7l-9.2 9.2M7 7v10h10"/></svg>'}
+                     <div class="p-3 mb-2 d-flex align-items-center justify-content-between" 
+                          style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; transition: all 0.2s ease;"  
+                         onmouseover="this.style.background='rgba(255,255,255,0.04)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" 
+                         onmouseout="this.style.background='rgba(255,255,255,0.02)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                        
+                        <div class="d-flex align-items-center gap-3" style="flex: 1;">
+                            <div class="d-flex align-items-center justify-content-center" 
+                                 style="width: 36px; height: 36px; background: ${isIncome ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; border-radius: 10px; box-shadow: 0 0 15px ${isIncome ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'};">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${amountColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    ${isIncome ? '<path d="M17 7L7 17M7 17H17M7 17V7"/>' : '<path d="M7 17L17 7M17 7H7M17 7V17"/>'}
+                                </svg>
+                            </div>
+                            
+                            <div style="flex: 1;">
+                                <div class="mb-1 d-flex align-items-center gap-2">
+                                    <span class="fw-medium" style="color: ${amountColor}; font-size: 0.9rem;">${tx.category || tx.type}</span>
+                                    ${tx.notes ? `<span class="text-white-30" style="font-size: 0.75rem;">•</span> <span class="text-white-50 text-truncate" style="font-size: 0.8rem; max-width: 200px;">${tx.notes}</span>` : ''}
                                 </div>
-                                <div>
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                         <span class="fw-medium ${textColor}">${tx.category || tx.type}</span>
-                                    </div>
-                                    <div class="small text-white-40">${new Date(tx.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}${tx.notes ? ' · ' + tx.notes : ''}</div>
+                                <div class="small text-white-40" style="font-size: 0.75rem;">
+                                    ${new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                 </div>
                             </div>
-                            <div class="text-end">
-                                <div class="h6 mb-0 ${textColor}">${isPositive ? '+' : '-'}₹${(Math.abs(tx.amount) / 100000).toFixed(2)}L</div>
-                            </div>
+                        </div>
+                        
+                        <div class="text-end ps-3">
+                            <div class="fw-medium" style="color: ${amountColor}; font-size: 1rem; letter-spacing: 0.02em;">${isIncome ? '+' : '-'}₹${(Math.abs(tx.amount) / 100000).toFixed(2)}L</div>
+                            <div class="small text-white-40 text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.05em; margin-top: 2px;">${isIncome ? 'Income' : 'Expense'}</div>
                         </div>
                     </div>
                     `;
@@ -5469,6 +5849,8 @@ function renderBusinessCashFlow() {
             </div>
         </div>
     `).join('');
+
+    container.innerHTML = summaryHtml + listHtml;
 }
 
 function renderBusinessStatements() {
@@ -5477,60 +5859,222 @@ function renderBusinessStatements() {
     // P&L Statements
     const plContainer = document.getElementById('business-pl-statements');
     if (plContainer) {
-        plContainer.innerHTML = BUSINESS_STATEMENTS.pl.map(pl => {
-            const biz = BUSINESS_DATA.find(b => b.id === pl.businessId);
-            return `
-            <div class="glass-card p-4 mb-3" style="background: rgba(255,255,255,0.02);">
-                <div class="d-flex justify-content-between mb-3">
-                    <h4 class="h6 text-white mb-0">${biz?.name || 'Unknown'}</h4>
-                    <span class="text-white-40 small">${pl.period}</span>
+        if (!BUSINESS_STATEMENTS.pl || BUSINESS_STATEMENTS.pl.length === 0) {
+            plContainer.innerHTML = '<div class="text-center text-white-40 py-5">No statements available</div>';
+            // Reset wrapper width if empty
+            const wrapper = plContainer.closest('.glass-card');
+            if (wrapper) wrapper.style.maxWidth = '100%';
+        } else {
+            const count = BUSINESS_STATEMENTS.pl.length;
+            const wrapper = plContainer.closest('.glass-card');
+            if (wrapper) {
+                if (count <= 1) {
+                    wrapper.style.maxWidth = '600px';
+                } else {
+                    wrapper.style.maxWidth = '100%';
+                }
+            }
+
+            const gridHtml = `
+            <div class="row g-4">
+            ${BUSINESS_STATEMENTS.pl.map(pl => {
+                const biz = BUSINESS_DATA.find(b => b.id === pl.businessId);
+                const isProfitable = (pl.netProfit || 0) >= 0;
+                const profitColor = isProfitable ? '#10b981' : '#ef4444';
+                const colClass = BUSINESS_STATEMENTS.pl.length === 1 ? 'col-12' : 'col-12 col-xl-6';
+
+                return `
+                <div class="${colClass}">
+                    <div class="glass-card h-100 p-4 d-flex flex-column transition-colors position-relative overflow-hidden"
+                         style="transition: background 0.3s ease;"
+                         onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                         onmouseout="this.style.background='rgba(255,255,255,0.02)'">
+                        
+                        <!-- Header -->
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="d-flex align-items-center justify-content-center" 
+                                     style="width: 42px; height: 42px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-white-60">
+                                        <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="h6 text-white fw-medium mb-0">${biz?.name || 'Unknown'}</h4>
+                                    <span class="small text-white-40" style="font-size: 0.75rem;">${pl.period}</span>
+                                </div>
+                            </div>
+                            <span class="badge rounded-pill fw-normal text-white-40 px-3" 
+                                  style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); font-weight: 300;">P&L</span>
+                        </div>
+
+                        <!-- Main Metric: Net Profit -->
+                        <div class="mb-4 text-center py-3 rounded-xl" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03);">
+                            <div class="small text-white-40 text-uppercase tracking-wider mb-1" style="font-size: 0.7rem;">Net Profit</div>
+                            <div class="h3 fw-light mb-0" style="color: ${profitColor}; letter-spacing: -0.02em;">
+                                ${isProfitable ? '+' : '-'}₹${(Math.abs(pl.netProfit || 0) / 100000).toFixed(2)}L
+                            </div>
+                        </div>
+
+                        <!-- Revenue vs Expenses -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-6">
+                                <div class="p-3 h-100 d-flex flex-column align-items-center justify-content-center text-center" 
+                                     style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 18px;">
+                                    <span class="small text-green-400 text-uppercase tracking-wider mb-1" style="font-size: 0.65rem;">Revenue</span>
+                                    <div class="fw-light h5 mb-0 text-white">₹${((pl.revenue || 0) / 100000).toFixed(2)}L</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-3 h-100 d-flex flex-column align-items-center justify-content-center text-center" 
+                                     style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 18px;">
+                                    <span class="small text-red-400 text-uppercase tracking-wider mb-1" style="font-size: 0.65rem;">Expenses</span>
+                                    <div class="fw-light h5 mb-0 text-white">₹${((pl.expenses || 0) / 100000).toFixed(2)}L</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Expense Breakdown Accordion -->
+                        ${(pl.expenses || 0) > 0 ? `
+                        <div class="mt-auto">
+                            <button onclick="this.nextElementSibling.classList.toggle('d-none'); this.querySelector('.arrow-icon').style.transform = this.nextElementSibling.classList.contains('d-none') ? 'rotate(0deg)' : 'rotate(90deg)';" 
+                                    class="btn w-100 py-2 d-flex align-items-center justify-content-between text-white-40 hover-text-white transition-colors small fw-medium"
+                                    style="background: transparent; border-top: 1px solid rgba(255,255,255,0.05); border-radius: 0;">
+                                <span>Expense Breakdown</span>
+                                <svg class="arrow-icon transition-transform" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transition: transform 0.2s;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                            </button>
+                            <div class="d-none pt-3" style="border-top: 1px solid rgba(255,255,255,0.05);"> 
+                                <div class="d-flex flex-column gap-2">
+                                ${Object.entries(pl.expenseBreakdown || {}).map(([cat, amount]) => `
+                                    <div class="d-flex justify-content-between align-items-center small">
+                                        <span class="text-white-50">${cat}</span>
+                                        <span class="text-white-70 font-monospace">₹${((amount || 0) / 100000).toFixed(2)}L</span>
+                                    </div>
+                                `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+
+                    </div>
                 </div>
-                <div class="d-flex flex-column gap-2">
-                    <div class="d-flex justify-content-between"><span class="text-white-60">Revenue</span><span class="text-white">₹${(pl.revenue / 100000).toFixed(2)}L</span></div>
-                    <div class="d-flex justify-content-between"><span class="text-white-60">Expenses</span><span class="text-red-400">₹${(pl.expenses / 100000).toFixed(2)}L</span></div>
-                    <hr class="border-white-5 my-2">
-                    <div class="d-flex justify-content-between"><span class="text-white fw-medium">Net Profit</span><span class="text-green-400 h5 mb-0">₹${(pl.netProfit / 100000).toFixed(2)}L</span></div>
-                </div>
-            </div>
-            `;
-        }).join('');
+                `;
+            }).join('')}
+            </div>`;
+            plContainer.innerHTML = gridHtml;
+        }
     }
 
-    // Balance Sheets
+    // Balance Sheet Statements
     const bsContainer = document.getElementById('business-balance-sheets');
     if (bsContainer) {
-        bsContainer.innerHTML = BUSINESS_STATEMENTS.bs.map(bs => {
-            const biz = BUSINESS_DATA.find(b => b.id === bs.businessId);
-            const totalAssets = Object.values(bs.assets).reduce((s, v) => s + v, 0);
-            const totalLiabilities = Object.values(bs.liabilities).reduce((s, v) => s + v, 0);
-            return `
-            <div class="glass-card p-4 mb-3" style="background: rgba(255,255,255,0.02);">
-                <h4 class="h6 text-white mb-3">${biz?.name || 'Unknown'}</h4>
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="small text-white-40 mb-2">Assets</div>
-                        <div class="d-flex justify-content-between small mb-1"><span class="text-white-60">Cash</span><span class="text-white">₹${(bs.assets.cash / 100000).toFixed(1)}L</span></div>
-                        <div class="d-flex justify-content-between small mb-1"><span class="text-white-60">Inventory</span><span class="text-white">₹${(bs.assets.inventory / 100000).toFixed(1)}L</span></div>
-                        <div class="d-flex justify-content-between small mb-1"><span class="text-white-60">Equipment</span><span class="text-white">₹${(bs.assets.equipment / 100000).toFixed(1)}L</span></div>
-                        <hr class="border-white-5 my-2"><div class="d-flex justify-content-between small"><span class="text-white">Total</span><span class="text-white fw-medium">₹${(totalAssets / 100000).toFixed(1)}L</span></div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="small text-white-40 mb-2">Liabilities</div>
-                        <div class="d-flex justify-content-between small mb-1"><span class="text-white-60">Loans</span><span class="text-white">₹${(bs.liabilities.loans / 100000).toFixed(1)}L</span></div>
-                        <div class="d-flex justify-content-between small mb-1"><span class="text-white-60">Payables</span><span class="text-white">₹${(bs.liabilities.payables / 100000).toFixed(1)}L</span></div>
-                        <hr class="border-white-5 my-2"><div class="d-flex justify-content-between small"><span class="text-white">Total</span><span class="text-white fw-medium">₹${(totalLiabilities / 100000).toFixed(1)}L</span></div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="small text-white-40 mb-2">Equity</div>
-                        <div class="d-flex justify-content-between small"><span class="text-white">Total Equity</span><span class="text-green-400 fw-medium">₹${(bs.equity / 100000).toFixed(1)}L</span></div>
+        if (!BUSINESS_STATEMENTS.bs || BUSINESS_STATEMENTS.bs.length === 0) {
+            bsContainer.innerHTML = '<div class="text-center text-white-40 py-3">No balance sheets available</div>';
+            // Reset wrapper width if empty
+            const wrapper = bsContainer.closest('.glass-card');
+            if (wrapper) wrapper.style.maxWidth = '100%';
+        } else {
+            const count = BUSINESS_STATEMENTS.bs.length;
+            const wrapper = bsContainer.closest('.glass-card');
+            if (wrapper) {
+                if (count <= 1) {
+                    wrapper.style.maxWidth = '600px';
+                } else {
+                    wrapper.style.maxWidth = '100%';
+                }
+            }
+
+            const gridHtml = `
+            <div class="row g-4">
+            ${BUSINESS_STATEMENTS.bs.map(bs => {
+                const biz = BUSINESS_DATA.find(b => b.id === bs.businessId);
+                const totalAssets = Object.values(bs.assets || {}).reduce((s, v) => s + (v || 0), 0);
+                const totalLiabilities = Object.values(bs.liabilities || {}).reduce((s, v) => s + (v || 0), 0);
+                const equity = totalAssets - totalLiabilities;
+                const colClass = BUSINESS_STATEMENTS.bs.length === 1 ? 'col-12' : 'col-12 col-xl-6';
+
+                return `
+                <div class="${colClass}">
+                    <div class="glass-card h-100 p-4 transition-colors"
+                         style="transition: background 0.3s ease;"
+                         onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                         onmouseout="this.style.background='rgba(255,255,255,0.02)'">
+                        
+                        <!-- Header -->
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="d-flex align-items-center justify-content-center" 
+                                     style="width: 42px; height: 42px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-white-60">
+                                        <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11m16-11v11"/>
+                                    </svg>
+                                </div>
+                                <h4 class="h6 text-white fw-medium mb-0">${biz?.name || 'Unknown'}</h4>
+                            </div>
+                             <span class="badge rounded-pill fw-normal text-white-40 px-3" 
+                                  style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); font-weight: 300;">Sheet</span>
+                        </div>
+
+                        <!-- Summary Grid -->
+                        <div class="row g-3">
+                            <div class="col-4">
+                                <div class="small text-white-40 text-uppercase tracking-wider mb-1" style="font-size: 0.65rem;">Assets</div>
+                                <div class="text-white fw-medium">₹${(totalAssets / 100000).toFixed(1)}L</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="small text-white-40 text-uppercase tracking-wider mb-1" style="font-size: 0.65rem;">Liabilities</div>
+                                <div class="text-white fw-medium">₹${(totalLiabilities / 100000).toFixed(1)}L</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="small text-white-40 text-uppercase tracking-wider mb-1" style="font-size: 0.65rem;">Equity</div>
+                                <div class="text-green-400 fw-medium">₹${(equity / 100000).toFixed(1)}L</div>
+                            </div>
+                        </div>
+
+                        <div class="my-4" style="height: 1px; background: rgba(255,255,255,0.05);"></div>
+
+                        <!-- Details -->
+                        <div class="row g-4">
+                            <div class="col-6">
+                                <div class="small text-white-40 mb-3 fw-medium">ASSETS</div>
+                                <div class="d-flex flex-column gap-2">
+                                    <div class="d-flex justify-content-between small">
+                                        <span class="text-white-60">Cash</span>
+                                        <span class="text-white">₹${((bs.assets?.cash || 0) / 100000).toFixed(1)}L</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between small">
+                                        <span class="text-white-60">Receivable</span>
+                                        <span class="text-white">₹${((bs.assets?.receivables || 0) / 100000).toFixed(1)}L</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between small">
+                                        <span class="text-white-60">Inventory</span>
+                                        <span class="text-white">₹${((bs.assets?.inventory || 0) / 100000).toFixed(1)}L</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="small text-white-40 mb-3 fw-medium">LIABILITIES</div>
+                                <div class="d-flex flex-column gap-2">
+                                    <div class="d-flex justify-content-between small">
+                                        <span class="text-white-60">Payable</span>
+                                        <span class="text-white">₹${((bs.liabilities?.payables || 0) / 100000).toFixed(1)}L</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between small">
+                                        <span class="text-white-60">Loans</span>
+                                        <span class="text-white">₹${((bs.liabilities?.loans || 0) / 100000).toFixed(1)}L</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            `;
-        }).join('');
+                `;
+            }).join('')}
+            </div>`;
+            bsContainer.innerHTML = gridHtml;
+        }
     }
 }
-
 function renderBusinessDocumentation() {
     console.log('Rendering Business Documentation...');
 
@@ -5564,47 +6108,62 @@ function renderBusinessDocumentation() {
 
             html += `
             <div class="mb-5">
-                <!-- Business Long Pill Header -->
-                <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-pill mb-4 w-100" 
-                     style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
-                    <div class="p-1 rounded-circle bg-white-10 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white-60">
-                            <path d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5m-4 0h4"/>
-                        </svg>
-                    </div>
-                    <span class="small fw-medium text-white-70" style="font-size: 0.75rem; letter-spacing: 0.02em;">${biz.name}</span>
-                    <div class="ms-auto pe-1">
-                        <span class="py-1 px-3 rounded-pill bg-white-10 text-white-40" style="font-size: 0.65rem; letter-spacing: 0.05em;">${bizDocs.length} ${bizDocs.length === 1 ? 'FILE' : 'FILES'}</span>
-                    </div>
+                <!-- Business Section Header -->
+                <div class="d-flex align-items-center gap-3 mb-4 px-1">
+                    <span class="text-white small fw-medium text-uppercase tracking-wider" style="letter-spacing: 0.05em; opacity: 0.6;">${biz.name}</span>
+                    <div class="flex-grow-1" style="height: 1px; background: rgba(255,255,255,0.05);"></div>
+                    <span class="badge rounded-pill fw-normal text-white-40" style="background: rgba(255,255,255,0.05); font-weight: 300;">${bizDocs.length} FILE${bizDocs.length !== 1 ? 'S' : ''}</span>
                 </div>
 
                 <div class="row g-4">
                     ${bizDocs.map(doc => {
                 const colorClass = typeColors[doc.type] || 'bg-white-10 text-white-60';
-
-                // Icon based on type (using global helper)
                 let iconSvg = getFileIcon(doc.fileName || 'file.pdf');
 
                 return `
-                        <div class="col-md-4">
-                            <div class="glass-card p-4 h-100 d-flex flex-column group relative" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);">
-                                <div class="d-flex align-items-start justify-content-between mb-4">
-                                    <div class="p-3 rounded-3 ${colorClass}">
-                                        ${iconSvg}
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <div class="glass-card h-100 p-4 d-flex flex-column position-relative overflow-hidden transition-colors"
+                                 style="transition: background 0.3s ease;"
+                                 onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                                 onmouseout="this.style.background='rgba(255,255,255,0.02)'">
+                                 
+                                <!-- Top Row: Icon and Delete -->
+                                <div class="d-flex justify-content-between align-items-start mb-4">
+                                    <div class="p-3 d-flex align-items-center justify-content-center" 
+                                         style="width: 48px; height: 48px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                                        <div style="transform: scale(1.1); opacity: 0.8;">
+                                            ${iconSvg}
+                                        </div>
                                     </div>
-                                    <button class="btn btn-link text-white-50 p-0 hover-text-danger transition-colors" onclick="event.stopPropagation(); deleteBusinessDocument('${doc.id}')" title="Delete Document">
-                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    <button onclick="event.stopPropagation(); deleteBusinessDocument('${doc.id}')" 
+                                            class="btn p-0 text-danger opacity-50 hover-opacity-100 transition-colors"
+                                            style="border: none;"
+                                            title="Delete Document">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
                                 </div>
-                                <h3 class="h6 fw-medium text-white mb-1 text-truncate" title="${doc.name}">${doc.name}</h3>
-                                <p class="small text-white-70 mb-1 text-truncate" style="font-size: 0.75rem;">${doc.fileName || 'No file attached'}</p>
-                                <p class="small text-white-50 mb-4" style="font-size: 0.7rem;">${doc.fileSize ? formatFileSize(doc.fileSize) : 'Size N/A'} • ${doc.date}</p>
-                                
-                                <button onclick="window.open('${doc.url}', '_blank')" class="btn w-100 py-2 small rounded bg-white bg-opacity-10 hover-bg-white hover-bg-opacity-20 text-white-50 transition-colors mt-auto">
-                                    <span class="d-flex align-items-center justify-content-center gap-2">
-                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                        View Document
-                                    </span>
+
+                                <!-- Content -->
+                                <div class="mb-4">
+                                    <h3 class="h6 text-white fw-medium mb-1 text-truncate" title="${doc.name}">${doc.name}</h3>
+                                    <div class="d-flex flex-column gap-1">
+                                        <span class="small text-white-40 text-truncate" style="font-size: 0.75rem;">${doc.fileName || 'Unnamed File'}</span>
+                                        ${doc.description ? `<p class="small text-white-50 mb-2 mt-2" style="font-size: 0.75rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${doc.description}</p>` : ''}
+                                        <div class="d-flex align-items-center gap-2 small text-white-30 mt-1" style="font-size: 0.7rem;">
+                                            <span>${doc.fileSize ? formatFileSize(doc.fileSize) : 'Size N/A'}</span>
+                                            <span>•</span>
+                                            <span>${doc.date}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Action Button -->
+                                <button onclick="openDocumentViewer('${doc.url}', '${doc.name}')" 
+                                        class="mt-auto btn w-100 py-2 text-white-50 hover-text-white transition-all small fw-medium"
+                                        style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px;"
+                                        onmouseover="this.style.background='rgba(255,255,255,0.08)'"
+                                        onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                                    View Document
                                 </button>
                             </div>
                         </div>
@@ -5617,7 +6176,7 @@ function renderBusinessDocumentation() {
 
         // If no documents at all
         if (html === '') {
-            html = '<p class="text-white-40 text-center py-4">No documents uploaded yet. Click "+ Add Document" to get started.</p>';
+            html = '<p class="text-white-40 text-center py-5 fw-light">No documents uploaded yet. Click "+ Add Document" to get started.</p>';
         }
 
         docsContainer.innerHTML = html;
@@ -5681,42 +6240,116 @@ function openBusinessDetailModal(businessId) {
     }
 
     modal.innerHTML = `
-        <div class="glass-card p-5" style="max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
-            <div class="d-flex justify-content-between align-items-start mb-4">
-                <div class="d-flex align-items-center gap-4">
-                    <div class="rounded-3 bg-white-10 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-white-80"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/></svg>
+        <div class="position-relative d-flex flex-column glass-card" style="max-width: 650px; width: 100%; max-height: 85vh;" onclick="event.stopPropagation()">
+            
+            <!-- Fixed Header -->
+            <div class="p-4 flex-shrink-0">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="d-flex align-items-center gap-4">
+                        <div class="rounded-3 bg-white-10 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-white-80"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/></svg>
+                        </div>
+                        <div>
+                            <h2 class="h3 text-white fw-light mb-1">${biz.name}</h2>
+                            <p class="text-white-40 mb-0">${biz.industry}</p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 class="h3 text-white fw-light mb-1">${biz.name}</h2>
-                        <p class="text-white-40 mb-0">${biz.industry}</p>
+                    <div class="d-flex gap-2">
+                        <button onclick="toggleBusinessEditMode('${biz.id}')" class="btn glass-button px-3 py-2" id="edit-mode-toggle">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button>
+                        <button onclick="closeBusinessDetailModal()" class="btn glass-button px-3 py-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
                     </div>
                 </div>
-                <button onclick="closeBusinessDetailModal()" class="btn glass-button px-3 py-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
             </div>
 
-            <div class="glass-card p-4 mb-4" style="background: rgba(255,255,255,0.02);">
-                <h3 class="h6 text-white mb-3">Overview</h3>
-                <div class="d-flex justify-content-between mb-2"><span class="text-white-40">Founded</span><span class="text-white">${new Date(biz.founded).toLocaleDateString()}</span></div>
-                <div class="d-flex justify-content-between mb-2"><span class="text-white-40">Ownership Structure</span><span class="text-white">${biz.ownership}% stake</span></div>
-                ${biz.description ? `<hr class="border-white-5 my-3"><p class="text-white-60 small mb-0">${biz.description}</p>` : ''}
+            <!-- Scrollable Content -->
+            <div class="flex-grow-1 overflow-auto px-4" style="max-height: calc(85vh - 180px);">
+                
+                <!-- View Mode -->
+                <div id="view-mode-content">
+                    <div class="glass-card p-4 mb-4" style="background: rgba(255,255,255,0.02);">
+                        <h3 class="h6 text-white mb-3">Overview</h3>
+                        <div class="d-flex justify-content-between mb-2"><span class="text-white-40">Founded</span><span class="text-white">${new Date(biz.founded).toLocaleDateString()}</span></div>
+                        <div class="d-flex justify-content-between mb-2"><span class="text-white-40">Ownership Structure</span><span class="text-white">${biz.ownership}% stake</span></div>
+                        ${biz.description ? `<hr class="border-white-5 my-3"><p class="text-white-60 small mb-0">${biz.description}</p>` : ''}
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6"><div class="glass-card p-4" style="background: rgba(255,255,255,0.02);"><div class="small text-white-40 mb-2">Annual Revenue</div><div class="h3 text-white fw-light">₹${(biz.annualRevenue / 10000000).toFixed(2)}Cr</div></div></div>
+                        <div class="col-md-6"><div class="glass-card p-4" style="background: rgba(255,255,255,0.02);"><div class="small text-white-40 mb-2">Annual Profit</div><div class="h3 text-green-400 fw-light">₹${(biz.annualProfit / 10000000).toFixed(2)}Cr</div></div></div>
+                        <div class="col-md-6"><div class="glass-card p-4" style="background: rgba(255,255,255,0.02);"><div class="small text-white-40 mb-2">Profit Margin</div><div class="h3 text-white fw-light">${profitMargin.toFixed(1)}%</div></div></div>
+                        <div class="col-md-6"><div class="glass-card p-4" style="background: rgba(255,255,255,0.02);"><div class="small text-white-40 mb-2">Monthly Cash Flow</div><div class="h3 text-white fw-light">₹${(biz.cashFlow / 100000).toFixed(1)}L</div></div></div>
+                    </div>
+                </div>
+
+                <!-- Edit Mode -->
+                <div id="edit-mode-content" style="display: none;">
+                    <form id="edit-business-form" onsubmit="saveBusinessDetails(event, '${biz.id}')">
+                        <div class="glass-card p-4 mb-4" style="background: rgba(255,255,255,0.02);">
+                            <h3 class="h6 text-white mb-3">Basic Information</h3>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label text-white-40 small">Business Name</label>
+                                    <input type="text" class="form-control glass-input" id="edit-name" value="${biz.name}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-white-40 small">Industry</label>
+                                    <input type="text" class="form-control glass-input" id="edit-industry" value="${biz.industry}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-white-40 small">Founded Date</label>
+                                    <input type="date" class="form-control glass-input" id="edit-founded" value="${biz.founded}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-white-40 small">Ownership (%)</label>
+                                    <input type="number" class="form-control glass-input" id="edit-ownership" value="${biz.ownership}" min="0" max="100" step="0.1" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label text-white-40 small">Description</label>
+                                    <textarea class="form-control glass-input" id="edit-description" rows="2">${biz.description || ''}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-4 mb-4" style="background: rgba(255,255,255,0.02);">
+                            <h3 class="h6 text-white mb-3">Financial Information</h3>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label text-white-40 small">Annual Revenue (₹)</label>
+                                    <input type="number" class="form-control glass-input" id="edit-annual-revenue" value="${biz.annualRevenue}" min="0" step="1000" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-white-40 small">Annual Profit (₹)</label>
+                                    <input type="number" class="form-control glass-input" id="edit-annual-profit" value="${biz.annualProfit}" min="0" step="1000" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-white-40 small">Monthly Cash Flow (₹)</label>
+                                    <input type="number" class="form-control glass-input" id="edit-cashflow" value="${biz.cashFlow}" step="1000" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-end mb-3">
+                            <button type="button" onclick="toggleBusinessEditMode('${biz.id}')" class="btn glass-button px-4 py-2">Cancel</button>
+                            <button type="submit" class="btn btn-primary px-4 py-2">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
-            <div class="row g-3">
-                <div class="col-md-6"><div class="glass-card p-4" style="background: rgba(255,255,255,0.02);"><div class="small text-white-40 mb-2">Annual Revenue</div><div class="h3 text-white fw-light">₹${(biz.annualRevenue / 10000000).toFixed(2)}Cr</div></div></div>
-                <div class="col-md-6"><div class="glass-card p-4" style="background: rgba(255,255,255,0.02);"><div class="small text-white-40 mb-2">Annual Profit</div><div class="h3 text-green-400 fw-light">₹${(biz.annualProfit / 10000000).toFixed(2)}Cr</div></div></div>
-                <div class="col-md-6"><div class="glass-card p-4" style="background: rgba(255,255,255,0.02);"><div class="small text-white-40 mb-2">Profit Margin</div><div class="h3 text-white fw-light">${profitMargin.toFixed(1)}%</div></div></div>
-                <div class="col-md-6"><div class="glass-card p-4" style="background: rgba(255,255,255,0.02);"><div class="small text-white-40 mb-2">Monthly Cash Flow</div><div class="h3 text-white fw-light">₹${(biz.cashFlow / 100000).toFixed(1)}L</div></div></div>
-            </div>
-
-            <!-- Remove Button -->
-            <div class="mt-5 pt-4 border-top border-white border-opacity-10 d-flex justify-content-center">
-                <button onclick="confirmRemoveBusiness('${biz.id}')" class="btn text-danger bg-danger bg-opacity-10 border border-danger border-opacity-25 px-4 py-2 hover-bg-opacity-20 transition-all rounded-pill d-flex align-items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                    <span>Remove Business</span>
-                </button>
+            <!-- Fixed Footer -->
+            <div class="p-4 border-top border-white border-opacity-10 flex-shrink-0" id="view-mode-footer">
+                <div class="d-flex justify-content-center">
+                    <button onclick="confirmRemoveBusiness('${biz.id}')" class="btn text-danger bg-danger bg-opacity-10 border border-danger border-opacity-25 px-4 py-2 hover-bg-opacity-20 transition-all rounded-pill d-flex align-items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                        <span>Remove Business</span>
+                    </button>
+                </div>
             </div>
         </div>
     `;
@@ -5833,8 +6466,141 @@ async function removeBusiness(businessId) {
     }
 }
 
+// Toggle Business Edit Mode
+function toggleBusinessEditMode(businessId) {
+    const viewMode = document.getElementById('view-mode-content');
+    const editMode = document.getElementById('edit-mode-content');
+    const viewFooter = document.getElementById('view-mode-footer');
+
+    if (viewMode && editMode) {
+        if (viewMode.style.display === 'none') {
+            // Switch to View Mode
+            viewMode.style.display = 'block';
+            editMode.style.display = 'none';
+            if (viewFooter) viewFooter.style.display = 'block';
+        } else {
+            // Switch to Edit Mode
+            viewMode.style.display = 'none';
+            editMode.style.display = 'block';
+            if (viewFooter) viewFooter.style.display = 'none';
+        }
+    }
+}
+
+// Save Business Details
+async function saveBusinessDetails(event, businessId) {
+    event.preventDefault();
+
+    const updatedData = {
+        name: document.getElementById('edit-name').value,
+        industry: document.getElementById('edit-industry').value,
+        founded: document.getElementById('edit-founded').value,
+        status: document.getElementById('edit-status').value,
+        description: document.getElementById('edit-description').value || null,
+        ownership: parseFloat(document.getElementById('edit-ownership').value),
+        valuation: parseFloat(document.getElementById('edit-valuation').value),
+        annualRevenue: parseFloat(document.getElementById('edit-annual-revenue').value),
+        annualProfit: parseFloat(document.getElementById('edit-annual-profit').value),
+        monthlyRevenue: parseFloat(document.getElementById('edit-monthly-revenue').value),
+        monthlyProfit: parseFloat(document.getElementById('edit-monthly-profit').value),
+        cashFlow: parseFloat(document.getElementById('edit-cashflow').value)
+    };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/businesses/${businessId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(updatedData)
+        });
+
+        if (response.ok) {
+            showToast('Business updated successfully', 'success');
+
+            // Update local data
+            const bizIndex = BUSINESS_DATA.findIndex(b => b.id === businessId);
+            if (bizIndex !== -1) {
+                BUSINESS_DATA[bizIndex] = { ...BUSINESS_DATA[bizIndex], ...updatedData };
+            }
+
+            // Refresh all business sections
+            renderBusinessDashboard();
+            renderBusinessVentures();
+
+            // Close modal
+            closeBusinessDetailModal();
+        } else {
+            const error = await response.json();
+            showToast(error.detail || 'Failed to update business', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating business:', error);
+        showToast('Error connecting to server', 'error');
+    }
+}
+
 function closeBusinessDetailModal() {
     const modal = document.getElementById('business-detail-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+// ==================== DOCUMENT VIEWER MODAL ====================
+
+function openDocumentViewer(url, name) {
+    console.log('Opening document viewer for:', name, url);
+
+    // Create modal if doesn't exist
+    let modal = document.getElementById('document-viewer-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'document-viewer-modal';
+        modal.className = 'modal-overlay';
+        modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 2rem;';
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+        <div class="position-relative d-flex flex-column glass-card" style="max-width: 90vw; width: 1000px; height: 85vh;" onclick="event.stopPropagation()">
+            <!-- Header -->
+            <div class="p-3 border-bottom border-white-5 d-flex justify-content-between align-items-center flex-shrink-0">
+                <h3 class="h5 text-white fw-light mb-0">${name}</h3>
+                <button onclick="closeDocumentViewer()" class="btn glass-button px-3 py-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Document Viewer -->
+            <div class="flex-grow-1 position-relative" style="background: rgba(0,0,0,0.3);">
+                <iframe src="${url}" 
+                        style="width: 100%; height: 100%; border: none;"
+                        title="${name}">
+                </iframe>
+            </div>
+            
+            <!-- Footer with download option -->
+            <div class="p-3 border-top border-white-5 d-flex justify-content-end gap-2 flex-shrink-0">
+                <a href="${url}" download="${name}" class="btn glass-button px-4 py-2 text-decoration-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Download
+                </a>
+            </div>
+        </div>
+    `;
+
+    modal.style.display = 'flex';
+    modal.onclick = closeDocumentViewer;
+}
+
+function closeDocumentViewer() {
+    const modal = document.getElementById('document-viewer-modal');
     if (modal) modal.style.display = 'none';
 }
 
@@ -5847,6 +6613,10 @@ window.renderBusinessDocumentation = renderBusinessDocumentation;
 window.renderBusinessAIInsights = renderBusinessAIInsights;
 window.openBusinessDetailModal = openBusinessDetailModal;
 window.closeBusinessDetailModal = closeBusinessDetailModal;
+window.toggleBusinessEditMode = toggleBusinessEditMode;
+window.saveBusinessDetails = saveBusinessDetails;
+window.openDocumentViewer = openDocumentViewer;
+window.closeDocumentViewer = closeDocumentViewer;
 
 // ==================== ADD BUSINESS MODAL ====================
 
@@ -5985,6 +6755,11 @@ async function submitNewBusiness(event) {
                     category: txPayload.category,
                     notes: txPayload.notes
                 });
+
+                // Regenerate statements to reflect the new initial transaction
+                generateBusinessStatements();
+                renderBusinessStatements();
+                renderBusinessCashFlow();
 
             } catch (txErr) {
                 console.error("Failed to create initial transaction", txErr);
@@ -6187,7 +6962,7 @@ function closeAddDocumentModal() {
     }
 }
 
-function submitNewDocument(event) {
+async function submitNewDocument(event) {
     event.preventDefault();
 
     const businessId = document.getElementById('doc-business').value;
@@ -6212,34 +6987,57 @@ function submitNewDocument(event) {
 
     const fileInput = document.getElementById('doc-file');
     const file = fileInput ? fileInput.files[0] : null;
-    const fileUrl = file ? URL.createObjectURL(file) : '#';
-    const fileName = file ? file.name : 'Unknown';
-    const fileSize = file ? file.size : 0;
 
-    // Create new document
-    const newDoc = {
-        id: 'doc-' + Date.now(),
-        businessId: businessId,
-        name: docName, // Use the selected type/name or custom name
-        type: document.getElementById('doc-name').value, // Keep original type for classification if needed (or just use name)
-        fileName: fileName,
-        fileSize: fileSize,
-        date: new Date().toISOString().split('T')[0],
-        notes: description,
-        url: fileUrl
-    };
+    if (!file) {
+        showToast('Please select a file to upload.', 'error');
+        return;
+    }
 
-    BUSINESS_DOCUMENTS.push(newDoc);
+    const fileName = file.name;
+    const fileSize = file.size;
 
-    // Persist to localStorage
-    localStorage.setItem('aether_business_documents', JSON.stringify(BUSINESS_DOCUMENTS));
+    // Convert file to base64 for persistence
+    try {
+        const base64Data = await fileToBase64(file);
 
-    // Close modal and re-render
-    closeAddDocumentModal();
-    renderBusinessDocumentation();
+        // Create new document
+        const newDoc = {
+            id: 'doc-' + Date.now(),
+            businessId: businessId,
+            name: docName,
+            type: document.getElementById('doc-name').value,
+            fileName: fileName,
+            fileSize: fileSize,
+            date: new Date().toISOString().split('T')[0],
+            description: description,
+            url: base64Data // Store base64 data instead of blob URL
+        };
 
-    console.log('New document added:', newDoc);
-    showToast('Document added successfully', 'success');
+        BUSINESS_DOCUMENTS.push(newDoc);
+
+        // Persist to localStorage
+        localStorage.setItem('aether_business_documents', JSON.stringify(BUSINESS_DOCUMENTS));
+
+        // Close modal and re-render
+        closeAddDocumentModal();
+        renderBusinessDocumentation();
+
+        console.log('New document added:', newDoc);
+        showToast('Document added successfully', 'success');
+    } catch (error) {
+        console.error('Error processing file:', error);
+        showToast('Error uploading file. Please try again.', 'error');
+    }
+}
+
+// Helper function to convert file to base64
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
 }
 
 // Toggle Custom Document Name Input
@@ -6263,15 +7061,20 @@ function toggleCustomDocName() {
 }
 
 function deleteBusinessDocument(docId) {
-    if (confirm('Are you sure you want to delete this document?')) {
-        BUSINESS_DOCUMENTS = BUSINESS_DOCUMENTS.filter(d => d.id !== docId);
+    showConfirmationModal(
+        'Delete Document?',
+        'Are you sure you want to delete this document? This action cannot be undone.',
+        'Delete',
+        () => {
+            BUSINESS_DOCUMENTS = BUSINESS_DOCUMENTS.filter(d => d.id !== docId);
 
-        // Persist to localStorage
-        localStorage.setItem('aether_business_documents', JSON.stringify(BUSINESS_DOCUMENTS));
+            // Persist to localStorage
+            localStorage.setItem('aether_business_documents', JSON.stringify(BUSINESS_DOCUMENTS));
 
-        renderBusinessDocumentation();
-        showToast('Document removed', 'info');
-    }
+            renderBusinessDocumentation();
+            showToast('Document removed', 'success');
+        }
+    );
 }
 
 window.openAddDocumentModal = openAddDocumentModal;

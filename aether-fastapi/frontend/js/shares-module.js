@@ -139,10 +139,10 @@ function renderSharesOverview() {
                             <div class="text-white-50 mb-1">${ICONS.trending}</div>
                             <div>
                                 <p class="small text-uppercase text-white-50 mb-1" style="letter-spacing: 0.1em; font-size: 0.65rem;">Total Gain/Loss</p>
-                                <h3 class="h4 fw-light ${metrics.total_gain_loss >= 0 ? 'text-success' : 'text-danger'} mb-1">
+                                <h3 class="h4 fw-light mb-1" style="color: ${metrics.total_gain_loss >= 0 ? '#10b981' : '#ef4444'}">
                                     ${metrics.total_gain_loss >= 0 ? '+' : ''}${formatCurrency(metrics.total_gain_loss)}
                                 </h3>
-                                <p class="small fw-light ${metrics.total_gain_loss_percent >= 0 ? 'text-success' : 'text-danger'}" style="font-size: 0.75rem;">
+                                <p class="small fw-light" style="font-size: 0.75rem; color: ${metrics.total_gain_loss_percent >= 0 ? '#10b981' : '#ef4444'}">
                                     ${metrics.total_gain_loss_percent >= 0 ? '+' : ''}${metrics.total_gain_loss_percent.toFixed(2)}%
                                 </p>
                             </div>
@@ -417,7 +417,7 @@ function renderSharesHoldings() {
                 <div style="width: 12%" class="text-white-90 fw-medium">₹${totalValue.toLocaleString('en-IN')}</div>
                 <!-- Gain/Loss (14%) -->
                 <div style="width: 14%">
-                    <div class="${gainLoss >= 0 ? 'text-success' : 'text-danger'}">
+                    <div style="color: ${gainLoss >= 0 ? '#10b981' : '#ef4444'}">
                         <span class="d-flex align-items-center gap-1">
                             <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
                                 ${gainLoss >= 0
