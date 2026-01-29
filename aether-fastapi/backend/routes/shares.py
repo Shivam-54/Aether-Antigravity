@@ -21,6 +21,8 @@ class ShareBase(BaseModel):
     quantity: float
     avg_buy_price: float
     current_price: float
+    acquisition_date: Optional[datetime] = None  # Purchase date
+
 
 
 class ShareCreate(ShareBase):
@@ -419,3 +421,150 @@ async def get_stock_price(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch price: {str(e)}")
+
+
+# ---Real-Time Price Refresh & Charts ---
+
+@router.post("/refresh-prices")
+async def refresh_all_prices(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Refresh current prices for all active share holdings using real market data"""
+    try:
+        from services.stock_api import bulk_refresh_prices, normalize_indian_stock_symbol
+        
+        # Get all active shares for this user
+        active_shares = db.query(Share).filter(
+            Share.user_id == current_user.id,
+            Share.status == ShareStatus.ACTIVE
+        ).all()
+        
+        if not active_shares:
+            return {"updated_count": 0, "message": "No active holdings to refresh"}
+        
+        # Get unique symbols
+        symbols = list(set([share.symbol for share in active_shares]))
+        
+        # Fetch latest prices
+        prices = bulk_refresh_prices(symbols)
+        
+        # Update database
+        updated_count = 0
+        errors = []
+        
+        for share in active_shares:
+            normalized_symbol = normalize_indian_stock_symbol(share.symbol)
+            new_price = prices.get(normalized_symbol)
+            
+            if new_price:
+                share.current_price = new_price
+                updated_count += 1
+            else:
+                errors.append(f"{share.symbol}: Price unavailable")
+        
+        db.commit()
+        
+        return {
+            "updated_count": updated_count,
+            "total_holdings": len(active_shares),
+            "errors": errors if errors else None,
+            "message": f"Successfully updated {updated_count} holdings"
+        }
+    
+    except ImportError:
+        raise HTTPException(
+            status_code=500,
+            detail="Stock API service not available"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Price refresh failed: {str(e)}")
+
+
+@router.get("/chart/{symbol}")
+async def get_stock_chart(
+    symbol: str,
+    period: str = "1mo",
+    current_user: User = Depends(get_current_user)
+):
+    """Get historical chart data for a stock symbol"""
+    try:
+        from services.stock_api import get_historical_data
+        
+        # period can be: 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y
+        valid_periods = ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y']
+        if period not in valid_periods:
+            period = '1mo'
+        
+        data = get_historical_data(symbol, period)
+        
+        if not data:
+            raise HTTPException(status_code=404, detail="No chart data available")
+        
+        return {
+            "symbol": symbol,
+            "period": period,
+            "data": data
+        }
+    
+    except ImportError:
+        raise HTTPException(
+            status_code=500,
+            detail="Stock API service not available"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Chart data fetch failed: {str(e)}")
+
+
+@router.get("/portfolio-chart")
+async def get_portfolio_chart(
+    period: str = "1mo",
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get aggregated portfolio performance chart data"""
+    try:
+        from services.stock_api import get_historical_data
+        
+        # Get all active shares
+        active_shares = db.query(Share).filter(
+            Share.user_id == current_user.id,
+            Share.status == ShareStatus.ACTIVE
+        ).all()
+        
+        if not active_shares:
+            return {"data": [], "message": "No holdings to chart"}
+        
+        # For simplicity, we'll use weighted average based on current holdings
+        # In a real app, you'd track historical portfolio composition
+        portfolio_data = {}
+        
+        for share in active_shares:
+            hist_data = get_historical_data(share.symbol, period)
+            if hist_data:
+                weight = share.total_value  # Weight by current value
+                for point in hist_data:
+                    date = point['date']
+                    if date not in portfolio_data:
+                        portfolio_data[date] = {'total_value': 0, 'total_weight': 0}
+                    
+                    # Weighted contribution
+                    portfolio_data[date]['total_value'] += point['price'] * share.quantity
+                    portfolio_data[date]['total_weight'] += weight
+        
+        # Convert to array
+        chart_data = [
+            {
+                'date': date,
+                'value': data['total_value']
+            }
+            for date, data in sorted(portfolio_data.items())
+        ]
+        
+        return {
+            "period": period,
+            "data": chart_data
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Portfolio chart failed: {str(e)}")

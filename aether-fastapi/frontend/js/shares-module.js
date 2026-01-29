@@ -37,6 +37,10 @@ async function fetchSharesData() {
 
         renderSharesOverview();
         renderSharesHoldings();
+        // Sync Performance Tab
+        if (window.renderPerformanceAnalytics) {
+            renderPerformanceAnalytics();
+        }
     } catch (error) {
         console.error('Error fetching shares data:', error);
     }
@@ -663,18 +667,32 @@ async function refreshSharePrice() {
 
         if (response.ok) {
             const data = await response.json();
-            priceInput.value = data.price;
 
-            // Auto-populate avg buy price if empty
-            const avgPriceInput = document.getElementById('share-avg-price');
-            if (!avgPriceInput.value) {
-                avgPriceInput.value = data.price;
+            if (data && data.price) {
+                priceInput.value = data.price;
+                priceInput.placeholder = 'Enter current price';
+
+                // Auto-populate avg buy price if empty
+                const avgPriceInput = document.getElementById('share-avg-price');
+                if (!avgPriceInput.value) {
+                    avgPriceInput.value = data.price;
+                }
+            } else {
+                // Price data returned but no price value
+                console.warn('Price data incomplete:', data);
+                priceInput.value = '';
+                priceInput.placeholder = 'Price not available - Enter manually';
             }
+        } else {
+            // API error
+            console.error('Price fetch failed with status:', response.status);
+            priceInput.value = '';
+            priceInput.placeholder = 'Price not found - Enter manually';
         }
     } catch (error) {
         console.error('Error fetching price:', error);
         priceInput.value = '';
-        priceInput.placeholder = 'Error fetching price';
+        priceInput.placeholder = 'Could not fetch price';
     } finally {
         // Hide loading
         if (loadingIndicator) loadingIndicator.classList.add('hidden');
@@ -734,7 +752,8 @@ async function submitAddShare(event) {
         sector: selectedSector,
         quantity: parseFloat(document.getElementById('share-quantity').value),
         avg_buy_price: parseFloat(document.getElementById('share-avg-price').value),
-        current_price: parseFloat(document.getElementById('share-current-price').value)
+        current_price: parseFloat(document.getElementById('share-current-price').value),
+        acquisition_date: document.getElementById('share-purchase-date').value || null
     };
 
     try {
@@ -748,6 +767,18 @@ async function submitAddShare(event) {
         });
 
         if (response.ok) {
+            // Log the buy transaction
+            logShareTransaction(
+                'buy',
+                shareData.company_name,
+                shareData.symbol,
+                shareData.quantity,
+                shareData.current_price,
+                shareData.sector,
+                0, // No purchase price for buy transactions
+                shareData.acquisition_date // Pass acquisition date
+            );
+
             closeAddShareModal();
             await fetchSharesData();
         } else {
@@ -760,7 +791,7 @@ async function submitAddShare(event) {
     }
 }
 
-// Refresh Share Prices
+// Refresh Share Prices - NOW USES BULK API ENDPOINT
 async function refreshSharePrices() {
     const refreshBtn = document.querySelector('button[onclick="refreshSharePrices()"]');
     const originalContent = refreshBtn ? refreshBtn.innerHTML : '';
@@ -776,64 +807,37 @@ async function refreshSharePrices() {
     }
 
     try {
-        console.log('Refreshing share prices...');
-        let updatedCount = 0;
+        console.log('Refreshing share prices via bulk API...');
 
-        // 1. Fetch latest prices for all active holdings
-        const activeHoldings = SHARES_DATA.holdings.filter(s => s.status === 'active');
+        // Call the new bulk refresh endpoint
+        const response = await fetch(`${API_BASE_URL}/shares/refresh-prices`, {
+            method: 'POST',
+            headers: getAuthHeaders()
+        });
 
-        await Promise.all(activeHoldings.map(async (share) => {
-            try {
-                const response = await fetch(`${API_BASE_URL}/shares/stock-price/${encodeURIComponent(share.symbol)}`, {
-                    headers: getAuthHeaders()
-                });
+        if (response.ok) {
+            const result = await response.json();
+            console.log(`Updated ${result.updated_count} of ${result.total_holdings} holdings`);
 
-                if (response.ok) {
-                    const data = await response.json();
-                    const newPrice = data.price;
-
-                    // Update share data locally
-                    share.current_price = newPrice;
-                    share.total_value = share.quantity * newPrice;
-                    share.gain_loss = share.total_value - share.total_invested;
-                    share.gain_loss_percent = (share.gain_loss / share.total_invested) * 100;
-
-                    updatedCount++;
-                }
-            } catch (err) {
-                console.error(`Error refreshing price for ${share.symbol}:`, err);
+            if (result.errors && result.errors.length > 0) {
+                console.warn('Some prices could not be updated:', result.errors);
             }
-        }));
 
-        // 2. Recalculate Portfolio Metrics
-        if (updatedCount > 0) {
-            // Recalculate based on current holdings data
-            const activeShares = SHARES_DATA.holdings.filter(s => s.status === 'active');
+            // Re-fetch all data to get updated values
+            await fetchSharesData();
 
-            SHARES_DATA.metrics.total_value = activeShares.reduce((sum, s) => sum + s.total_value, 0);
-            SHARES_DATA.metrics.total_invested = activeShares.reduce((sum, s) => sum + s.total_invested, 0);
-            SHARES_DATA.metrics.total_gain_loss = SHARES_DATA.metrics.total_value - SHARES_DATA.metrics.total_invested;
-
-            SHARES_DATA.metrics.total_gain_loss_percent = SHARES_DATA.metrics.total_invested > 0
-                ? (SHARES_DATA.metrics.total_gain_loss / SHARES_DATA.metrics.total_invested) * 100
-                : 0;
-
-            console.log('Metrics updated:', SHARES_DATA.metrics);
+            showToast(result.message || 'Prices refreshed successfully', 'success');
+        } else {
+            const error = await response.json();
+            showToast('Failed to refresh prices: ' + (error.detail || 'Unknown error'), 'error');
         }
-
-        // 3. Update UI
-        renderSharesOverview();
-        renderSharesHoldings();
-
     } catch (error) {
         console.error('Error refreshing shares:', error);
+        showToast('Error refreshing prices', 'error');
     } finally {
         if (refreshBtn) {
             refreshBtn.disabled = false;
             refreshBtn.innerHTML = originalContent;
-            // Update timestamp text
-            const timeSpan = refreshBtn.nextElementSibling;
-            if (timeSpan) timeSpan.textContent = 'Just now';
         }
     }
 }
@@ -903,6 +907,25 @@ async function submitSellShare(event) {
         });
 
         if (response.ok) {
+            // Get share details for transaction logging
+            const share = SHARES_DATA.holdings.find(s => s.id === id);
+
+            if (share && currentSellShare) {
+                // Calculate average buy price for the transaction log
+                const avgBuyPrice = share.avg_buy_price;
+
+                // Log the sell transaction
+                logShareTransaction(
+                    'sell',
+                    share.company_name,
+                    share.symbol,
+                    share.quantity,
+                    sellData.sale_price,
+                    share.sector,
+                    avgBuyPrice // Pass average buy price for P/L calculation
+                );
+            }
+
             closeSellShareModal();
             await fetchSharesData();
         } else {
@@ -919,7 +942,11 @@ async function submitSellShare(event) {
 function openRemoveShareModal(id, symbol) {
     document.getElementById('remove-share-id').value = id;
     document.getElementById('remove-share-name').textContent = symbol;
+
+    // Store symbol for transaction cleanup
     const modal = document.getElementById('remove-share-modal');
+    modal.dataset.symbol = symbol; // Store in data attribute
+
     modal.classList.remove('hidden');
     modal.style.display = 'block';
 }
@@ -932,6 +959,8 @@ function closeRemoveShareModal() {
 
 async function confirmRemoveShare() {
     const id = document.getElementById('remove-share-id').value;
+    const modal = document.getElementById('remove-share-modal');
+    const symbol = modal?.dataset?.symbol; // Get from modal data attribute
 
     try {
         const response = await fetch(`${API_BASE_URL}/shares/holdings/${id}`, {
@@ -940,6 +969,11 @@ async function confirmRemoveShare() {
         });
 
         if (response.ok) {
+            // Also remove all transactions for this share
+            if (symbol && typeof removeTransactionsBySymbol === 'function') {
+                removeTransactionsBySymbol(symbol);
+            }
+
             closeRemoveShareModal();
             await fetchSharesData();
         } else {

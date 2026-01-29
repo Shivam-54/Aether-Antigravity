@@ -19,6 +19,7 @@ class CryptoHolding(Base):
     quantity = Column(Float, nullable=False, default=0.0)
     purchase_price_avg = Column(Float, default=0.0)  # Average buy price in INR
     current_price = Column(Float, default=0.0)       # Current price in INR
+    purchase_date = Column(Date, nullable=True)      # Date when crypto was acquired
     
     wallet_id = Column(UUID(as_uuid=True), ForeignKey("crypto_wallets.id"), nullable=True)
     

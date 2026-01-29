@@ -881,6 +881,15 @@ function navigateToSection(sectionId, sectionName, btn) {
             if (sectionId === 'holdings') {
                 renderSharesHoldings();
             }
+
+            // If navigating to Market Activity, render transactions
+            if (sectionId === 'market-activity') {
+                if (window.renderShareTransactions) {
+                    window.renderShareTransactions();
+                } else {
+                    console.error('renderShareTransactions not found');
+                }
+            }
         } else {
             console.warn(`Section shares-section-${sectionId} not found`);
             // Fallback to overview
@@ -1699,7 +1708,8 @@ async function submitAddProperty(event) {
         current_value: currentPrice,
         type: type,
         status: 'Owned',
-        ownership_structure: 'Individual'
+        ownership_structure: 'Individual',
+        acquisition_date: document.getElementById('propAcquisitionDate').value || null
         // Lat/Lng not in basic PropertyCreate schema yet? 
         // Note: The Property model has location/address but might not have lat/lng columns in my previous write.
         // Let's check model.py. I wrote: location, address.
@@ -3292,73 +3302,9 @@ function addChatMessage(text, sender) {
 // ================================
 
 // Crypto Data State
-let CRYPTO_DATA = {
-    holdings: [],
-    transactions: [],
-    wallets: [],
-    metrics: {
-        total_value: 0,
-        change_24h_value: 0,
-        change_24h_percent: 0,
-        total_assets_count: 0,
-        avg_portfolio_return: 0
-    }
-};
-
-async function fetchCryptoData() {
-    try {
-        // Fetch holdings
-        const holdingsResponse = await fetch(`${API_BASE_URL}/crypto/holdings`, {
-            headers: getAuthHeaders()
-        });
-
-        if (holdingsResponse.ok) {
-            CRYPTO_DATA.holdings = await holdingsResponse.json();
-        } else if (holdingsResponse.status === 401) {
-            console.warn('Unauthorized - logging out');
-            logout();
-            return;
-        }
-
-        // Fetch metrics
-        const metricsResponse = await fetch(`${API_BASE_URL}/crypto/metrics`, {
-            headers: getAuthHeaders()
-        });
-
-        if (metricsResponse.ok) {
-            CRYPTO_DATA.metrics = await metricsResponse.json();
-        }
-
-        // Render after fetching (always render, even in DEV_MODE with empty data)
-        renderCryptoOverview();
-        renderCryptoHoldings();
-        renderCryptoTransactions();
-    } catch (error) {
-        console.error('Error fetching crypto data:', error);
-        // In DEV_MODE, still render UI even on network error
-        if (DEV_MODE) {
-            console.log('DEV_MODE: Rendering crypto overview despite error');
-            renderCryptoOverview();
-        }
-    }
-}
-
-function calculateCryptoMetrics() {
-    const { holdings } = CRYPTO_DATA;
-
-    const totalValue = holdings.reduce((sum, h) => sum + (h.quantity * h.current_price), 0);
-    const totalInvested = holdings.reduce((sum, h) => sum + (h.quantity * h.purchase_price_avg), 0);
-
-    const avgReturn = totalInvested > 0 ? ((totalValue - totalInvested) / totalInvested) * 100 : 0;
-
-    return {
-        total_value: totalValue,
-        change_24h_value: CRYPTO_DATA.metrics.change_24h_value || 0,
-        change_24h_percent: CRYPTO_DATA.metrics.change_24h_percent || 0,
-        total_assets_count: holdings.length,
-        avg_portfolio_return: avgReturn
-    };
-}
+// CRYPTO LOGIC MOVED TO: js/modules/crypto/crypto-overview.js
+// The new module handles CRYPTO_DATA, fetchCryptoData, and rendering.
+// Keeping this comment for code traceability.
 
 function renderCryptoOverview() {
     const metrics = calculateCryptoMetrics();
@@ -3779,11 +3725,51 @@ function renderCryptoHoldings() {
 // Add Crypto Modal Functions
 let addCryptoModalOpen = false;
 
-function openAddCryptoModal() {
+async function openAddCryptoModal() {
     const modal = document.getElementById('add-crypto-modal');
     if (modal) {
         modal.style.display = 'block';
         addCryptoModalOpen = true;
+
+        // Fetch and populate wallets
+        populateCryptoWalletSelector();
+    }
+}
+
+// Populate wallet dropdown - NOW FETCHES FROM SUPABASE
+async function populateCryptoWalletSelector() {
+    const walletSelect = document.getElementById('cryptoWallet');
+    if (!walletSelect) return;
+
+    try {
+        // Fetch wallets from Supabase API
+        const response = await fetch(`${API_BASE_URL}/crypto/wallets`, {
+            headers: getAuthHeaders()
+        });
+
+        if (response.ok) {
+            const wallets = await response.json();
+
+            // Clear existing options except the first placeholder
+            walletSelect.innerHTML = '<option value="">Select a wallet...</option>';
+
+            if (wallets.length === 0) {
+                walletSelect.innerHTML += '<option value="" disabled>No wallets found - create one first</option>';
+            } else {
+                wallets.forEach(wallet => {
+                    const option = document.createElement('option');
+                    option.value = wallet.id;
+                    option.textContent = `${wallet.name} (${wallet.network})`;
+                    walletSelect.appendChild(option);
+                });
+            }
+        } else {
+            console.error('Failed to fetch wallets');
+            walletSelect.innerHTML = '<option value="">Error loading wallets</option>';
+        }
+    } catch (error) {
+        console.error('Error loading wallets:', error);
+        walletSelect.innerHTML = '<option value="">Error loading wallets</option>';
     }
 }
 
@@ -4085,13 +4071,18 @@ async function refreshCryptoPrice() {
 async function submitAddCrypto(event) {
     event.preventDefault();
 
+    const walletId = document.getElementById('cryptoWallet').value;
+    const purchaseDate = document.getElementById('cryptoPurchaseDate').value;
+
     const formData = {
         symbol: document.getElementById('cryptoSymbol').value.toUpperCase(),
         name: document.getElementById('cryptoName').value,
         network: document.getElementById('cryptoNetwork').value,
         quantity: parseFloat(document.getElementById('cryptoQuantity').value) || 0,
         purchase_price_avg: parseFloat(document.getElementById('cryptoAvgPrice').value) || 0,
-        current_price: parseFloat(document.getElementById('cryptoCurrentPrice').value) || 0
+        current_price: parseFloat(document.getElementById('cryptoCurrentPrice').value) || 0,
+        wallet_id: walletId || null,  // ✅ Re-enabled - wallets now have proper UUIDs from Supabase
+        purchase_date: purchaseDate || null
     };
 
     try {
@@ -4109,7 +4100,9 @@ async function submitAddCrypto(event) {
                 formData.symbol,
                 formData.quantity,
                 formData.purchase_price_avg,
-                formData.network
+                formData.network,
+                0, // purchasePrice (not needed for buy)
+                purchaseDate // Pass the selected purchase date
             );
 
             closeAddCryptoModal();
@@ -5250,7 +5243,7 @@ async function submitAddBond(event) {
         yield_to_maturity: coupon, // Simplified assumption
         quantity: quantity,
         purchase_price: price,
-        purchase_date: new Date().toISOString().split('T')[0]
+        purchase_date: document.getElementById('bond-purchase-date').value || null
     };
 
     try {

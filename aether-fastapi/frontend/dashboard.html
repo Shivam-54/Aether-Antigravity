@@ -1187,41 +1187,19 @@
                     <!-- 3. Market Activity Section -->
                     <div id="shares-section-market-activity" class="shares-section" style="display: none;">
                         <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2">Market Activity</h2>
-                            <p class="text-white-50 fw-light">Recent market movements in your portfolio</p>
+                            <h2 class="h3 fw-light mb-2">Transaction History</h2>
+                            <p class="text-white-50 fw-light">Your share buy and sell activity</p>
                         </div>
-                        <div class="glass-card glass-empty-state">
-                            <div class="glass-empty-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-                                    stroke-linejoin="round" class="text-white-80">
-                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                                </svg>
-                            </div>
-                            <h3 class="h4 fw-light text-white-90 mb-2">Coming Soon</h3>
-                            <p class="text-white-50 fw-light">Market activity tracking is under development.</p>
+
+                        <!-- Activity Feed -->
+                        <div id="share-transactions-list">
+                            <!-- Injected by JS -->
                         </div>
                     </div>
 
                     <!-- 4. Performance Section -->
                     <div id="shares-section-performance" class="shares-section" style="display: none;">
-                        <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2">Performance Analytics</h2>
-                            <p class="text-white-50 fw-light">Deep dive into your portfolio performance</p>
-                        </div>
-                        <div class="glass-card glass-empty-state">
-                            <div class="glass-empty-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-                                    stroke-linejoin="round" class="text-white-80">
-                                    <line x1="18" y1="20" x2="18" y2="10"></line>
-                                    <line x1="12" y1="20" x2="12" y2="4"></line>
-                                    <line x1="6" y1="20" x2="6" y2="14"></line>
-                                </svg>
-                            </div>
-                            <h3 class="h4 fw-light text-white-90 mb-2">Coming Soon</h3>
-                            <p class="text-white-50 fw-light">Performance analytics are under development.</p>
-                        </div>
+                        <!-- Content injected by js/shares-performance.js -->
                     </div>
 
                     <!-- 5. Transactions Section -->
@@ -1789,10 +1767,18 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Core & Modules -->
+    <script src="js/modules/crypto/crypto-overview.js"></script>
+    <script src="js/modules/crypto/crypto-transactions.js"></script>
+    <script src="js/modules/crypto/crypto-insights.js"></script>
+
+    <!-- Main Dashboard Logic -->
     <script src="js/dashboard.js?v=154"></script>
-    <script src="js/crypto-transactions.js?v=6"></script>
-    <script src="js/crypto-wallets.js?v=8"></script>
+    <script src="js/share-transactions.js?v=1"></script>
+    <script src="js/modules/crypto/crypto-wallets.js"></script>
+    <script src="js/analytics-utils.js"></script> <!-- NEW: Analytics Logic -->
     <script src="js/shares-module.js?v=12"></script>
+    <script src="js/shares-performance.js?v=1"></script>
 
 
     <!-- Add Property Modal -->
@@ -1910,6 +1896,15 @@
                             </div>
                         </div>
 
+                        <!-- Acquisition Date -->
+                        <div class="mb-3">
+                            <label class="form-label small text-uppercase text-white-50"
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Purchase Date</label>
+                            <input type="date" id="propAcquisitionDate"
+                                class="form-control glass-input text-white fw-light"
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; color-scheme: dark;">
+                        </div>
+
                         <!-- Coords -->
                         <div class="row g-3 mb-4">
                             <div class="col-6">
@@ -2006,6 +2001,27 @@
                             <input type="text" id="cryptoName" class="form-control modal-glass-input"
                                 placeholder="Bitcoin, Ethereum" required>
                         </div>
+                    </div>
+
+                    <!-- Wallet Selection -->
+                    <div class="mb-4">
+                        <label class="modal-label">Link to Wallet <span class="text-danger">*</span></label>
+                        <select id="cryptoWallet" class="form-control modal-glass-input" required>
+                            <option value="">Select a wallet...</option>
+                            <!-- Options populated by JavaScript -->
+                        </select>
+                        <small class="d-block mt-1" style="color: rgba(255, 255, 255, 0.3); font-size: 0.75rem;">
+                            Choose which wallet this asset belongs to
+                        </small>
+                    </div>
+
+                    <!-- Purchase Date -->
+                    <div class="mb-4">
+                        <label class="modal-label">Purchase Date</label>
+                        <input type="date" id="cryptoPurchaseDate" class="form-control modal-glass-input">
+                        <small class="d-block mt-1" style="color: rgba(255, 255, 255, 0.3); font-size: 0.75rem;">
+                            When did you acquire this asset?
+                        </small>
                     </div>
 
                     <!-- Network -->
@@ -2940,6 +2956,13 @@
                         </div>
                     </div>
 
+                    <!-- Purchase Date Field -->
+                    <div class="mb-4">
+                        <label class="form-label small text-white-70 mb-2">Purchase Date</label>
+                        <input type="date" id="share-purchase-date" class="form-control glass-input py-3"
+                            style="width: 100%; padding: 12px 16px; border-radius: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: white; outline: none; color-scheme: dark;">
+                    </div>
+
                     <!-- Calculated Fields (Hidden until Quantity > 0) -->
                     <div id="share-calculation-box" class="p-4 mb-4 hidden"
                         style="border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05); background: rgba(255, 255, 255, 0.02); padding: 16px;">
@@ -3275,6 +3298,14 @@
                                 <input type="date" id="bond-maturity" class="form-control glass-input" required>
                             </div>
                         </div>
+
+                        <!-- Purchase Date -->
+                        <div class="mb-3">
+                            <label class="form-label small text-white-50">Purchase Date</label>
+                            <input type="date" id="bond-purchase-date" class="form-control glass-input"
+                                style="color-scheme: dark;">
+                        </div>
+
                         <div class="d-flex gap-3">
                             <button type="button" class="btn glass-button flex-fill"
                                 onclick="handleBondStep(1)">Back</button>
@@ -3383,6 +3414,12 @@
                                     <input type="text" id="biz-description" class="form-control glass-input py-2"
                                         placeholder="Brief description of business operations"
                                         style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small text-white-50 mb-1"
+                                        style="font-size: 0.75rem;">Founded Date</label>
+                                    <input type="date" id="biz-founded" class="form-control glass-input py-2"
+                                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; color-scheme: dark;">
                                 </div>
                             </div>
                         </div>

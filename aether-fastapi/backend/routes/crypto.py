@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, date
 from uuid import UUID
 
 from database import get_db
@@ -21,6 +21,7 @@ class CryptoHoldingBase(BaseModel):
     quantity: float
     purchase_price_avg: float = 0.0
     current_price: float = 0.0
+    purchase_date: Optional[date] = None
     wallet_id: Optional[UUID] = None
 
 class CryptoHoldingCreate(CryptoHoldingBase):
@@ -33,6 +34,7 @@ class CryptoHoldingUpdate(BaseModel):
     quantity: Optional[float] = None
     purchase_price_avg: Optional[float] = None
     current_price: Optional[float] = None
+    purchase_date: Optional[date] = None
     wallet_id: Optional[UUID] = None
 
 class CryptoHoldingResponse(CryptoHoldingBase):
@@ -222,6 +224,51 @@ async def get_wallets(
     """Get all connected wallets for the current user"""
     wallets = db.query(CryptoWallet).filter(CryptoWallet.user_id == current_user.id).all()
     return wallets
+
+class CryptoWalletCreate(BaseModel):
+    name: str
+    network: str = "Multi-Chain"
+    address: Optional[str] = None
+
+@router.post("/wallets", response_model=CryptoWalletResponse, status_code=status.HTTP_201_CREATED)
+async def create_wallet(
+    wallet_data: CryptoWalletCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new crypto wallet"""
+    new_wallet = CryptoWallet(
+        **wallet_data.dict(),
+        user_id=current_user.id,
+        total_value=0.0,
+        asset_count=0,
+        is_connected=True
+    )
+    
+    db.add(new_wallet)
+    db.commit()
+    db.refresh(new_wallet)
+    return new_wallet
+
+@router.delete("/wallets/{wallet_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_wallet(
+    wallet_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a crypto wallet"""
+    wallet = db.query(CryptoWallet).filter(
+        CryptoWallet.id == wallet_id,
+        CryptoWallet.user_id == current_user.id
+    ).first()
+    
+    if not wallet:
+        raise HTTPException(status_code=404, detail="Wallet not found")
+    
+    db.delete(wallet)
+    db.commit()
+    return None
+
 
 # --- Metrics Route ---
 
