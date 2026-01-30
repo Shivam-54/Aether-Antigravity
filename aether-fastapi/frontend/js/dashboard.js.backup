@@ -1404,360 +1404,76 @@ function renderRealEstateProperties() {
 }
 
 // Render Functions
-// ===== REAL ESTATE TRANSACTION HISTORY STORAGE =====
-// Get transactions from localStorage
-function getRealEstateTransactions() {
-    const stored = localStorage.getItem('aether_realestate_transactions');
-    const transactions = stored ? JSON.parse(stored) : [];
-
-    // Migrate old date formats to new format
-    transactions.forEach(txn => {
-        if (txn.date_display && typeof txn.date_display === 'string') {
-            // Check if it's in old format (28/1/2026 or 2/1/2026)
-            if (txn.date_display.includes('/')) {
-                const parts = txn.date_display.split('/');
-                if (parts.length === 3) {
-                    const day = parseInt(parts[0]);
-                    const month = parseInt(parts[1]);
-                    const year = parseInt(parts[2]);
-                    const date = new Date(year, month - 1, day);
-                    txn.date_display = date.getDate() + ' ' + date.toLocaleDateString('en-IN', { month: 'long' }) + ' ' + date.getFullYear();
-                }
-            }
-            // Check if it's in old format like "05 Nov 2025"
-            else if (txn.date_display.match(/^\d{2}\s\w{3}\s\d{4}$/)) {
-                const date = new Date(txn.timestamp);
-                txn.date_display = date.getDate() + ' ' + date.toLocaleDateString('en-IN', { month: 'long' }) + ' ' + date.getFullYear();
-            }
-        }
-    });
-
-    // Save migrated data back
-    if (transactions.length > 0 && stored) {
-        localStorage.setItem('aether_realestate_transactions', JSON.stringify(transactions));
-    }
-
-    return transactions;
-}
-
-// Save transactions to localStorage
-function saveRealEstateTransactions(transactions) {
-    localStorage.setItem('aether_realestate_transactions', JSON.stringify(transactions));
-}
-
-// Log a new transaction
-function logRealEstateTransaction(type, propertyName, propertyId, value, rentAmount = null, gainLoss = null, transactionDate = null) {
-    const transactions = getRealEstateTransactions();
-
-    const txnDate = transactionDate ? new Date(transactionDate) : new Date();
-
-    const newTransaction = {
-        id: 'retxn-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-        type: type, // 'Rent' or 'Sale'
-        property: propertyName,
-        property_id: propertyId,
-        value: value,
-        rentAmount: rentAmount,
-        gainLoss: gainLoss,
-        timestamp: txnDate.toISOString(),
-        date_display: txnDate.getDate() + ' ' + txnDate.toLocaleDateString('en-IN', { month: 'long' }) + ' ' + txnDate.getFullYear()
-    };
-
-    transactions.unshift(newTransaction); // Add to beginning (most recent first)
-
-    // Keep only last 100 transactions
-    if (transactions.length > 100) {
-        transactions.length = 100;
-    }
-
-    saveRealEstateTransactions(transactions);
-    renderRealEstateTransactions();
-
-    console.log(`✅ Logged ${type} transaction:`, newTransaction);
-}
-
 function renderRealEstateTransactions() {
     const container = document.getElementById('transaction-list');
     if (!container) return;
 
-    // Get stored transactions or derive from current properties
-    let transactions = getRealEstateTransactions();
+    // Derive transactions from properties status
+    const transactions = [];
 
-    // If no stored transactions, derive from properties (backward compatibility)
-    if (transactions.length === 0) {
-        REAL_ESTATE_DATA.properties.forEach(p => {
-            if (p.status === 'Sold') {
-                const saleDate = p.updated_at ? new Date(p.updated_at) : new Date();
-                transactions.push({
-                    id: 'retxn-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                    type: 'Sale',
-                    property: p.name,
-                    property_id: p.id,
-                    value: p.current_value,
-                    rentAmount: null,
-                    timestamp: p.updated_at || new Date().toISOString(),
-                    date_display: p.updated_at ? (saleDate.getDate() + ' ' + saleDate.toLocaleDateString('en-IN', { month: 'long' }) + ' ' + saleDate.getFullYear()) : 'Recently',
-                    gainLoss: p.purchase_price > 0 ? (p.current_value - p.purchase_price) : 0
-                });
-            }
-            if (p.status === 'Rented' || p.rent_status === 'Rented') {
-                const rentDate = p.rent_start_date ? new Date(p.rent_start_date) : new Date();
-                transactions.push({
-                    id: 'retxn-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                    type: 'Rent',
-                    property: p.name,
-                    property_id: p.id,
-                    value: p.current_value,
-                    rentAmount: p.rent_amount,
-                    timestamp: p.rent_start_date || new Date().toISOString(),
-                    date_display: p.rent_start_date ? (rentDate.getDate() + ' ' + rentDate.toLocaleDateString('en-IN', { month: 'long' }) + ' ' + rentDate.getFullYear()) : 'Active',
-                    gainLoss: null
-                });
-            }
-        });
-        // Save the derived transactions for future use
-        if (transactions.length > 0) {
-            saveRealEstateTransactions(transactions);
+    // Process properties to create transaction records
+    REAL_ESTATE_DATA.properties.forEach(p => {
+        if (p.status === 'Sold') {
+            transactions.push({
+                type: 'Sale',
+                property: p.name,
+                value: p.current_value, // Proxy for sale price
+                rentAmount: null,
+                date: p.updated_at ? new Date(p.updated_at).toLocaleDateString() : 'Recently',
+                gainLoss: p.purchase_price > 0 ? (p.current_value - p.purchase_price) : 0,
+                color: 'text-info', // Sale blue
+                bg: 'bg-info bg-opacity-20'
+            });
         }
-    }
+        if (p.status === 'Rented' || p.rent_status === 'Rented') {
+            transactions.push({
+                type: 'Rent',
+                property: p.name,
+                value: p.current_value,
+                rentAmount: p.rent_amount,
+                date: p.rent_start_date ? new Date(p.rent_start_date).toLocaleDateString() : 'Active',
+                gainLoss: null,
+                color: 'text-success',
+                bg: 'bg-success bg-opacity-20'
+            });
+        }
+    });
 
     if (transactions.length === 0) {
-        container.innerHTML = `
-            <div class="text-center py-5">
-                <div class="text-white-50 mb-2">
-                    <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity: 0.3;">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                </div>
-                <p class="text-white-50 small mb-0">No transactions yet</p>
-            </div>
-        `;
+        container.innerHTML = '<div class="p-4 text-center text-white-50">No recent transactions</div>';
         return;
     }
 
-    // Group transactions by month-year (chronological order, newest first)
-    const groupedByMonth = {};
-    transactions.forEach(txn => {
-        const txnDate = new Date(txn.timestamp);
-        const monthKey = txnDate.toLocaleDateString('en-IN', {
-            month: 'long',
-            year: 'numeric'
-        });
+    container.innerHTML = transactions.map(tx => {
+        const rentAmountHtml = tx.rentAmount
+            ? `<span class="text-white-90">${formatCurrency(tx.rentAmount)}</span>`
+            : '<span class="text-white-50">-</span>';
 
-        if (!groupedByMonth[monthKey]) {
-            groupedByMonth[monthKey] = {
-                transactions: [],
-                timestamp: txnDate.getTime() // For sorting
-            };
-        }
-        groupedByMonth[monthKey].transactions.push(txn);
-    });
-
-    // Sort month groups by timestamp (newest first)
-    const sortedMonths = Object.keys(groupedByMonth).sort((a, b) => {
-        return groupedByMonth[b].timestamp - groupedByMonth[a].timestamp;
-    });
-
-    let html = '';
-
-    sortedMonths.forEach(monthKey => {
-        const monthData = groupedByMonth[monthKey];
-        const txns = monthData.transactions;
-
-        html += `
-        <div class="mb-4">
-            <div class="d-flex align-items-center gap-2 text-white-50 small fw-medium mb-3 px-2" style="letter-spacing: 0.5px;">
-                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity: 0.5;">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
-                ${monthKey}
+        return `
+        <div class="row g-0 p-3 border-bottom border-white border-opacity-10 text-white-70 small align-items-center hover-bg-light transition-colors" style="transition: background 0.2s;">
+            <div class="col-2">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center justify-content-center rounded-circle ${tx.type === 'Rent' ? 'bg-indigo-500 bg-opacity-20 text-info' : 'bg-success bg-opacity-20 text-success'}" style="width: 24px; height: 24px;">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            ${tx.type === 'Rent'
+                ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>'
+                : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+            }
+                        </svg>
+                    </div>
+                    ${tx.type}
+                </div>
             </div>
-            <div class="glass-panel overflow-hidden p-0" style="border-radius: 1rem;">
-                <!-- Table Header -->
-                <div class="row g-0 px-4 py-3 border-bottom border-white border-opacity-10 text-white-50 small text-uppercase fw-medium" 
-                     style="background: rgba(255,255,255,0.03); letter-spacing: 0.5px;">
-                    <div class="col-2">Type</div>
-                    <div class="col-3">Property</div>
-                    <div class="col-2">Value</div>
-                    <div class="col-2">Rent Amount</div>
-                    <div class="col-2">Date</div>
-                    <div class="col-1 text-end">Gain/Loss</div>
-                </div>
-        `;
-
-        txns.forEach((tx, index) => {
-            const isLast = index === txns.length - 1;
-            const borderStyle = isLast ? '' : 'border-bottom: 1px solid rgba(255,255,255,0.05);';
-
-            const rentAmountHtml = tx.rentAmount
-                ? `<span class="text-white-90 fw-medium">${formatCurrency(tx.rentAmount)}</span>`
-                : '<span class="text-white-50">—</span>';
-
-            html += `
-                <div class="row g-0 px-4 py-3 text-white-70 small align-items-center hover-bg-light transition-colors" 
-                     style="cursor: pointer; ${borderStyle} transition: all 0.2s ease;"
-                     onmouseover="this.style.background='rgba(255,255,255,0.05)'"
-                     onmouseout="this.style.background='transparent'"
-                     onclick="openEditRealEstateTransactionModal('${tx.id}')">
-                    <div class="col-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="d-flex align-items-center justify-content-center rounded-circle ${tx.type === 'Rent' ? 'text-info' : 'text-success'}" 
-                                 style="width: 28px; height: 28px; background: ${tx.type === 'Rent' ? 'rgba(99, 102, 241, 0.15)' : 'rgba(16, 185, 129, 0.15)'};">
-                                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                    ${tx.type === 'Rent'
-                    ? '<path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>'
-                    : '<path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'}
-                                </svg>
-                            </div>
-                            <span class="fw-medium text-white-90">${tx.type}</span>
-                        </div>
-                    </div>
-                    <div class="col-3 text-white-90 text-truncate pe-2 fw-medium" title="${tx.property}">${tx.property}</div>
-                    <div class="col-2 text-white-70">${typeof tx.value === 'number' ? formatCurrency(tx.value) : tx.value}</div>
-                    <div class="col-2">${rentAmountHtml}</div>
-                    <div class="col-2 text-white-50" style="font-size: 0.85rem;">${tx.date_display}</div>
-                    <div class="col-1 text-end ${tx.gainLoss !== null && tx.gainLoss >= 0 ? 'text-success' : (tx.gainLoss !== null ? 'text-danger' : 'text-white-50')} fw-medium">
-                        ${tx.gainLoss !== null ? ((tx.gainLoss >= 0 ? '+' : '') + formatCurrency(tx.gainLoss)) : '—'}
-                    </div>
-                </div>
-            `;
-        });
-
-        html += `
+            <div class="col-2 text-white text-truncate pe-2" title="${tx.property}">${tx.property}</div>
+            <div class="col-2">${typeof tx.value === 'number' ? formatCurrency(tx.value) : tx.value}</div>
+            <div class="col-2">${rentAmountHtml}</div>
+            <div class="col-2">${tx.date}</div>
+            <div class="col-2 ${tx.gainLoss !== null && tx.gainLoss >= 0 ? 'text-success' : (tx.gainLoss !== null ? 'text-danger' : 'text-white-50')}">
+                ${tx.gainLoss !== null ? ((tx.gainLoss >= 0 ? '+' : '') + formatCurrency(tx.gainLoss)) : '-'}
             </div>
         </div>
-        `;
-    });
-
-    container.innerHTML = html;
+    `}).join('');
 }
-
-// ===== REAL ESTATE TRANSACTION EDIT/DELETE MODAL =====
-// Open modal to edit or delete a real estate transaction
-function openEditRealEstateTransactionModal(transactionId) {
-    const transactions = getRealEstateTransactions();
-    const txn = transactions.find(t => t.id === transactionId);
-
-    if (!txn) {
-        console.error('Real estate transaction not found:', transactionId);
-        return;
-    }
-
-    // Store current transaction ID
-    window.currentEditRealEstateTransactionId = transactionId;
-
-    // Convert ISO timestamp to date input format (YYYY-MM-DD)
-    const txnDate = new Date(txn.timestamp);
-    const dateStr = txnDate.toISOString().split('T')[0];
-
-    // Create modal HTML (matching crypto transaction modal style)
-    const modalHtml = `
-        <div id="edit-realestate-transaction-modal" class="modal-overlay" style="display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center;">
-            <div class="glass-panel p-4" style="max-width: 500px; width: 90%;">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="text-white fw-light mb-0">Edit ${txn.type} Transaction</h5>
-                    <button onclick="closeEditRealEstateTransactionModal()" class="btn-close btn-close-white" aria-label="Close"></button>
-                </div>
-                
-                <div class="mb-3">
-                    <div class="text-white-70 mb-2">
-                        <strong>${txn.property}</strong>
-                    </div>
-                    <div class="text-white-50 small">
-                        ${txn.type} ${txn.rentAmount ? `₹${formatCurrency(txn.rentAmount)}/month` : `for ₹${formatCurrency(txn.value)}`}
-                    </div>
-                </div>
-                
-                <div class="mb-4">
-                    <label class="form-label text-white-70 small">Transaction Date</label>
-                    <input type="date" id="edit-realestate-transaction-date" class="form-control glass-input" value="${dateStr}">
-                </div>
-                
-                <div class="d-flex gap-2">
-                    <button onclick="saveRealEstateTransactionDate()" class="btn glass-button flex-grow-1">
-                        Save Date
-                    </button>
-                    <button onclick="deleteRealEstateTransaction()" class="btn glass-button-danger">
-                        Delete
-                    </button>
-                    <button onclick="closeEditRealEstateTransactionModal()" class="btn glass-button-outline">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Remove existing modal if any
-    const existingModal = document.getElementById('edit-realestate-transaction-modal');
-    if (existingModal) existingModal.remove();
-
-    // Add to body
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-}
-
-// Close edit real estate transaction modal
-function closeEditRealEstateTransactionModal() {
-    const modal = document.getElementById('edit-realestate-transaction-modal');
-    if (modal) modal.remove();
-    window.currentEditRealEstateTransactionId = null;
-}
-
-// Save updated real estate transaction date
-function saveRealEstateTransactionDate() {
-    const transactionId = window.currentEditRealEstateTransactionId;
-    if (!transactionId) return;
-
-    const newDate = document.getElementById('edit-realestate-transaction-date').value;
-    if (!newDate) {
-        alert('Please select a date');
-        return;
-    }
-
-    const transactions = getRealEstateTransactions();
-    const txnIndex = transactions.findIndex(t => t.id === transactionId);
-
-    if (txnIndex === -1) {
-        alert('Transaction not found');
-        return;
-    }
-
-    // Update transaction with new date
-    const updatedDate = new Date(newDate);
-    transactions[txnIndex].timestamp = updatedDate.toISOString();
-    transactions[txnIndex].date_display = updatedDate.getDate() + ' ' + updatedDate.toLocaleDateString('en-IN', { month: 'long' }) + ' ' + updatedDate.getFullYear();
-
-    saveRealEstateTransactions(transactions);
-    renderRealEstateTransactions();
-    closeEditRealEstateTransactionModal();
-
-    console.log('✅ Real estate transaction date updated');
-}
-
-// Delete a real estate transaction
-function deleteRealEstateTransaction() {
-    const transactionId = window.currentEditRealEstateTransactionId;
-    if (!transactionId) return;
-
-    if (!confirm('Are you sure you want to delete this transaction?')) {
-        return;
-    }
-
-    const transactions = getRealEstateTransactions();
-    const filtered = transactions.filter(t => t.id !== transactionId);
-
-    saveRealEstateTransactions(filtered);
-    renderRealEstateTransactions();
-    closeEditRealEstateTransactionModal();
-
-    console.log('🗑️ Real estate transaction deleted');
-}
-
-// Make globally accessible
-window.openEditRealEstateTransactionModal = openEditRealEstateTransactionModal;
-window.closeEditRealEstateTransactionModal = closeEditRealEstateTransactionModal;
-window.saveRealEstateTransactionDate = saveRealEstateTransactionDate;
-window.deleteRealEstateTransaction = deleteRealEstateTransaction;
 
 // Modal Functions
 function openPropertyModal(propertyId) {
