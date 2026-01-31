@@ -26,21 +26,25 @@ app.add_middleware(
 
 # Import routes
 # Import here to avoid SQLAlchemy loading issues - ensuring config is loaded first
-from routes import auth, real_estate, documents, crypto, shares, bonds, business
+from routes import auth, real_estate, documents, crypto, shares, bonds, business, analytics, ml_predictions, valuations
 from database import engine, Base
-from models import user, real_estate as re_model, document, crypto as crypto_model, shares as shares_model, bonds as bonds_model, business as business_model # Import models to register them
+from models import user, real_estate as re_model, property_valuation, document, crypto as crypto_model, shares as shares_model, bonds as bonds_model, business as business_model # Import models to register them
 
 # Create tables
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)  # Tables already exist in Supabase
+
 
 # Include routers
 app.include_router(auth.router)
 app.include_router(real_estate.router)
+app.include_router(valuations.router)
 app.include_router(documents.router)
 app.include_router(crypto.router)
 app.include_router(shares.router)
 app.include_router(bonds.router)
 app.include_router(business.router)
+app.include_router(analytics.router)
+app.include_router(ml_predictions.router)
 
 @app.get("/api")
 def api_root():

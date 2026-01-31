@@ -3,6 +3,7 @@
 
 from .user import User
 from .real_estate import Property
+from .property_valuation import PropertyValuation
 from .document import Document
 from .crypto import CryptoHolding, CryptoTransaction, CryptoWallet
 from .shares import Share

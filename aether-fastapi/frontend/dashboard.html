@@ -701,6 +701,159 @@
             scrollbar-width: thin;
             scrollbar-color: rgba(255, 255, 255, 0.1) rgba(255, 255, 255, 0.02);
         }
+
+        /* Valuation Timeline Styles */
+        .valuation-timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .valuation-timeline::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 12px;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom,
+                    rgba(255, 255, 255, 0.15),
+                    rgba(255, 255, 255, 0.05));
+        }
+
+        .timeline-item {
+            position: relative;
+        }
+
+        .timeline-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .timeline-dot.active {
+            background: #10b981;
+            border-color: #10b981;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Property Status Toggle */
+        .property-status-toggle {
+            display: inline-flex;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .property-status-toggle .toggle-btn {
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.6);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        .property-status-toggle .toggle-btn.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        /* Property Folder Cards */
+        .property-folder-card {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .property-folder-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .property-folder-card .folder-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+
+        .property-folder-card .property-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .property-folder-card .property-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .property-folder-card .folder-stats {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .property-folder-card .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.85rem;
+        }
+
+        /* Valuation Table */
+        .valuation-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+        }
+
+        .valuation-table th {
+            text-align: left;
+            padding: 12px 16px;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 500;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .valuation-table td {
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .valuation-table td:first-child {
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px 0 0 8px;
+        }
+
+        .valuation-table td:last-child {
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 0 8px 8px 0;
+        }
+
+        .valuation-table tbody tr:hover td {
+            background: rgba(255, 255, 255, 0.05);
+        }
     </style>
 </head>
 
@@ -798,10 +951,8 @@
                             <h2 class="h3 fw-light mb-2">Rental & Sale History</h2>
                             <p class="text-white-50 fw-light">Chronological transaction ledger</p>
                         </div>
-                        <div class="glass-card overflow-hidden p-0">
-                            <div id="transaction-list">
-                                <!-- Injected JS -->
-                            </div>
+                        <div id="transaction-list">
+                            <!-- Injected JS -->
                         </div>
                     </div>
 
@@ -810,224 +961,133 @@
                         <div class="glass-header mb-4 d-flex justify-content-between align-items-end">
                             <div>
                                 <h2 class="h3 fw-light mb-2">Valuations & Documents</h2>
-                                <p class="text-white-50 fw-light">Property documentation and records</p>
+                                <p class="text-white-50 fw-light">Organize property records and valuations</p>
                             </div>
-                            <button class="glass-button px-4 py-2 rounded-pill small d-flex align-items-center gap-2"
-                                onclick="openUploadDocumentModal()">
-                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
-                                    </path>
-                                </svg>
-                                Upload Document
-                            </button>
+
+                            <!-- Active/Sold Toggle -->
+                            <div class="property-status-toggle">
+                                <button class="toggle-btn active" data-status="Active"
+                                    onclick="filterPropertiesByStatus('Active')">
+                                    Active <span id="active-count" class="count-badge">(0)</span>
+                                </button>
+                                <button class="toggle-btn" data-status="Sold"
+                                    onclick="filterPropertiesByStatus('Sold')">
+                                    Sold <span id="sold-count" class="count-badge">(0)</span>
+                                </button>
+                            </div>
                         </div>
-                        <div id="documents-list" class="row g-4">
-                            <!-- Injected JS -->
+
+                        <!-- Property Folders Grid -->
+                        <div id="property-folders-grid" class="row g-4 mb-4">
+                            <!-- Dynamically populated by valuations.js -->
+                        </div>
+
+                        <!-- Property Detail Panel (Hidden by default) -->
+                        <div id="property-detail-panel" class="property-detail-panel" style="display: none;">
+                            <!-- Back Button -->
+                            <div class="mb-4">
+                                <button class="btn glass-button btn-sm" onclick="closePropertyDetail()">
+                                    ← Back to Properties
+                                </button>
+                            </div>
+
+                            <!-- Property Name Header -->
+                            <h3 id="detail-property-name" class="text-white mb-4"></h3>
+
+                            <!-- Documents Section -->
+                            <div class="glass-card p-4 mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h4 class="text-white mb-0">📄 Documents</h4>
+                                    <button class="btn glass-button btn-sm" onclick="openUploadDocumentModal()">
+                                        + Upload Document
+                                    </button>
+                                </div>
+                                <div id="detail-documents-list">
+                                    <!-- Dynamically populated -->
+                                </div>
+                            </div>
+
+                            <!-- Valuation History Section -->
+                            <div class="glass-card p-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h4 class="text-white mb-0">💰 Valuation History</h4>
+                                    <button class="btn glass-button btn-sm" onclick="openValuationModalForProperty()">
+                                        + Add Valuation Entry
+                                    </button>
+                                </div>
+
+                                <!-- Valuation Table -->
+                                <div class="table-responsive">
+                                    <table class="valuation-table" id="detail-valuation-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Value</th>
+                                                <th>Source</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="valuation-table-body">
+                                            <!-- Dynamically populated -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- 5. AI Insights -->
-                    <div id="realestate-section-ai-insights" class="realestate-section" style="display: none;">
-                        <div class="row g-5">
-                            <!-- Left Panel: AI Property Insights -->
-                            <div class="col-lg-6 d-flex flex-column gap-4">
-                                <div>
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round" class="text-white">
-                                            <path
-                                                d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-                                        </svg>
-                                        <h2 class="h4 fw-light text-white mb-0">AI Property Insights</h2>
+                    <div id="realestate-section-ai-insights" class="realestate-section">
+                        <!-- Full Width Analytics -->
+                        <div class="d-flex flex-column gap-4">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <h2 class="h4 fw-light text-white mb-0">Portfolio Intelligence</h2>
+                                <span
+                                    class="badge bg-white bg-opacity-10 text-white-50 fw-light rounded-pill px-2 py-1 small">Beta</span>
+                            </div>
+
+                            <!-- 1. Health Score Board -->
+                            <div id="ai-health-score-container" class="glass-card p-4">
+                                <!-- Dynamic Content -->
+                                <div class="text-center text-white-50 py-4">
+                                    <div class="spinner-border spinner-border-sm text-primary mb-2" role="status">
                                     </div>
-                                    <p class="small text-white-50 mb-0 ps-4 ms-1">Strategic recommendations powered by
-                                        AI</p>
-                                </div>
-
-                                <!-- Insight Card -->
-                                <div
-                                    class="glass-card p-4 d-flex gap-3 align-items-start position-relative overflow-hidden">
-                                    <!-- Icon Container -->
-                                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                                        style="width: 48px; height: 48px; background: rgba(255,255,255,0.05);">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round" class="text-white-50">
-                                            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-                                            <polyline points="16 7 22 7 22 13" />
-                                        </svg>
-                                    </div>
-
-                                    <div class="flex-grow-1">
-                                        <p class="text-white fw-light mb-3" style="line-height: 1.6;">
-                                            You have sold 1 properties. Ensure you reinvest capital gains to maintain
-                                            compounding growth.
-                                        </p>
-
-                                        <div class="d-flex align-items-center gap-3 flex-wrap">
-                                            <span
-                                                class="badge bg-warning bg-opacity-10 text-warning fw-normal px-3 py-2 rounded-pill small">Medium
-                                                Impact</span>
-
-                                            <div class="d-flex align-items-center gap-2 flex-grow-1"
-                                                style="max-width: 200px;">
-                                                <div class="progress w-100"
-                                                    style="height: 4px; background: rgba(255,255,255,0.1);">
-                                                    <div class="progress-bar bg-white" role="progressbar"
-                                                        style="width: 95%" aria-valuenow="95" aria-valuemin="0"
-                                                        aria-valuemax="100"></div>
-                                                </div>
-                                                <span class="small text-white-50" style="font-size: 0.75rem;">95%
-                                                    confidence</span>
-                                            </div>
-
-                                            <span
-                                                class="badge bg-white bg-opacity-10 text-white-50 fw-normal px-3 py-2 rounded-pill small">Opportunity</span>
-                                        </div>
-                                    </div>
+                                    <div>Calculating Portfolio Health...</div>
                                 </div>
                             </div>
 
-                            <!-- Right Panel: AI Assistant -->
-                            <div class="col-lg-6 d-flex flex-column gap-4" style="height: 100%;">
-                                <div>
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round" class="text-white">
-                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z">
-                                            </path>
-                                        </svg>
-                                        <h2 class="h4 fw-light text-white mb-0">AI Assistant</h2>
-                                    </div>
-                                    <p class="small text-white-50 mb-0 ps-4 ms-1">Ask questions about your portfolio</p>
-                                </div>
-
-                                <!-- View 1: Question Grid -->
-                                <div id="ai-question-grid" class="d-flex flex-column gap-3">
-                                    <div class="row g-3">
-                                        <div class="col-6">
-                                            <button onclick="handleAIChat('Which property is underperforming?')"
-                                                class="glass-card p-4 w-100 text-start h-100 hover-lift d-flex align-items-start gap-3 border-0"
-                                                style="background: rgba(255,255,255,0.03);">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                                    class="text-white-50 flex-shrink-0 mt-1">
-                                                    <path d="m12 14 4-4" />
-                                                    <path d="M3.34 19a10 10 0 1 1 17.32 0" />
-                                                </svg>
-                                                <span class="text-white-90 small">Which property is
-                                                    underperforming?</span>
-                                            </button>
-                                        </div>
-                                        <div class="col-6">
-                                            <button onclick="handleAIChat('Should I hold or sell this asset?')"
-                                                class="glass-card p-4 w-100 text-start h-100 hover-lift d-flex align-items-start gap-3 border-0"
-                                                style="background: rgba(255,255,255,0.03);">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                                    class="text-white-50 flex-shrink-0 mt-1">
-                                                    <path d="M12 2v20" />
-                                                    <path d="m17 5-5-3-5 3" />
-                                                    <path d="m17 19-5 3-5-3" />
-                                                </svg>
-                                                <span class="text-white-90 small">Should I hold or sell this
-                                                    asset?</span>
-                                            </button>
-                                        </div>
-                                        <div class="col-6">
-                                            <button onclick="handleAIChat('What is my real estate risk exposure?')"
-                                                class="glass-card p-4 w-100 text-start h-100 hover-lift d-flex align-items-start gap-3 border-0"
-                                                style="background: rgba(255,255,255,0.03);">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                                    class="text-white-50 flex-shrink-0 mt-1">
-                                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
-                                                </svg>
-                                                <span class="text-white-90 small">What is my real estate risk
-                                                    exposure?</span>
-                                            </button>
-                                        </div>
-                                        <div class="col-6">
-                                            <button onclick="handleAIChat('How can I optimize my portfolio?')"
-                                                class="glass-card p-4 w-100 text-start h-100 hover-lift d-flex align-items-start gap-3 border-0"
-                                                style="background: rgba(255,255,255,0.03);">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                                    class="text-white-50 flex-shrink-0 mt-1">
-                                                    <path d="M2 20h.01" />
-                                                    <path d="M7 20v-4" />
-                                                    <path d="M12 20v-8" />
-                                                    <path d="M17 20V8" />
-                                                    <path d="M22 4v16" />
-                                                </svg>
-                                                <span class="text-white-90 small">How can I optimize my
-                                                    portfolio?</span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <button onclick="toggleAIChatMode()"
-                                            class="btn btn-link text-white-50 text-decoration-none small p-0 hover-text-white transition-all">Expand
-                                            chat</button>
-                                    </div>
-                                </div>
-
-                                <!-- View 2: Active Chat Interface (Hidden by default) -->
-                                <div id="ai-chat-interface" style="display: none;">
-                                    <div class="glass-card d-flex flex-column p-4"
-                                        style="height: 400px; position: relative;">
-                                        <!-- Empty State / Chat Messages -->
-                                        <div id="ai-chat-messages-full"
-                                            class="flex-grow-1 overflow-auto mb-3 custom-scrollbar d-flex flex-column gap-3 pe-2">
-                                            <div id="ai-chat-placeholder"
-                                                class="d-flex align-items-center justify-content-center h-100 text-white-50 small">
-                                                Ask me anything about your real estate portfolio...
-                                            </div>
-                                        </div>
-
-                                        <!-- Input Area -->
-                                        <form
-                                            onsubmit="event.preventDefault(); handleAIChat(this.querySelector('input').value); this.querySelector('input').value='';"
-                                            class="mt-auto">
-                                            <div class="position-relative">
-                                                <input type="text"
-                                                    class="form-control glass-input rounded-pill ps-4 pe-5 py-3 text-white small"
-                                                    placeholder="Type a message..."
-                                                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 0.9rem;">
-                                                <button type="button"
-                                                    onclick="this.form.dispatchEvent(new Event('submit'))"
-                                                    class="btn position-absolute top-50 end-0 translate-middle-y text-white-50 hover-text-white pe-3"
-                                                    style="border:none; background:none;">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                        <path d="m22 2-7 20-4-9-9-4Z" />
-                                                        <path d="M22 2 11 13" />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-
-                                    <!-- Collapse Button (Outside Card) -->
-                                    <button onclick="toggleAIChatMode()"
-                                        class="btn btn-link text-white-50 text-decoration-none small ps-0 mt-2 hover-text-white transition-all">Collapse</button>
+                            <!-- 2. Performance Podium -->
+                            <div>
+                                <h3 class="h6 text-white-50 text-uppercase fw-light mb-3" style="letter-spacing: 1px;">
+                                    Top Performers</h3>
+                                <div id="ai-performance-ranking" class="row g-3">
+                                    <!-- Dynamic Content -->
                                 </div>
                             </div>
 
+                            <!-- 3. Risk Alerts -->
+                            <div id="ai-risk-section" style="display: none;">
+                                <h3 class="h6 text-white-50 text-uppercase fw-light mb-3" style="letter-spacing: 1px;">
+                                    Risk Detection</h3>
+                                <div id="ai-risk-container" class="d-flex flex-column gap-3">
+                                    <!-- Dynamic Content -->
+                                </div>
+                            </div>
 
-
+                            <!-- 4. Price Predictions -->
+                            <div>
+                                <h3 class="h6 text-white-50 text-uppercase fw-light mb-3" style="letter-spacing: 1px;">
+                                    💰 Price Forecasts</h3>
+                                <div id="ai-price-predictions" class="row g-3">
+                                    <!-- Dynamic prediction cards -->
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+
+
 
                 <!-- Crypto Module -->
                 <div class="module-content" id="module-crypto">
@@ -1102,7 +1162,8 @@
                         <div class="glass-header mb-4 d-flex justify-content-between align-items-center">
                             <div>
                                 <h2 class="h3 fw-light mb-2">Connected Wallets</h2>
-                                <p class="text-white-50 fw-light mb-0">Manage your wallet connections</p>
+                                <p class="text-white-50 fw-light mb-0">Manage your wallet
+                                    connections</p>
                             </div>
                             <button class="glass-button px-4 py-2" onclick="openAddWalletModal()">
                                 + Add Wallet
@@ -1118,12 +1179,15 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"
                                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
                                             stroke-linecap="round" stroke-linejoin="round" class="text-white-50">
-                                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2">
+                                            </rect>
                                             <line x1="1" y1="10" x2="23" y2="10"></line>
                                         </svg>
                                     </div>
-                                    <h3 class="h4 fw-light text-white-90 mb-2">No wallets connected</h3>
-                                    <p class="text-white-50 fw-light mb-3">Add your crypto wallet addresses to track
+                                    <h3 class="h4 fw-light text-white-90 mb-2">No wallets connected
+                                    </h3>
+                                    <p class="text-white-50 fw-light mb-3">Add your crypto wallet
+                                        addresses to track
                                         balances</p>
                                     <button class="glass-button px-4 py-2" onclick="openAddWalletModal()">
                                         + Add Your First Wallet
@@ -1137,7 +1201,8 @@
                     <div id="crypto-section-ai-insights" class="crypto-section" style="display: none;">
                         <div class="glass-header mb-4">
                             <h2 class="h3 fw-light mb-2">AI Insights</h2>
-                            <p class="text-white-50 fw-light">AI-powered analysis of your crypto portfolio
+                            <p class="text-white-50 fw-light">AI-powered analysis of your crypto
+                                portfolio
                             </p>
                         </div>
                         <div class="glass-card glass-empty-state">
@@ -1151,7 +1216,8 @@
                                 </svg>
                             </div>
                             <h3 class="h4 fw-light text-white-90 mb-2">Coming Soon</h3>
-                            <p class="text-white-50 fw-light">AI-powered portfolio analysis is under development.</p>
+                            <p class="text-white-50 fw-light">AI-powered portfolio analysis is under
+                                development.</p>
                         </div>
                     </div>
                 </div>
@@ -1163,14 +1229,19 @@
                         <!-- Injected by JS -->
                     </div>
 
-                    <!-- 2. Holdings Section -->
-                    <div id="shares-section-holdings" class="shares-section" style="display: none;">
-                        <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2">Share Holdings</h2>
-                            <p class="text-white-50 fw-light">Manage your stock portfolio and add new holdings</p>
+                    <!-- AI Insights Section (Full Width) -->
+                    <div id="real-estate-ai-section" class="mt-4" style="display: none;">
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-stars text-primary fs-4"></i>
+                                <h4 class="text-white mb-0">Portfolio Intelligence <span
+                                        class="badge bg-primary-subtle text-primary small ms-2">Beta</span>
+                                </h4>
+                            </div>
                         </div>
-                        <div id="shares-holdings-list">
-                            <!-- Injected by JS -->
+
+                        <!-- Full Width Content -->
+                        <div class="w-100">
                         </div>
                     </div>
 
@@ -1196,7 +1267,8 @@
                     <div id="shares-section-transactions" class="shares-section" style="display: none;">
                         <div class="glass-header mb-4">
                             <h2 class="h3 fw-light mb-2">Transaction History</h2>
-                            <p class="text-white-50 fw-light">Complete record of buy and sell orders</p>
+                            <p class="text-white-50 fw-light">Complete record of buy and sell orders
+                            </p>
                         </div>
                         <div class="glass-card glass-empty-state">
                             <div class="glass-empty-icon">
@@ -1208,7 +1280,8 @@
                                 </svg>
                             </div>
                             <h3 class="h4 fw-light text-white-90 mb-2">Coming Soon</h3>
-                            <p class="text-white-50 fw-light">Transaction history is under development.</p>
+                            <p class="text-white-50 fw-light">Transaction history is under
+                                development.</p>
                         </div>
                     </div>
 
@@ -1216,7 +1289,8 @@
                     <div id="shares-section-ai-insights" class="shares-section" style="display: none;">
                         <div class="glass-header mb-4">
                             <h2 class="h3 fw-light mb-2">AI Insights</h2>
-                            <p class="text-white-50 fw-light">AI-powered analysis of your share portfolio</p>
+                            <p class="text-white-50 fw-light">AI-powered analysis of your share
+                                portfolio</p>
                         </div>
                         <div class="glass-card glass-empty-state">
                             <div class="glass-empty-icon">
@@ -1229,7 +1303,8 @@
                                 </svg>
                             </div>
                             <h3 class="h4 fw-light text-white-90 mb-2">Coming Soon</h3>
-                            <p class="text-white-50 fw-light">AI-powered portfolio analysis is under development.</p>
+                            <p class="text-white-50 fw-light">AI-powered portfolio analysis is under
+                                development.</p>
                         </div>
                     </div>
                 </div>
@@ -1239,7 +1314,8 @@
                     <div id="bonds-section-overview" class="bonds-section active">
                         <div class="glass-header mb-4">
                             <h2 class="h3 fw-light mb-2">Portfolio Overview</h2>
-                            <p class="text-white-50 fw-light">Capital stability and fixed income performance</p>
+                            <p class="text-white-50 fw-light">Capital stability and fixed income
+                                performance</p>
                         </div>
 
                         <!-- Main Chart Container -->
@@ -1247,7 +1323,8 @@
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <div>
                                     <h3 class="h5 fw-light mb-1">Fixed Income Trend</h3>
-                                    <p class="text-white-50 small mb-0">Projected monthly coupon payments</p>
+                                    <p class="text-white-50 small mb-0">Projected monthly coupon
+                                        payments</p>
                                 </div>
                                 <button class="btn btn-sm btn-icon-glass text-white-50">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -1297,7 +1374,8 @@
                                             <rect width="20" height="14" x="2" y="5" rx="2" />
                                             <line x1="2" x2="22" y1="10" y2="10" />
                                         </svg>
-                                        <span class="text-white-50 small text-uppercase spacing-1">Total Bond
+                                        <span class="text-white-50 small text-uppercase spacing-1">Total
+                                            Bond
                                             Value</span>
                                     </div>
                                     <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-total-value">--</h3>
@@ -1316,7 +1394,8 @@
                                             <line x1="8" x2="8" y1="2" y2="6" />
                                             <line x1="3" x2="21" y1="10" y2="10" />
                                         </svg>
-                                        <span class="text-white-50 small text-uppercase spacing-1">Annual Fixed
+                                        <span class="text-white-50 small text-uppercase spacing-1">Annual
+                                            Fixed
                                             Income</span>
                                     </div>
                                     <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-annual-income">--</h3>
@@ -1333,7 +1412,8 @@
                                             <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
                                             <polyline points="16 7 22 7 22 13" />
                                         </svg>
-                                        <span class="text-white-50 small text-uppercase spacing-1">Average Yield</span>
+                                        <span class="text-white-50 small text-uppercase spacing-1">Average
+                                            Yield</span>
                                     </div>
                                     <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-avg-yield">--</h3>
                                     <p class="small text-white-50">Yield to Maturity</p>
@@ -1349,7 +1429,8 @@
                                             <circle cx="12" cy="12" r="10" />
                                             <polyline points="12 6 12 12 16 14" />
                                         </svg>
-                                        <span class="text-white-50 small text-uppercase spacing-1">Next Maturity</span>
+                                        <span class="text-white-50 small text-uppercase spacing-1">Next
+                                            Maturity</span>
                                     </div>
                                     <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-next-maturity">--</h3>
                                     <p class="small text-white-50" id="bonds-overview-next-maturity-date">Upcoming Date
@@ -1368,7 +1449,8 @@
                                             <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
                                             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                                         </svg>
-                                        <span class="text-white-50 small text-uppercase spacing-1">Active Bonds</span>
+                                        <span class="text-white-50 small text-uppercase spacing-1">Active
+                                            Bonds</span>
                                     </div>
                                     <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-total-count">0</h3>
                                     <p class="small text-white-50">Currently Active Instruments</p>
@@ -1382,7 +1464,8 @@
                         <div class="glass-header mb-4 d-flex justify-content-between align-items-end">
                             <div>
                                 <h2 class="h3 fw-light mb-2">Holdings</h2>
-                                <p class="text-white-50 fw-light">Breakdown of recurring capital inflows</p>
+                                <p class="text-white-50 fw-light">Breakdown of recurring capital
+                                    inflows</p>
                             </div>
                             <button class="glass-button px-4 py-2 rounded-pill small" onclick="openAddBondModal()">
                                 <span>+</span> Add Bond
@@ -1392,7 +1475,8 @@
                             <!-- Income by Type Chart -->
                             <div class="col-lg-6">
                                 <div class="glass-card p-4 h-100">
-                                    <h3 class="h5 fw-light text-white-90 mb-4">Income by Bond Type</h3>
+                                    <h3 class="h5 fw-light text-white-90 mb-4">Income by Bond Type
+                                    </h3>
                                     <div style="height: 300px; position: relative;">
                                         <canvas id="bondsIncomeChart"></canvas>
                                     </div>
@@ -1401,7 +1485,8 @@
                             <!-- Top Payers List -->
                             <div class="col-lg-6">
                                 <div class="glass-card p-4 h-100">
-                                    <h3 class="h5 fw-light text-white-90 mb-4">Top Income Generators</h3>
+                                    <h3 class="h5 fw-light text-white-90 mb-4">Top Income Generators
+                                    </h3>
                                     <div id="bonds-top-payers-list" class="d-flex flex-column gap-3 custom-scrollbar"
                                         style="max-height: 320px; overflow-y: auto; padding-right: 8px;">
                                         <!-- Injected via JS -->
@@ -1415,7 +1500,8 @@
                     <div id="bonds-section-maturity" class="bonds-section" style="display: none;">
                         <div class="glass-header mb-4">
                             <h2 class="h3 fw-light mb-2">Maturity Schedule</h2>
-                            <p class="text-white-50 fw-light">Timeline of capital returns and corpus liquidity</p>
+                            <p class="text-white-50 fw-light">Timeline of capital returns and corpus
+                                liquidity</p>
                         </div>
                         <div id="bonds-maturity-list" class="d-flex flex-column gap-3">
                             <!-- Injected via JS -->
@@ -1435,7 +1521,8 @@
                                     <canvas id="bondsAllocationChart"></canvas>
                                     <div class="position-absolute top-50 start-50 translate-middle text-center"
                                         style="pointer-events: none;">
-                                        <p class="text-white-50 small text-uppercase spacing-1 mb-2">Total Corpus</p>
+                                        <p class="text-white-50 small text-uppercase spacing-1 mb-2">
+                                            Total Corpus</p>
                                         <p class="h3 fw-light text-white-90" id="bonds-total-corpus">--</p>
                                     </div>
                                 </div>
@@ -1454,7 +1541,8 @@
                     <div id="bonds-section-yield-analysis" class="bonds-section" style="display: none;">
                         <div class="glass-header mb-4">
                             <h2 class="h3 fw-light mb-2">Yield Analysis</h2>
-                            <p class="text-white-50 fw-light">Performance efficiency across bond categories</p>
+                            <p class="text-white-50 fw-light">Performance efficiency across bond
+                                categories</p>
                         </div>
 
                         <!-- Yield Cards Container -->
@@ -1468,7 +1556,8 @@
                     <div id="bonds-section-ai-insights" class="bonds-section" style="display: none;">
                         <div class="glass-header mb-4">
                             <h2 class="h3 fw-light mb-2">AI Insights</h2>
-                            <p class="text-white-50 fw-light">Strategic intelligence for fixed income optimization</p>
+                            <p class="text-white-50 fw-light">Strategic intelligence for fixed
+                                income optimization</p>
                         </div>
 
                         <!-- Insights Cards Container -->
@@ -1522,7 +1611,8 @@
                     <div id="business-section-dashboard" class="business-section">
                         <div class="glass-header mb-4">
                             <h2 class="h3 fw-light mb-2">Business Dashboard</h2>
-                            <p class="text-white-50 fw-light">Portfolio-wide operational intelligence</p>
+                            <p class="text-white-50 fw-light">Portfolio-wide operational
+                                intelligence</p>
                         </div>
 
                         <!-- 0. Performance Chart -->
@@ -1574,7 +1664,8 @@
                         <div class="glass-header mb-4 d-flex justify-content-between align-items-start">
                             <div>
                                 <h2 class="h3 fw-light mb-2">Ventures</h2>
-                                <p class="text-white-50 fw-light mb-0">Your business portfolio and ownership stakes</p>
+                                <p class="text-white-50 fw-light mb-0">Your business portfolio and
+                                    ownership stakes</p>
                             </div>
                             <button onclick="openAddBusinessModal()"
                                 class="btn glass-button px-4 py-2 d-flex align-items-center gap-2">
@@ -1596,7 +1687,8 @@
                     <div id="business-section-cash-flow" class="business-section" style="display: none;">
                         <div class="glass-header mb-4">
                             <h2 class="h3 fw-light mb-2">Cash Flow</h2>
-                            <p class="text-white-50 fw-light">Track money movement across your businesses</p>
+                            <p class="text-white-50 fw-light">Track money movement across your
+                                businesses</p>
                         </div>
 
                         <!-- Filters -->
@@ -1637,7 +1729,8 @@
                     <div id="business-section-statements" class="business-section" style="display: none;">
                         <div class="glass-header mb-4">
                             <h2 class="h3 fw-light mb-2">Statements</h2>
-                            <p class="text-white-50 fw-light">Financial clarity without complexity</p>
+                            <p class="text-white-50 fw-light">Financial clarity without complexity
+                            </p>
                         </div>
 
                         <!-- P&L Section -->
@@ -1664,7 +1757,8 @@
                         <div class="glass-header mb-4 d-flex justify-content-between align-items-end">
                             <div>
                                 <h2 class="h3 fw-light mb-2">Documents</h2>
-                                <p class="text-white-50 fw-light">All your business legal, financial and property
+                                <p class="text-white-50 fw-light">All your business legal, financial
+                                    and property
                                     records</p>
                             </div>
                             <button onclick="openAddDocumentModal()"
@@ -1688,7 +1782,8 @@
                     <div id="business-section-ai-insights" class="business-section" style="display: none;">
                         <div class="glass-header mb-4">
                             <h2 class="h3 fw-light mb-2">AI Insights</h2>
-                            <p class="text-white-50 fw-light">Decision intelligence powered by your business data</p>
+                            <p class="text-white-50 fw-light">Decision intelligence powered by your
+                                business data</p>
                         </div>
 
                         <!-- Insight Feed -->
@@ -1707,7 +1802,8 @@
                                     <path
                                         d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
                                 </svg>
-                                <p class="text-white-40 text-center small mb-4">Ask me about your business performance,
+                                <p class="text-white-40 text-center small mb-4">Ask me about your
+                                    business performance,
                                     trends, or projections.</p>
                                 <div class="row g-2 w-100" style="max-width: 600px;">
                                     <div class="col-6"><button
@@ -1724,7 +1820,8 @@
                                             me cash flow trends</button></div>
                                 </div>
                             </div>
-                            <p class="text-white-30 small text-center">AI chat functionality coming soon...</p>
+                            <p class="text-white-30 small text-center">AI chat functionality coming
+                                soon...</p>
                         </div>
                     </div>
                 </div>
@@ -1763,6 +1860,7 @@
     <script src="js/modules/crypto/crypto-insights.js"></script>
 
     <!-- Main Dashboard Logic -->
+    <script src="js/real-estate-ai.js"></script>
     <script src="js/dashboard.js?v=154"></script>
     <script src="js/share-transactions.js?v=1"></script>
     <script src="js/modules/crypto/crypto-wallets.js"></script>
@@ -1784,7 +1882,8 @@
                     class="p-4 border-bottom border-white border-opacity-10 d-flex justify-content-between align-items-center">
                     <div>
                         <h2 class="h4 fw-light text-white-90 mb-1">Add New Property</h2>
-                        <p class="small text-white-50 mb-0">Enter property details to add to your portfolio
+                        <p class="small text-white-50 mb-0">Enter property details to add to your
+                            portfolio
                         </p>
                     </div>
                     <button onclick="closeAddPropertyModal()"
@@ -1803,7 +1902,8 @@
                         <!-- Name -->
                         <div class="mb-3">
                             <label class="form-label small text-uppercase text-white-50"
-                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Property Name *</label>
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Property Name
+                                *</label>
                             <input type="text" id="propName" class="form-control glass-input text-white fw-light"
                                 placeholder="e.g., Sunset Villa" required autocomplete="off"
                                 style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
@@ -1812,7 +1912,8 @@
                         <!-- Type -->
                         <div class="mb-3">
                             <label class="form-label small text-uppercase text-white-50"
-                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Type of Property *</label>
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Type of Property
+                                *</label>
                             <select id="propType" class="form-select glass-input text-white fw-light" required
                                 style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
                                 <option value="Residential" class="text-dark">Residential</option>
@@ -1828,33 +1929,42 @@
                         <div class="row g-3 mb-3">
                             <div class="col-6">
                                 <label class="form-label small text-uppercase text-white-50"
-                                    style="letter-spacing: 0.1em; font-size: 0.7rem;">State *</label>
+                                    style="letter-spacing: 0.1em; font-size: 0.7rem;">State
+                                    *</label>
                                 <select id="propState" class="form-select glass-input text-white fw-light" required
                                     style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
                                     <option value="" class="text-dark">Select State</option>
-                                    <option value="Andhra Pradesh" class="text-dark">Andhra Pradesh</option>
+                                    <option value="Andhra Pradesh" class="text-dark">Andhra Pradesh
+                                    </option>
                                     <option value="Assam" class="text-dark">Assam</option>
                                     <option value="Bihar" class="text-dark">Bihar</option>
                                     <option value="Chandigarh" class="text-dark">Chandigarh</option>
-                                    <option value="Chhattisgarh" class="text-dark">Chhattisgarh</option>
+                                    <option value="Chhattisgarh" class="text-dark">Chhattisgarh
+                                    </option>
                                     <option value="Delhi" class="text-dark">Delhi</option>
                                     <option value="Goa" class="text-dark">Goa</option>
                                     <option value="Gujarat" class="text-dark">Gujarat</option>
                                     <option value="Haryana" class="text-dark">Haryana</option>
-                                    <option value="Himachal Pradesh" class="text-dark">Himachal Pradesh</option>
+                                    <option value="Himachal Pradesh" class="text-dark">Himachal
+                                        Pradesh</option>
                                     <option value="Jharkhand" class="text-dark">Jharkhand</option>
                                     <option value="Karnataka" class="text-dark">Karnataka</option>
                                     <option value="Kerala" class="text-dark">Kerala</option>
-                                    <option value="Madhya Pradesh" class="text-dark">Madhya Pradesh</option>
-                                    <option value="Maharashtra" class="text-dark">Maharashtra</option>
+                                    <option value="Madhya Pradesh" class="text-dark">Madhya Pradesh
+                                    </option>
+                                    <option value="Maharashtra" class="text-dark">Maharashtra
+                                    </option>
                                     <option value="Odisha" class="text-dark">Odisha</option>
                                     <option value="Punjab" class="text-dark">Punjab</option>
                                     <option value="Rajasthan" class="text-dark">Rajasthan</option>
                                     <option value="Tamil Nadu" class="text-dark">Tamil Nadu</option>
                                     <option value="Telangana" class="text-dark">Telangana</option>
-                                    <option value="Uttar Pradesh" class="text-dark">Uttar Pradesh</option>
-                                    <option value="Uttarakhand" class="text-dark">Uttarakhand</option>
-                                    <option value="West Bengal" class="text-dark">West Bengal</option>
+                                    <option value="Uttar Pradesh" class="text-dark">Uttar Pradesh
+                                    </option>
+                                    <option value="Uttarakhand" class="text-dark">Uttarakhand
+                                    </option>
+                                    <option value="West Bengal" class="text-dark">West Bengal
+                                    </option>
                                 </select>
                             </div>
                             <div class="col-6">
@@ -1870,7 +1980,8 @@
                         <div class="row g-3 mb-3">
                             <div class="col-6">
                                 <label class="form-label small text-uppercase text-white-50"
-                                    style="letter-spacing: 0.1em; font-size: 0.7rem;">Purchase Price (₹)
+                                    style="letter-spacing: 0.1em; font-size: 0.7rem;">Purchase Price
+                                    (₹)
                                     *</label>
                                 <input type="number" id="propPurchasePrice"
                                     class="form-control glass-input text-white fw-light" placeholder="0" required
@@ -1878,7 +1989,8 @@
                             </div>
                             <div class="col-6">
                                 <label class="form-label small text-uppercase text-white-50"
-                                    style="letter-spacing: 0.1em; font-size: 0.7rem;">Current Price (₹)
+                                    style="letter-spacing: 0.1em; font-size: 0.7rem;">Current Price
+                                    (₹)
                                     *</label>
                                 <input type="number" id="propCurrentPrice"
                                     class="form-control glass-input text-white fw-light" placeholder="0" required
@@ -1889,7 +2001,8 @@
                         <!-- Acquisition Date -->
                         <div class="mb-3">
                             <label class="form-label small text-uppercase text-white-50"
-                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Purchase Date</label>
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Purchase
+                                Date</label>
                             <input type="date" id="propAcquisitionDate"
                                 class="form-control glass-input text-white fw-light"
                                 style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; color-scheme: dark;">
@@ -1938,8 +2051,10 @@
                 <!-- Header -->
                 <div class="p-4 d-flex justify-content-between align-items-start">
                     <div>
-                        <h2 class="h4 fw-light text-white mb-1" style="letter-spacing: -0.01em;">Add New Crypto</h2>
-                        <p class="small mb-0" style="color: rgba(255, 255, 255, 0.45);">Search and add cryptocurrency to
+                        <h2 class="h4 fw-light text-white mb-1" style="letter-spacing: -0.01em;">Add
+                            New Crypto</h2>
+                        <p class="small mb-0" style="color: rgba(255, 255, 255, 0.45);">Search and
+                            add cryptocurrency to
                             your portfolio</p>
                     </div>
                     <button onclick="closeAddCryptoModal()" class="modal-close-btn" type="button">
@@ -1968,7 +2083,8 @@
                             <div id="cryptoSearchSpinner" class="position-absolute d-none"
                                 style="right: 1rem; top: 50%; transform: translateY(-50%);">
                                 <div class="spinner-border spinner-border-sm" role="status"
-                                    style="width: 14px; height: 14px; color: rgba(255,255,255,0.4);"></div>
+                                    style="width: 14px; height: 14px; color: rgba(255,255,255,0.4);">
+                                </div>
                             </div>
                         </div>
                         <!-- Search Results Dropdown -->
@@ -2082,11 +2198,13 @@
                         <div class="row g-3">
                             <div class="col-6">
                                 <label class="modal-label text-white-40">Total Investment</label>
-                                <div id="totalInvestment" class="h5 fw-light text-white-90 mb-0">₹0.00</div>
+                                <div id="totalInvestment" class="h5 fw-light text-white-90 mb-0">
+                                    ₹0.00</div>
                             </div>
                             <div class="col-6">
                                 <label class="modal-label text-white-40">Current Value</label>
-                                <div id="currentValue" class="h5 fw-light text-white-90 mb-0">₹0.00</div>
+                                <div id="currentValue" class="h5 fw-light text-white-90 mb-0">₹0.00
+                                </div>
                             </div>
                             <div class="col-6">
                                 <label class="modal-label text-white-40">Profit/Loss</label>
@@ -2125,8 +2243,10 @@
                 <!-- Header -->
                 <div class="p-4 d-flex justify-content-between align-items-start">
                     <div>
-                        <h2 class="h4 fw-light text-white mb-1" style="letter-spacing: -0.01em;">Add Wallet</h2>
-                        <p class="small mb-0" style="color: rgba(255, 255, 255, 0.45);">Connect your crypto wallet
+                        <h2 class="h4 fw-light text-white mb-1" style="letter-spacing: -0.01em;">Add
+                            Wallet</h2>
+                        <p class="small mb-0" style="color: rgba(255, 255, 255, 0.45);">Connect your
+                            crypto wallet
                             address</p>
                     </div>
                     <button onclick="closeAddWalletModal()" class="modal-close-btn" type="button">
@@ -2206,8 +2326,10 @@
                 <!-- Header -->
                 <div class="p-4 d-flex justify-content-between align-items-start">
                     <div>
-                        <h2 class="h5 fw-light text-white mb-1" style="letter-spacing: -0.01em;">Delete Wallet</h2>
-                        <p class="small mb-0" style="color: rgba(255, 255, 255, 0.45);">This action cannot be undone</p>
+                        <h2 class="h5 fw-light text-white mb-1" style="letter-spacing: -0.01em;">
+                            Delete Wallet</h2>
+                        <p class="small mb-0" style="color: rgba(255, 255, 255, 0.45);">This action
+                            cannot be undone</p>
                     </div>
                     <button onclick="closeDeleteWalletModal()" class="modal-close-btn" type="button">
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -2289,7 +2411,8 @@
                                 <!-- Rent Amount -->
                                 <div class="col-6">
                                     <label class="form-label small text-uppercase text-white-50"
-                                        style="letter-spacing: 0.1em; font-size: 0.7rem;">Rent Amount (₹)
+                                        style="letter-spacing: 0.1em; font-size: 0.7rem;">Rent
+                                        Amount (₹)
                                         *</label>
                                     <input type="number" id="rentAmount"
                                         class="form-control glass-input text-white fw-light" placeholder="50000"
@@ -2310,7 +2433,8 @@
                                 <!-- Security Deposit -->
                                 <div class="col-6">
                                     <label class="form-label small text-uppercase text-white-50"
-                                        style="letter-spacing: 0.1em; font-size: 0.7rem;">Security Deposit
+                                        style="letter-spacing: 0.1em; font-size: 0.7rem;">Security
+                                        Deposit
                                         (₹)</label>
                                     <input type="number" id="securityDeposit"
                                         class="form-control glass-input text-white fw-light" placeholder="100000"
@@ -2367,7 +2491,8 @@
                                         </svg>
                                     </div>
                                     <div>
-                                        <h3 class="h6 fw-light text-white-90 mb-1">Portfolio Impact Analysis
+                                        <h3 class="h6 fw-light text-white-90 mb-1">Portfolio Impact
+                                            Analysis
                                         </h3>
                                         <p class="small fw-light text-white-60 mb-0" id="impact-description"></p>
                                     </div>
@@ -2376,20 +2501,24 @@
                                 <div class="row g-3 pt-3 border-top border-white border-opacity-10">
                                     <div class="col-4">
                                         <div class="small text-uppercase text-white-50 mb-1"
-                                            style="font-size: 0.65rem; letter-spacing: 0.1em;">Rental Yield
+                                            style="font-size: 0.65rem; letter-spacing: 0.1em;">
+                                            Rental Yield
                                         </div>
                                         <div class="h5 fw-light" style="color: rgb(74, 222, 128);" id="rental-yield">0%
                                         </div>
                                     </div>
                                     <div class="col-4">
                                         <div class="small text-uppercase text-white-50 mb-1"
-                                            style="font-size: 0.65rem; letter-spacing: 0.1em;">Annual Income
+                                            style="font-size: 0.65rem; letter-spacing: 0.1em;">
+                                            Annual Income
                                         </div>
-                                        <div class="h5 fw-light text-white-90" id="annual-income">₹0</div>
+                                        <div class="h5 fw-light text-white-90" id="annual-income">₹0
+                                        </div>
                                     </div>
                                     <div class="col-4">
                                         <div class="small text-uppercase text-white-50 mb-1"
-                                            style="font-size: 0.65rem; letter-spacing: 0.1em;">Monthly
+                                            style="font-size: 0.65rem; letter-spacing: 0.1em;">
+                                            Monthly
                                             Cashflow
                                         </div>
                                         <div class="h5 fw-light text-white-90" id="monthly-cashflow">₹0
@@ -2438,7 +2567,8 @@
                         </svg>
                     </div>
                     <h3 class="h5 text-white mb-2">Sell Property?</h3>
-                    <p class="text-white-50 small mb-4">Are you sure you want to sell this property? This
+                    <p class="text-white-50 small mb-4">Are you sure you want to sell this property?
+                        This
                         action
                         will
                         remove it from your active portfolio and mark it as sold.</p>
@@ -2475,7 +2605,8 @@
                         </svg>
                     </div>
                     <h3 class="h5 text-white mb-2">Remove Property?</h3>
-                    <p class="text-white-50 small mb-4">Are you sure you want to remove this property? This
+                    <p class="text-white-50 small mb-4">Are you sure you want to remove this
+                        property? This
                         will
                         permanently delete it from your portfolio history.</p>
 
@@ -2512,7 +2643,8 @@
                         </svg>
                     </div>
                     <h3 class="h5 text-white mb-2">Stop Renting Property?</h3>
-                    <p class="text-white-50 small mb-4">Are you sure you want to stop renting this property?
+                    <p class="text-white-50 small mb-4">Are you sure you want to stop renting this
+                        property?
                         It will
                         be
                         moved to "Owned" status and all rental details will be removed.</p>
@@ -2559,41 +2691,23 @@
                 <!-- Form -->
                 <div class="p-4" style="max-height: 70vh; overflow-y: auto;">
                     <form id="uploadDocumentForm" onsubmit="submitUploadDocument(event)">
-                        <!-- Property Status Filter -->
-                        <div class="mb-3">
-                            <label class="form-label small text-uppercase text-white-50"
-                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Property Status</label>
-                            <select id="docPropertyStatus" class="form-select glass-input text-white fw-light" required
-                                onchange="filterPropertiesByStatus()"
-                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
-                                <option value="" class="text-dark">Select status...</option>
-                                <option value="active" class="text-dark">Active Properties</option>
-                                <option value="sold" class="text-dark">Sold Properties</option>
-                            </select>
-                        </div>
 
-                        <!-- Property Selection -->
-                        <div class="mb-3">
-                            <label class="form-label small text-uppercase text-white-50"
-                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Property</label>
-                            <select id="docProperty" class="form-select glass-input text-white fw-light" required
-                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
-                                <option value="" class="text-dark">Select a property...</option>
-                            </select>
-                        </div>
 
                         <!-- Document Type -->
                         <div class="mb-3">
                             <label class="form-label small text-uppercase text-white-50"
-                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Document Type</label>
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Document
+                                Type</label>
                             <select id="docType" class="form-select glass-input text-white fw-light" required
                                 style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
                                 <option value="" class="text-dark">Select document type...</option>
                                 <option value="Deed" class="text-dark">Deed</option>
-                                <option value="Valuation Report" class="text-dark">Valuation Report</option>
+                                <option value="Valuation Report" class="text-dark">Valuation Report
+                                </option>
                                 <option value="Tax Document" class="text-dark">Tax Document</option>
                                 <option value="Insurance" class="text-dark">Insurance</option>
-                                <option value="Inspection Report" class="text-dark">Inspection Report
+                                <option value="Inspection Report" class="text-dark">Inspection
+                                    Report
                                 </option>
                                 <option value="Other" class="text-dark">Other</option>
                             </select>
@@ -2602,7 +2716,8 @@
                         <!-- Description -->
                         <div class="mb-3">
                             <label class="form-label small text-uppercase text-white-50"
-                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Description (Optional)</label>
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Description
+                                (Optional)</label>
                             <textarea id="docDescription" class="form-control glass-input text-white fw-light" rows="3"
                                 placeholder="Add notes or description about this document..."
                                 style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; resize: none;"></textarea>
@@ -2624,7 +2739,8 @@
                                     </svg>
                                 </div>
                                 <p class="text-white-70 mb-1">Drag & drop or click to browse</p>
-                                <p class="small text-white-50 mb-0" style="font-size: 0.7rem;">PDF, PNG,
+                                <p class="small text-white-50 mb-0" style="font-size: 0.7rem;">PDF,
+                                    PNG,
                                     JPG, TXT,
                                     DOC,
                                     DOCX (Max 10MB)</p>
@@ -2757,7 +2873,8 @@
                         <div class="row g-3 mb-3">
                             <div class="col-6">
                                 <label class="form-label small text-uppercase text-white-50"
-                                    style="letter-spacing: 0.1em; font-size: 0.7rem;">Amount (₹) *</label>
+                                    style="letter-spacing: 0.1em; font-size: 0.7rem;">Amount (₹)
+                                    *</label>
                                 <input type="number" id="tx-amount" class="form-control glass-input text-white fw-light"
                                     placeholder="0" required step="0.01" min="0"
                                     style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
@@ -2774,7 +2891,8 @@
                         <!-- Description -->
                         <div class="mb-3">
                             <label class="form-label small text-uppercase text-white-50"
-                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Description / Source</label>
+                                style="letter-spacing: 0.1em; font-size: 0.7rem;">Description /
+                                Source</label>
                             <input type="text" id="tx-notes" class="form-control glass-input text-white fw-light"
                                 placeholder="e.g. Client Payment, Server Costs"
                                 style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
@@ -3146,7 +3264,8 @@
                 <div class="p-4 d-flex justify-content-between align-items-start">
                     <div>
                         <h2 class="h5 fw-light text-white mb-1" style="letter-spacing: -0.01em;">Remove Crypto?</h2>
-                        <p class="small mb-0" style="color: rgba(255, 255, 255, 0.45);">This action cannot be undone</p>
+                        <p class="small mb-0" style="color: rgba(255, 255, 255, 0.45);">This action cannot be undone
+                        </p>
                     </div>
                     <button onclick="closeRemoveCryptoModal()" class="modal-close-btn" type="button">
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -3190,7 +3309,8 @@
                 <div class="p-4 d-flex justify-content-between align-items-start">
                     <div>
                         <h2 class="h5 fw-light text-white mb-1" style="letter-spacing: -0.01em;">Remove Share?</h2>
-                        <p class="small mb-0" style="color: rgba(255, 255, 255, 0.45);">This action cannot be undone</p>
+                        <p class="small mb-0" style="color: rgba(255, 255, 255, 0.45);">This action cannot be undone
+                        </p>
                     </div>
                     <button onclick="closeRemoveShareModal()" class="modal-close-btn" type="button">
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -3677,6 +3797,90 @@
             }
         };
     </script>
+
+    <!-- Add Valuation Modal -->
+    <div class="modal fade" id="addValuationModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-card">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-white">Add Property Valuation</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="valuationForm">
+                        <input type="hidden" id="valuationPropertyId">
+
+                        <!-- Date Input -->
+                        <div class="mb-3">
+                            <label for="valuationDate" class="form-label text-white-50">Valuation Date *</label>
+                            <input type="date" class="form-control glass-input" id="valuationDate" required>
+                        </div>
+
+                        <!-- Value Input -->
+                        <div class="mb-3">
+                            <label for="valuationValue" class="form-label text-white-50">Property Value *</label>
+                            <div class="input-group">
+                                <span class="input-group-text glass-input">₹</span>
+                                <input type="number" class="form-control glass-input" id="valuationValue"
+                                    placeholder="1050000" step="0.01" min="0" required>
+                            </div>
+                            <small class="text-white-50">Enter value in rupees</small>
+                        </div>
+
+                        <!-- Source Radio Buttons -->
+                        <div class="mb-3">
+                            <label class="form-label text-white-50">Source</label>
+                            <div class="d-flex flex-column gap-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="valuationSource" id="sourceSelf"
+                                        value="self_assessment" checked>
+                                    <label class="form-check-label text-white" for="sourceSelf">
+                                        Self Assessment
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="valuationSource"
+                                        id="sourceAppraisal" value="professional_appraisal">
+                                    <label class="form-check-label text-white" for="sourceAppraisal">
+                                        Professional Appraisal
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="valuationSource"
+                                        id="sourceMarket" value="market_comparison">
+                                    <label class="form-check-label text-white" for="sourceMarket">
+                                        Market Comparison
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="valuationSource" id="sourceGovt"
+                                        value="government_assessment">
+                                    <label class="form-check-label text-white" for="sourceGovt">
+                                        Government Assessment
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="mb-3">
+                            <label for="valuationNotes" class="form-label text-white-50">Notes (Optional)</label>
+                            <textarea class="form-control glass-input" id="valuationNotes" rows="2"
+                                placeholder="e.g., Bank appraisal for loan refinancing"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn glass-button" onclick="saveValuation()">Add Valuation</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Valuation Management Script -->
+    <script src="js/valuations.js"></script>
+
 </body>
 
 

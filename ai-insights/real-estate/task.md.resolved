@@ -1,0 +1,71 @@
+# Task List: ML Features Implementation
+
+## Phase 1: Price Prediction ✅ COMPLETE
+- [x] Install Prophet and ML dependencies
+- [x] Create ML directory structure (`backend/ml/`)
+- [x] Implement [PropertyPriceForecaster](file:///Users/shivampatel/aether-isle/aether-fastapi/backend/ml/predictors/price_forecaster.py#15-182) class
+- [x] Create ML API routes (`/predict-price`, `/predict-all`)
+- [x] Register ML router in [main.py](file:///Users/shivampatel/aether-isle/aether-fastapi/backend/main.py)
+- [x] Add frontend price prediction chart
+- [x] Test price predictions with real data
+- [x] Fix database field mismatches
+- [x] Update properties with acquisition dates
+- [x] Redesign prediction cards UI (dark glass)
+
+## Phase 1.5: Historical Valuation Tracking ✅ COMPLETE
+- [x] Create database model [PropertyValuation](file:///Users/shivampatel/aether-isle/aether-fastapi/backend/models/property_valuation.py#13-42)
+- [x] Add migration for [property_valuations](file:///Users/shivampatel/aether-isle/aether-fastapi/backend/routes/valuations.py#102-134) table
+- [x] Create API endpoints:
+  - [x] `POST /api/realestate/valuations` - Add valuation
+  - [x] `GET /api/realestate/valuations/{property_id}` - Get history
+  - [x] `DELETE /api/realestate/valuations/{id}` - Remove valuation
+- [x] Build "Add Valuation" modal (frontend)
+- [x] Create Timeline View component with mini chart
+- [x] Install Prophet dependency
+- [x] Fix foreign key reference (profiles table)
+
+## Phase 1.6: Property Folder System ✅ COMPLETE
+### Backend
+- [x] Verify `status` field exists in Property model
+- [x] Active/Sold filtering (Active = Owned + Rented)
+- [x] Using existing APIs (no summary endpoint needed)
+
+### Frontend - Folder View
+- [x] Create Active/Sold toggle component (top right)
+- [x] Build property folder card component
+- [x] Create folder grid layout (3-column responsive)
+- [x] Add click handler for folder cards
+- [x] Implement status filter logic
+
+### Frontend - Property Detail View
+- [x] Create slide-in detail panel
+- [x] Render documents section (reuse existing)
+- [x] Build valuation table component
+- [x] Add "Add Valuation Entry" button in table
+- [x] Add back/close button
+
+### Frontend - Valuation Table
+- [x] Replace timeline CSS with table CSS
+- [x] Create table header (Date | Value | Source | Actions)
+- [x] Render valuation rows sorted by date
+- [x] Add delete buttons for manual entries
+- [x] Style with glass aesthetic
+
+### Polish
+- [x] Add loading states for folders
+- [x] Empty state for no properties
+- [x] Responsive design (mobile)
+- [x] Hover animations on folders
+- [x] Slide-in animation for detail panel
+
+## Phase 2: Sentiment Analysis (PLANNED)
+- [ ] Integrate NewsData.io API
+- [ ] Integrate GNews API
+- [ ] Implement Gemini sentiment analysis
+- [ ] Create market sentiment dashboard widget
+- [ ] Display bullish/bearish indicators
+
+## Phase 3: Conversational AI (PLANNED)
+- [ ] Build RAG chatbot with Gemini
+- [ ] Implement natural language portfolio queries
+- [ ] Add AI Advisor chat interface

@@ -45,6 +45,8 @@ class Property(Base):
 
     # Relationships
     owner = relationship("User", backref="properties")
+    valuations = relationship("PropertyValuation", back_populates="property", cascade="all, delete-orphan", order_by="PropertyValuation.valuation_date.desc()")
+
 
     def __repr__(self):
         return f"<Property(id={self.id}, name='{self.name}', user_id={self.user_id})>"

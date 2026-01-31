@@ -18,6 +18,7 @@ class Document(Base):
     file_url = Column(String, nullable=False)   # URL to access the file
     file_size = Column(Integer, nullable=True)  # Size in bytes
     mime_type = Column(String, nullable=True)   # File MIME type
+    description = Column(String, nullable=True) # Optional description
     
     # Metadata
     uploaded_at = Column(DateTime(timezone=True), server_default=func.now())

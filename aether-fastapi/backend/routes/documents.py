@@ -36,6 +36,7 @@ class DocumentResponse(BaseModel):
     file_url: str
     file_size: Optional[int]
     mime_type: Optional[str]
+    description: Optional[str]
     uploaded_at: datetime
 
     class Config:
@@ -65,6 +66,7 @@ async def upload_document(
     file: UploadFile = File(...),
     property_id: UUID_Type = Form(...),
     document_type: str = Form(...),
+    description: str = Form(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -116,6 +118,7 @@ async def upload_document(
         user_id=current_user.id,
         property_id=property_id,
         document_type=document_type,
+        description=description,
         file_name=file.filename,
         file_path=str(file_path),
         file_url=f"/api/realestate/documents/file/{unique_filename}",

@@ -1,0 +1,79 @@
+<!-- REPLACE THIS SECTION: lines 845-864 in dashboard.html -->
+<!-- Replace the entire <div id="realestate-section-valuation"> block with this -->
+
+<div id="realestate-section-valuation" class="realestate-section">
+    <div class="glass-header mb-4 d-flex justify-content-between align-items-end">
+        <div>
+            <h2 class="h3 fw-light mb-2">Valuations & Documents</h2>
+            <p class="text-white-50 fw-light">Organize property records and valuations</p>
+        </div>
+
+        <!-- Active/Sold Toggle -->
+        <div class="property-status-toggle">
+            <button class="toggle-btn active" data-status="Owned" onclick="filterPropertiesByStatus('Owned')">
+                Active <span id="active-count" class="count-badge">(0)</span>
+            </button>
+            <button class="toggle-btn" data-status="Sold" onclick="filterPropertiesByStatus('Sold')">
+                Sold <span id="sold-count" class="count-badge">(0)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Property Folders Grid -->
+    <div id="property-folders-grid" class="row g-4 mb-4">
+        <!-- Dynamically populated by valuations.js -->
+    </div>
+
+    <!-- Property Detail Panel (Hidden by default) -->
+    <div id="property-detail-panel" class="property-detail-panel" style="display: none;">
+        <!-- Back Button -->
+        <div class="mb-4">
+            <button class="btn glass-button btn-sm" onclick="closePropertyDetail()">
+                ← Back to Properties
+            </button>
+        </div>
+
+        <!-- Property Name Header -->
+        <h3 id="detail-property-name" class="text-white mb-4"></h3>
+
+        <!-- Documents Section -->
+        <div class="glass-card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="text-white mb-0">📄 Documents</h4>
+                <button class="btn glass-button btn-sm" onclick="openUploadDocumentModal()">
+                    + Upload Document
+                </button>
+            </div>
+            <div id="detail-documents-list">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <!-- Valuation History Section -->
+        <div class="glass-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="text-white mb-0">💰 Valuation History</h4>
+                <button class="btn glass-button btn-sm" onclick="openValuationModalForProperty()">
+                    + Add Valuation Entry
+                </button>
+            </div>
+
+            <!--Valuation Table -->
+            <div class="table-responsive">
+                <table class="valuation-table" id="detail-valuation-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Value</th>
+                            <th>Source</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="valuation-table-body">
+                        <!-- Dynamically populated -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

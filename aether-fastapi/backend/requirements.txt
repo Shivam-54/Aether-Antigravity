@@ -17,11 +17,10 @@ python-dotenv==1.0.0
 # Supabase (optional - if using Supabase Auth)
 supabase==2.0.3
 
-# Data processing (for ML later)
-# pandas==2.1.3
-# numpy==1.26.2
+# Data processing (for ML)
+pandas==2.3.3
+numpy==2.4.1
 
-# Uncomment when ready for ML features:
-# scikit-learn==1.3.2
-# tensorflow==2.15.0
-# yfinance==0.2.32
+# ML libraries
+scikit-learn==1.8.0
+prophet==1.3.0
