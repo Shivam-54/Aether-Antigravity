@@ -147,7 +147,8 @@ const SIDEBAR_CONFIG = {
         { icon: 'home', text: 'Overview', id: 'overview', active: true },
         { icon: 'building', text: 'Properties', id: 'properties' },
         { icon: 'receipt', text: 'Rental / S...', id: 'rental-sale' },
-        { icon: 'document', text: 'Valuation...', id: 'valuation' },
+        { icon: 'document', text: 'Documents', id: 'documents' },
+        { icon: 'trending', text: 'Valuation', id: 'valuation' },
         { icon: 'bulb', text: 'AI Insights', id: 'ai-insights' },
         { divider: true },
         { icon: 'arrow-up', text: 'Upgrade', id: 'upgrade' },
@@ -832,9 +833,16 @@ function navigateToSection(sectionId, sectionName, btn) {
         if (targetSection) {
             targetSection.style.display = 'block';
 
-            // If navigating to Valuation section, fetch documents
-            if (sectionId === 'valuation') {
+            // If navigating to Documents section, fetch documents
+            if (sectionId === 'documents') {
                 fetchDocuments();
+            }
+
+            // If navigating to Valuation section (Step 2 Implementation)
+            // If navigating to Valuation section
+            // If navigating to Valuation section
+            if (sectionId === 'valuation') {
+                filterValuationCards('active'); // Default to active
             }
 
             // If navigating to AI Insights, generate insights
@@ -1400,7 +1408,6 @@ function renderRealEstateProperties() {
                     </div>
                 </div>
             </div>
-        </div>
         `;
     }).join('');
 }
@@ -1408,6 +1415,8 @@ function renderRealEstateProperties() {
 // Render Functions
 // ===== REAL ESTATE TRANSACTION HISTORY STORAGE =====
 // Get transactions from localStorage
+
+
 function getRealEstateTransactions() {
     const stored = localStorage.getItem('aether_realestate_transactions');
     const transactions = stored ? JSON.parse(stored) : [];
@@ -1440,6 +1449,7 @@ function getRealEstateTransactions() {
     }
 
     return transactions;
+
 }
 
 // Save transactions to localStorage
@@ -2654,24 +2664,58 @@ function populatePropertyDropdown(statusFilter = null) {
     const dropdown = document.getElementById('docProperty');
     if (!dropdown) return;
 
-    // Clear existing options except the first one
+    // Clear existing options
     dropdown.innerHTML = '<option value="" class="text-dark">Select a property...</option>';
 
-    // Add properties from REAL_ESTATE_DATA based on status filter
-    REAL_ESTATE_DATA.properties.forEach(property => {
-        // Filter by status if specified
-        if (statusFilter) {
-            const propertyStatus = property.status.toLowerCase();
-            if (statusFilter === 'active' && propertyStatus === 'sold') return;
-            if (statusFilter === 'sold' && propertyStatus !== 'sold') return;
-        }
+    // Filter and Sort properties
+    let properties = [...REAL_ESTATE_DATA.properties];
+    if (statusFilter) {
+        if (statusFilter === 'active') properties = properties.filter(p => p.status !== 'Sold');
+        if (statusFilter === 'sold') properties = properties.filter(p => p.status === 'Sold');
+    }
 
-        const option = document.createElement('option');
-        option.value = property.id;
-        option.textContent = property.name;
-        option.className = 'text-dark';
-        dropdown.appendChild(option);
-    });
+    // Split into Active and Sold
+    const activeProps = properties.filter(p => p.status !== 'Sold');
+    const soldProps = properties.filter(p => p.status === 'Sold');
+
+    // Create OptGroups if we have mixed content or just add options
+    if (activeProps.length > 0) {
+        if (soldProps.length > 0) {
+            // If we have both, show headers
+            const group = document.createElement('optgroup');
+            group.label = "Active Properties";
+            activeProps.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name;
+                opt.className = 'text-dark';
+                group.appendChild(opt);
+            });
+            dropdown.appendChild(group);
+        } else {
+            // Just active
+            activeProps.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name;
+                opt.className = 'text-dark';
+                dropdown.appendChild(opt);
+            });
+        }
+    }
+
+    if (soldProps.length > 0) {
+        const group = document.createElement('optgroup');
+        group.label = "Sold Properties";
+        soldProps.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.name + " (Sold)";
+            opt.className = 'text-dark';
+            group.appendChild(opt);
+        });
+        dropdown.appendChild(group);
+    }
 }
 
 // Filter properties by status
@@ -2818,6 +2862,7 @@ function renderDocuments(documents) {
         const propDocs = groupedDocs[propName];
 
         const cardsHtml = propDocs.map(doc => {
+
             const uploadDate = doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleDateString() : 'N/A';
             const fileIcon = getFileIcon(doc.file_name);
             const fileSize = doc.file_size ? formatFileSize(doc.file_size) : '';
@@ -2895,6 +2940,358 @@ function renderDocuments(documents) {
             openDocumentViewer(url, name);
         });
     });
+}
+
+// ==================== VALUATION MODULE (REDESIGNED) ====================
+
+let currentValuationFilter = 'active';
+
+function filterValuationCards(status) {
+    currentValuationFilter = status;
+    const btnActive = document.getElementById('val-btn-active');
+    const btnSold = document.getElementById('val-btn-sold');
+
+    if (btnActive && btnSold) {
+        if (status === 'active') {
+            btnActive.classList.add('active');
+            btnSold.classList.remove('active');
+        } else {
+            btnActive.classList.remove('active');
+            btnSold.classList.add('active');
+        }
+    }
+    renderValuationCards();
+}
+
+// Stores which valuation rows are expanded
+let expandedValuationRows = new Set();
+
+function toggleValuationRow(propertyId) {
+    const content = document.getElementById(`val-content-${propertyId}`);
+    const icon = document.getElementById(`val-icon-${propertyId}`);
+
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.style.transform = 'rotate(180deg)';
+        expandedValuationRows.add(propertyId);
+        // Render history when opening to ensure fresh data
+        renderValuationHistoryInline(propertyId);
+    } else {
+        content.style.display = 'none';
+        icon.style.transform = 'rotate(0deg)';
+        expandedValuationRows.delete(propertyId);
+    }
+}
+
+function renderValuationHistoryInline(propertyId) {
+    const tbody = document.getElementById(`val-history-body-${propertyId}`);
+    if (!tbody) return;
+
+    const property = REAL_ESTATE_DATA.properties.find(p => p.id === propertyId);
+    if (!property) return;
+
+    let history = property.valuation_history || [];
+    // Sort by date (newest first)
+    history.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (history.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-white-30 font-monospace small">No valuation history recorded</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = history.map((entry, index) => {
+        const nextEntry = history[index + 1];
+        let changeHtml = '<span class="text-white-20">-</span>';
+
+        if (nextEntry) {
+            const diff = entry.value - nextEntry.value;
+            const percent = (diff / nextEntry.value) * 100;
+            const color = diff >= 0 ? 'text-emerald-400' : 'text-rose-400';
+            const sign = diff >= 0 ? '+' : '';
+            // Use inline color styles if custom classes aren't available
+            const styleColor = diff >= 0 ? 'color: #34d399;' : 'color: #fb7185;';
+            changeHtml = `<span style="${styleColor}">${sign}${percent.toFixed(1)}%</span>`;
+        } else if (index === history.length - 1 && property.purchase_price) {
+            // Compare oldest entry to purchase price if available
+            const diff = entry.value - property.purchase_price;
+            const percent = (diff / property.purchase_price) * 100;
+            const styleColor = diff >= 0 ? 'color: #34d399;' : 'color: #fb7185;';
+            const sign = diff >= 0 ? '+' : '';
+            changeHtml = `<span style="${styleColor}" title="Since Purchase">${sign}${percent.toFixed(1)}% (Initial)</span>`;
+        }
+
+        return `
+            <tr class="border-bottom border-white-05 hover-bg-white-05 transition-colors">
+                <td class="ps-4 py-3 text-white-70 font-monospace small">${new Date(entry.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</td>
+                <td class="py-3 fw-medium text-white font-family-base">${formatCurrency(entry.value)}</td>
+                <td class="py-3 font-monospace small">${changeHtml}</td>
+                <td class="pe-4 py-3 text-end">
+                    <button class="btn btn-icon btn-sm text-white-30 hover-text-danger transition-colors p-0" title="Delete Entry" style="background: transparent; border: none;">
+                         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function renderValuationCards() {
+    try {
+        const container = document.getElementById('valuation-folders-grid');
+        if (!container) return;
+
+        // Defensive check
+        if (!REAL_ESTATE_DATA || !REAL_ESTATE_DATA.properties) {
+            container.innerHTML = '<div class="col-12 text-center text-white-50">Loading data...</div>';
+            return;
+        }
+
+        let properties = REAL_ESTATE_DATA.properties.filter(p => {
+            if (currentValuationFilter === 'active') return p.status !== 'Sold';
+            if (currentValuationFilter === 'sold') return p.status === 'Sold';
+            return true;
+        });
+
+        // Switch to Single Column List Layout
+        container.className = 'd-flex flex-column gap-3';
+
+        if (properties.length === 0) {
+            container.innerHTML = `
+                <div class="glass-card p-5 text-center">
+                    <div class="mb-3 text-white-20">
+                        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    </div>
+                    <h4 class="h5 text-white-50 fw-light">No ${currentValuationFilter} properties found</h4>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = properties.map(property => {
+            const isExpanded = expandedValuationRows.has(property.id);
+            const name = property.name || 'Unknown Property';
+            const value = property.current_value || 0;
+            const price = property.purchase_price || 0;
+            const type = property.type || 'Asset';
+
+            // Appreciation
+            let appreciation = 0;
+            let percent = 0;
+            if (price > 0) {
+                appreciation = value - price;
+                percent = (appreciation / price) * 100;
+            }
+            const isPositive = appreciation >= 0;
+            const trendColor = isPositive ? 'text-success' : 'text-danger';
+            const styleColor = isPositive ? '#34d399' : '#fb7185'; // Emerald-400 : Rose-400
+
+            const trendIcon = isPositive
+                ? '<svg width="14" height="14" fill="none" class="me-1" stroke="currentColor" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>'
+                : '<svg width="14" height="14" fill="none" class="me-1" stroke="currentColor" viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>';
+
+            return `
+            <div class="glass-card overflow-hidden transition-all" style="border: 1px solid rgba(255,255,255,0.05);">
+                <!-- Header / Trigger -->
+                <div class="p-4 cursor-pointer hover-bg-white-05 transition-colors d-flex align-items-center justify-content-between gap-4"
+                     onclick="${safeOnClick('toggleValuationRow', property.id)}">
+                    
+                    <!-- Left: Identity -->
+                    <div class="d-flex align-items-center gap-4 flex-grow-1">
+                        <!-- Type Badge (Fixed: Transparent Glass Style) -->
+                        <div class="d-flex flex-column align-items-start gap-1">
+                             <div class="px-2 py-1 rounded-pill d-inline-flex align-items-center" 
+                                  style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                                <span style="font-size: 0.65rem; color: rgba(255,255,255,0.6); letter-spacing: 0.5px; text-transform: uppercase;">${type}</span>
+                            </div>
+                            <h3 class="h5 text-white fw-light mb-0 tracking-wide">${name}</h3>
+                        </div>
+                    </div>
+
+                    <!-- Middle: Stats -->
+                    <div class="d-flex align-items-center gap-5 text-end d-none d-md-flex">
+                        <div>
+                            <p class="x-small text-white-30 text-uppercase mb-1 ls-1" style="font-size: 0.65rem;">Current Value</p>
+                            <p class="h5 text-white fw-light mb-0 font-family-base">${formatCurrency(value)}</p>
+                        </div>
+                        <div style="min-width: 110px;">
+                            <p class="x-small text-white-30 text-uppercase mb-1 ls-1" style="font-size: 0.65rem;">Appreciation</p>
+                            <p class="fw-medium mb-0 d-flex align-items-center justify-content-end font-monospace" style="color: ${styleColor}; font-size: 0.95rem;">
+                                ${trendIcon}
+                                ${isPositive ? '+' : ''}${percent.toFixed(1)}%
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Right: Chevron -->
+                    <div class="ms-3 text-white-30" style="transition: transform 0.3s ease; transform: ${isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'};" id="val-icon-${property.id}">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </div>
+
+                <!-- Collapsible Content -->
+                <div id="val-content-${property.id}" style="display: ${isExpanded ? 'block' : 'none'}; border-top: 1px solid rgba(255,255,255,0.05);">
+                    <div class="px-4 py-4" style="background: rgba(0,0,0,0.2);">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="h6 text-white-50 fw-normal mb-0 small text-uppercase ls-1">History</h4>
+                            <button onclick="${safeOnClick('startAddValuation', property.id)}" 
+                                    class="d-flex align-items-center gap-2 px-3 py-1 rounded-pill transition-all"
+                                    style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); font-size: 0.8rem;">
+                                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                Add Entry
+                            </button>
+                        </div>
+
+                        <!-- Inner Table -->
+                        <div class="rounded-3 overflow-hidden" style="border: 1px solid rgba(255,255,255,0.05);">
+                            <table class="table table-borderless text-white-90 align-middle mb-0">
+                                <thead style="background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <tr>
+                                        <th class="fw-normal py-2 ps-4 small text-white-40 font-family-base">DATE</th>
+                                        <th class="fw-normal py-2 small text-white-40 font-family-base">VALUE</th>
+                                        <th class="fw-normal py-2 small text-white-40 font-family-base">CHANGE</th>
+                                        <th class="fw-normal py-2 pe-4 text-end small text-white-40 font-family-base">ACTION</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="val-history-body-${property.id}">
+                                    <!-- Populated by renderValuationHistoryInline -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+        }).join('');
+
+        // Re-render open rows
+        properties.forEach(p => {
+            if (expandedValuationRows.has(p.id)) {
+                renderValuationHistoryInline(p.id);
+            }
+        });
+
+    } catch (e) {
+        console.error('Error rendering valuation list:', e);
+        showToast('Error rendering valuation list', 'error');
+    }
+}
+
+// ==================== STEP 3: MODAL DETAILS ====================
+
+let currentValuationPropertyId = null;
+
+function openValuationHistoryModal(propertyId) {
+    currentValuationPropertyId = propertyId;
+    const property = REAL_ESTATE_DATA.properties.find(p => p.id === propertyId);
+    if (!property) return;
+
+    document.getElementById('history-modal-title').textContent = property.name;
+    document.getElementById('valuation-history-modal').classList.remove('hidden');
+
+    renderValuationHistoryInModal(propertyId);
+}
+
+function closeValuationHistoryModal() {
+    currentValuationPropertyId = null;
+    document.getElementById('valuation-history-modal').classList.add('hidden');
+}
+
+function renderValuationHistoryInModal(propertyId) {
+    const tbody = document.getElementById('valuation-history-modal-body');
+    if (!tbody) return;
+
+    const property = REAL_ESTATE_DATA.properties.find(p => p.id === propertyId);
+    const history = property.valuation_history || [
+        { date: '2025-01-01', value: property.current_value, id: 'mock-1' },
+        { date: '2024-01-01', value: property.purchase_price, id: 'mock-2' }
+    ];
+
+    history.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    tbody.innerHTML = history.map((entry, index) => {
+        const nextEntry = history[index + 1];
+        let changeHtml = '<span class="text-white-30">-</span>';
+
+        if (nextEntry) {
+            const diff = entry.value - nextEntry.value;
+            const percent = (diff / nextEntry.value) * 100;
+            const color = diff >= 0 ? 'text-success' : 'text-danger';
+            const sign = diff >= 0 ? '+' : '';
+            changeHtml = `<span class="${color}">${sign}${percent.toFixed(1)}%</span>`;
+        }
+
+        return `
+            <tr class="border-bottom border-white-05 hover-bg-white-05 transition-colors">
+                <td class="ps-4 py-3">${new Date(entry.date).toLocaleDateString()}</td>
+                <td class="py-3 fw-medium">${formatCurrency(entry.value)}</td>
+                <td class="py-3">${changeHtml}</td>
+                <td class="pe-4 py-3 text-end">
+                    <button class="btn btn-icon btn-sm text-white-50 hover-text-danger" title="Delete Entry">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function startAddValuation(propertyId) {
+    currentValuationPropertyId = propertyId;
+    openAddValuationModal();
+}
+
+// Start Add Valuation
+function openAddValuationModal() {
+    document.getElementById('add-valuation-modal').classList.remove('hidden');
+    document.getElementById('val-date').valueAsDate = new Date();
+}
+
+function closeAddValuationModal() {
+    document.getElementById('add-valuation-modal').classList.add('hidden');
+    document.getElementById('addValuationForm').reset();
+}
+
+function handleValuationSubmit(e) {
+    e.preventDefault();
+    const amount = parseFloat(document.getElementById('val-amount').value);
+    const date = document.getElementById('val-date').value;
+
+    if (!currentValuationPropertyId || isNaN(amount)) return;
+
+    const property = REAL_ESTATE_DATA.properties.find(p => p.id === currentValuationPropertyId);
+    if (property) {
+        if (!property.valuation_history) property.valuation_history = [];
+        property.valuation_history.push({ date: date, value: amount, id: Date.now().toString() });
+        property.current_value = amount;
+
+        renderValuationHistoryInModal(currentValuationPropertyId);
+        renderValuationCards(); // Update background card
+
+        closeAddValuationModal();
+        showToast('Valuation added successfully', 'success');
+    }
+}
+
+// Expose to window for onclick handlers
+window.filterValuationCards = filterValuationCards;
+window.renderValuationCards = renderValuationCards;
+window.openValuationHistoryModal = openValuationHistoryModal;
+window.closeValuationHistoryModal = closeValuationHistoryModal;
+window.renderValuationHistoryInModal = renderValuationHistoryInModal;
+window.openAddValuationModal = openAddValuationModal;
+window.closeAddValuationModal = closeAddValuationModal;
+window.handleValuationSubmit = handleValuationSubmit;
+window.startAddValuation = startAddValuation;
+window.toggleValuationRow = toggleValuationRow;
+
+// Helper for file size
+function formatFileSize(bytes, isCurrency = false) {
+    if (isCurrency) return formatCurrency(bytes); // Hacky reuse to save space
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
 // Delete Real Estate document
