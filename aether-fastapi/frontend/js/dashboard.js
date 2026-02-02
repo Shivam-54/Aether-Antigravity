@@ -231,6 +231,246 @@ let currentSection = null; // No section when on home
 // API Configuration
 const API_BASE_URL = 'http://localhost:8000/api';
 
+// ==================== NETWORK CORRELATION ANIMATION ====================
+// Living constellation visualization with floating nodes, parallax, and glow
+class NetworkCorrelationAnimation {
+    constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        if (!this.canvas) return;
+
+        this.ctx = this.canvas.getContext('2d');
+        this.dpr = window.devicePixelRatio || 1;
+        this.mouseX = 0;
+        this.mouseY = 0;
+        this.hoveredNode = null;
+        this.animationId = null;
+        this.startTime = performance.now();
+
+        // Node configuration
+        this.nodes = [
+            { id: 'BTC', baseX: 140, baseY: 55, r: 22, tier: 'primary', mass: 1.0, phase: 0, driftAmp: 3 },
+            { id: 'ETH', baseX: 70, baseY: 145, r: 16, tier: 'secondary', mass: 0.7, phase: 1.2, driftAmp: 4 },
+            { id: 'SOL', baseX: 200, baseY: 145, r: 14, tier: 'secondary', mass: 0.65, phase: 2.4, driftAmp: 4.5 },
+            { id: 'DOT', baseX: 230, baseY: 85, r: 12, tier: 'tertiary', mass: 0.5, phase: 3.6, driftAmp: 5 },
+            { id: 'ADA', baseX: 40, baseY: 110, r: 10, tier: 'tertiary', mass: 0.45, phase: 4.8, driftAmp: 5.5 }
+        ];
+
+        // Connection definitions
+        this.connections = [
+            [0, 1], [0, 2], [0, 3], [1, 2], [1, 4]
+        ];
+
+        this.setupCanvas();
+        this.setupEventListeners();
+        this.animate();
+    }
+
+    setupCanvas() {
+        const rect = this.canvas.getBoundingClientRect();
+        this.width = rect.width * this.dpr;
+        this.height = rect.height * this.dpr;
+
+        console.log('NetworkGraph: setupCanvas', { w: rect.width, h: rect.height, dpr: this.dpr });
+
+        if (rect.width === 0 || rect.height === 0) return;
+
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
+        this.ctx.scale(this.dpr, this.dpr);
+        this.displayWidth = rect.width;
+        this.displayHeight = rect.height;
+    }
+
+    setupEventListeners() {
+        const container = this.canvas.parentElement;
+
+        container.addEventListener('mousemove', (e) => {
+            const rect = this.canvas.getBoundingClientRect();
+            this.mouseX = e.clientX - rect.left;
+            this.mouseY = e.clientY - rect.top;
+            this.checkHover();
+        });
+
+        container.addEventListener('mouseleave', () => {
+            this.mouseX = this.displayWidth / 2;
+            this.mouseY = this.displayHeight / 2;
+            this.hoveredNode = null;
+        });
+
+        // Use ResizeObserver for robust layout handling (handles display:none -> block transitions)
+        this.resizeObserver = new ResizeObserver(() => {
+            console.log('NetworkGraph: ResizeObserver triggered');
+            this.setupCanvas();
+        });
+        this.resizeObserver.observe(container);
+    }
+
+    destroy() {
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+        }
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+        }
+    }
+
+    checkHover() {
+        this.hoveredNode = null;
+        for (const node of this.nodes) {
+            const dx = this.mouseX - node.x;
+            const dy = this.mouseY - node.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < node.r + 10) {
+                this.hoveredNode = node;
+                break;
+            }
+        }
+    }
+
+    animate() {
+        if (!this.ctx) return;
+        this.animationId = requestAnimationFrame(() => this.animate());
+
+        const time = performance.now() - this.startTime;
+        this.update(time);
+        this.draw(time);
+    }
+
+    update(time) {
+        if (!this.displayWidth || !this.displayHeight) return;
+
+        const centerX = this.displayWidth / 2;
+        const centerY = this.displayHeight / 2;
+
+        // Parallax offset based on mouse
+        const parallaxX = (this.mouseX - centerX) * 0.015;
+        const parallaxY = (this.mouseY - centerY) * 0.015;
+
+        for (const node of this.nodes) {
+            // Organic floating drift (Perlin-like sinusoidal)
+            const driftX = Math.sin(time * 0.0004 + node.phase) * node.driftAmp;
+            const driftY = Math.cos(time * 0.0003 + node.phase * 1.3) * node.driftAmp * 0.8;
+
+            // Apply parallax (stronger for lighter nodes)
+            const parallaxFactor = 1.2 - node.mass * 0.5;
+
+            node.x = node.baseX + driftX + parallaxX * parallaxFactor;
+            node.y = node.baseY + driftY + parallaxY * parallaxFactor;
+
+            // Breathing glow
+            node.glowIntensity = 0.5 + 0.3 * Math.sin(time * 0.001 + node.phase);
+
+            // Hover boost
+            if (this.hoveredNode === node) {
+                node.glowIntensity = Math.min(1, node.glowIntensity + 0.4);
+            }
+        }
+    }
+
+    draw(time) {
+        if (!this.displayWidth || !this.displayHeight) {
+            // throttle log
+            if (Math.floor(time / 1000) % 2 === 0 && Math.random() < 0.05) console.log('NetworkGraph: Skipping draw, zero dimensions');
+            return;
+        }
+
+        const ctx = this.ctx;
+        ctx.clearRect(0, 0, this.displayWidth, this.displayHeight);
+
+        // Draw ambient center bloom
+        this.drawCenterBloom(ctx, time);
+
+        // Draw connection lines with pulse
+        this.drawConnections(ctx, time);
+
+        // Draw nodes (back to front by tier)
+        const sortedNodes = [...this.nodes].sort((a, b) => a.mass - b.mass);
+        for (const node of sortedNodes) {
+            this.drawNode(ctx, node, time);
+        }
+    }
+
+    drawCenterBloom(ctx, time) {
+        const centerX = this.displayWidth / 2;
+        const centerY = this.displayHeight / 2 - 20;
+        const pulse = 0.8 + 0.2 * Math.sin(time * 0.0008);
+
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 80);
+        gradient.addColorStop(0, `rgba(255, 245, 230, ${0.06 * pulse})`);
+        gradient.addColorStop(1, 'transparent');
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, this.displayWidth, this.displayHeight);
+    }
+
+    drawConnections(ctx, time) {
+        for (let i = 0; i < this.connections.length; i++) {
+            const [a, b] = this.connections[i];
+            const nodeA = this.nodes[a];
+            const nodeB = this.nodes[b];
+
+            // Pulse alpha
+            const pulse = 0.08 + 0.06 * Math.sin(time * 0.002 + i * 0.5);
+
+            ctx.beginPath();
+            ctx.moveTo(nodeA.x, nodeA.y);
+            ctx.lineTo(nodeB.x, nodeB.y);
+            ctx.strokeStyle = `rgba(255, 225, 200, ${pulse})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+        }
+    }
+
+    drawNode(ctx, node, time) {
+        const x = node.x;
+        const y = node.y;
+        const r = node.r;
+        const intensity = node.glowIntensity;
+
+        // Tier-based styling — bigger glow for more important nodes
+        let glowSize, labelAlpha, coreIntensity;
+        switch (node.tier) {
+            case 'primary':
+                glowSize = r * 3;
+                labelAlpha = 0.95;
+                coreIntensity = 0.7;
+                break;
+            case 'secondary':
+                glowSize = r * 2.5;
+                labelAlpha = 0.8;
+                coreIntensity = 0.5;
+                break;
+            case 'tertiary':
+                glowSize = r * 2;
+                labelAlpha = 0.6;
+                coreIntensity = 0.35;
+                break;
+        }
+
+        // Pure soft glow orb — no borders, just radial gradient
+        const glowGradient = ctx.createRadialGradient(x, y, 0, x, y, glowSize);
+        glowGradient.addColorStop(0, `rgba(255, 255, 255, ${coreIntensity * intensity})`);
+        glowGradient.addColorStop(0.15, `rgba(255, 252, 245, ${0.4 * intensity})`);
+        glowGradient.addColorStop(0.4, `rgba(255, 245, 230, ${0.15 * intensity})`);
+        glowGradient.addColorStop(0.7, `rgba(255, 235, 210, ${0.06 * intensity})`);
+        glowGradient.addColorStop(1, 'transparent');
+
+        ctx.fillStyle = glowGradient;
+        ctx.beginPath();
+        ctx.arc(x, y, glowSize, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Label floating on top of the glow
+        ctx.font = node.tier === 'primary' ? '500 11px Inter, sans-serif' : '400 9px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = `rgba(255, 255, 255, ${labelAlpha})`;
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.4)';
+        ctx.shadowBlur = 8;
+        ctx.fillText(node.id, x, y);
+    }
+}
+
 // Supabase Configuration
 const SUPABASE_URL = 'https://dxymgwcybdlzskdwdlzb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4eW1nd2N5YmRsenNrZHdkbHpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4MTYxMjYsImV4cCI6MjA4MzM5MjEyNn0.0RnHD3v5dok7BP5SNUXmy_WDJFexI5Y2bGi18lLxgBk';
@@ -1351,7 +1591,7 @@ function renderRealEstateProperties() {
 
         return `
         <div class="col">
-            <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all glass-card h-100" style="transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all glass-card" style="transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                 <!-- Hover Texture -->
 
                 <div class="position-relative z-1 d-flex flex-column gap-3">
@@ -2953,11 +3193,23 @@ function filterValuationCards(status) {
 
     if (btnActive && btnSold) {
         if (status === 'active') {
-            btnActive.classList.add('active');
-            btnSold.classList.remove('active');
+            // Active button highlighted
+            btnActive.style.background = 'rgba(255,255,255,0.1)';
+            btnActive.style.color = 'rgba(255,255,255,0.95)';
+            btnActive.innerHTML = '<div style="width: 6px; height: 6px; border-radius: 50%; background: #34d399;"></div> Active';
+            // Sold button muted
+            btnSold.style.background = 'transparent';
+            btnSold.style.color = 'rgba(255,255,255,0.5)';
+            btnSold.innerHTML = 'Sold';
         } else {
-            btnActive.classList.remove('active');
-            btnSold.classList.add('active');
+            // Active button muted
+            btnActive.style.background = 'transparent';
+            btnActive.style.color = 'rgba(255,255,255,0.5)';
+            btnActive.innerHTML = 'Active';
+            // Sold button highlighted
+            btnSold.style.background = 'rgba(255,255,255,0.1)';
+            btnSold.style.color = 'rgba(255,255,255,0.95)';
+            btnSold.innerHTML = '<div style="width: 6px; height: 6px; border-radius: 50%; background: #fb7185;"></div> Sold';
         }
     }
     renderValuationCards();
@@ -3052,29 +3304,36 @@ function renderValuationCards() {
             return true;
         });
 
-        // Switch to Single Column List Layout
-        container.className = 'd-flex flex-column gap-3';
+        // Premium spacing layout
+        container.className = 'd-flex flex-column gap-4';
 
         if (properties.length === 0) {
             container.innerHTML = `
-                <div class="glass-card p-5 text-center">
-                    <div class="mb-3 text-white-20">
-                        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                <div class="position-relative p-5 text-center rounded-4 overflow-hidden" 
+                     style="background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%); 
+                            border: 1px solid rgba(255,255,255,0.06);
+                            backdrop-filter: blur(20px);">
+                    <div class="mb-4" style="opacity: 0.3;">
+                        <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="stroke-width: 1;">
+                            <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
                     </div>
-                    <h4 class="h5 text-white-50 fw-light">No ${currentValuationFilter} properties found</h4>
+                    <h4 class="h5 text-white-50 fw-light mb-2">No ${currentValuationFilter} properties found</h4>
+                    <p class="text-white-30 small mb-0">Add properties to track their valuation history</p>
                 </div>
             `;
             return;
         }
 
-        container.innerHTML = properties.map(property => {
+        container.innerHTML = properties.map((property, index) => {
             const isExpanded = expandedValuationRows.has(property.id);
             const name = property.name || 'Unknown Property';
             const value = property.current_value || 0;
             const price = property.purchase_price || 0;
             const type = property.type || 'Asset';
+            const location = property.address || property.location || '';
 
-            // Appreciation
+            // Appreciation calculations
             let appreciation = 0;
             let percent = 0;
             if (price > 0) {
@@ -3082,74 +3341,186 @@ function renderValuationCards() {
                 percent = (appreciation / price) * 100;
             }
             const isPositive = appreciation >= 0;
-            const trendColor = isPositive ? 'text-success' : 'text-danger';
-            const styleColor = isPositive ? '#34d399' : '#fb7185'; // Emerald-400 : Rose-400
 
-            const trendIcon = isPositive
-                ? '<svg width="14" height="14" fill="none" class="me-1" stroke="currentColor" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>'
-                : '<svg width="14" height="14" fill="none" class="me-1" stroke="currentColor" viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>';
+            // Premium color scheme with gradients
+            const accentGradient = isPositive
+                ? 'linear-gradient(135deg, #10b981, #34d399)'
+                : 'linear-gradient(135deg, #ef4444, #fb7185)';
+            const accentColor = isPositive ? '#34d399' : '#fb7185';
+            const accentGlow = isPositive ? 'rgba(52, 211, 153, 0.15)' : 'rgba(251, 113, 133, 0.15)';
+
+            // Type colors for visual variety
+            const typeColors = {
+                'Industrial': { bg: 'rgba(147, 51, 234, 0.12)', border: 'rgba(147, 51, 234, 0.3)', text: '#c4b5fd' },
+                'Residential': { bg: 'rgba(59, 130, 246, 0.12)', border: 'rgba(59, 130, 246, 0.3)', text: '#93c5fd' },
+                'Commercial': { bg: 'rgba(234, 179, 8, 0.12)', border: 'rgba(234, 179, 8, 0.3)', text: '#fde047' },
+                'Land': { bg: 'rgba(34, 197, 94, 0.12)', border: 'rgba(34, 197, 94, 0.3)', text: '#86efac' },
+                'default': { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.15)', text: 'rgba(255,255,255,0.7)' }
+            };
+            const typeStyle = typeColors[type] || typeColors['default'];
 
             return `
-            <div class="glass-card overflow-hidden transition-all" style="border: 1px solid rgba(255,255,255,0.05);">
+            <div class="position-relative rounded-4 overflow-hidden transition-all"
+                 style="background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+                        border: 1px solid rgba(255,255,255,0.08);
+                        backdrop-filter: blur(20px);
+                        box-shadow: 0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+                        animation: fadeInUp 0.5s ease ${index * 0.1}s both;">
+                
+                <!-- Subtle accent line at top -->
+                <div style="position: absolute; top: 0; left: 0; right: 0; height: 1px; 
+                            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);"></div>
+                
                 <!-- Header / Trigger -->
-                <div class="p-4 cursor-pointer hover-bg-white-05 transition-colors d-flex align-items-center justify-content-between gap-4"
+                <div class="p-4 cursor-pointer d-flex align-items-center justify-content-between gap-4"
+                     style="transition: all 0.3s ease;"
+                     onmouseover="this.style.background='rgba(255,255,255,0.02)'"
+                     onmouseout="this.style.background='transparent'"
                      onclick="${safeOnClick('toggleValuationRow', property.id)}">
                     
-                    <!-- Left: Identity -->
+                    <!-- Left: Property Identity -->
                     <div class="d-flex align-items-center gap-4 flex-grow-1">
-                        <!-- Type Badge (Fixed: Transparent Glass Style) -->
-                        <div class="d-flex flex-column align-items-start gap-1">
-                             <div class="px-2 py-1 rounded-pill d-inline-flex align-items-center" 
-                                  style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
-                                <span style="font-size: 0.65rem; color: rgba(255,255,255,0.6); letter-spacing: 0.5px; text-transform: uppercase;">${type}</span>
+                        <!-- Property Icon with Glow -->
+                        <div class="position-relative d-none d-lg-flex align-items-center justify-content-center rounded-3"
+                             style="width: 56px; height: 56px; 
+                                    background: ${typeStyle.bg}; 
+                                    border: 1px solid ${typeStyle.border};
+                                    flex-shrink: 0;">
+                            <svg width="24" height="24" fill="none" stroke="${typeStyle.text}" viewBox="0 0 24 24" style="opacity: 0.9;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
+                                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                        </div>
+                        
+                        <!-- Property Details -->
+                        <div class="d-flex flex-column gap-1">
+                            <!-- Type Badge -->
+                            <div class="d-inline-flex">
+                                <span class="px-2 py-1 rounded-pill d-inline-flex align-items-center gap-1" 
+                                      style="background: ${typeStyle.bg}; 
+                                             border: 1px solid ${typeStyle.border};
+                                             font-size: 0.6rem; 
+                                             color: ${typeStyle.text}; 
+                                             letter-spacing: 0.8px; 
+                                             text-transform: uppercase;
+                                             font-weight: 500;">
+                                    ${type}
+                                </span>
                             </div>
-                            <h3 class="h5 text-white fw-light mb-0 tracking-wide">${name}</h3>
+                            <!-- Property Name -->
+                            <h3 class="h5 text-white mb-0" style="font-weight: 400; letter-spacing: -0.02em;">${name}</h3>
+                            ${location ? `<p class="small mb-0" style="color: rgba(255,255,255,0.4); font-size: 0.75rem;">${location}</p>` : ''}
                         </div>
                     </div>
 
-                    <!-- Middle: Stats -->
-                    <div class="d-flex align-items-center gap-5 text-end d-none d-md-flex">
-                        <div>
-                            <p class="x-small text-white-30 text-uppercase mb-1 ls-1" style="font-size: 0.65rem;">Current Value</p>
-                            <p class="h5 text-white fw-light mb-0 font-family-base">${formatCurrency(value)}</p>
+                    <!-- Right: Value & Appreciation -->
+                    <div class="d-flex align-items-center gap-4 d-none d-md-flex">
+                        <!-- Current Value -->
+                        <div class="text-end">
+                            <p class="mb-1" style="font-size: 0.65rem; color: rgba(255,255,255,0.35); letter-spacing: 0.5px; text-transform: uppercase;">Current Value</p>
+                            <p class="mb-0" style="font-size: 1.25rem; font-weight: 300; color: rgba(255,255,255,0.95); letter-spacing: -0.02em;">${formatCurrency(value)}</p>
                         </div>
-                        <div style="min-width: 110px;">
-                            <p class="x-small text-white-30 text-uppercase mb-1 ls-1" style="font-size: 0.65rem;">Appreciation</p>
-                            <p class="fw-medium mb-0 d-flex align-items-center justify-content-end font-monospace" style="color: ${styleColor}; font-size: 0.95rem;">
-                                ${trendIcon}
+                        
+                        <!-- Appreciation Pill -->
+                        <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-3"
+                             style="background: ${accentGlow}; 
+                                    border: 1px solid ${accentColor}30;
+                                    min-width: 100px;">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle"
+                                 style="width: 28px; height: 28px; background: ${accentGradient}; flex-shrink: 0;">
+                                ${isPositive
+                    ? '<svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>'
+                    : '<svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>'
+                }
+                            </div>
+                            <div class="text-end">
+                                <p class="mb-0" style="font-size: 1rem; font-weight: 600; color: ${accentColor}; letter-spacing: -0.02em;">
+                                    ${isPositive ? '+' : ''}${percent.toFixed(1)}%
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Expand Icon -->
+                        <div class="d-flex align-items-center justify-content-center rounded-circle"
+                             style="width: 36px; height: 36px; 
+                                    background: rgba(255,255,255,0.03); 
+                                    border: 1px solid rgba(255,255,255,0.08);
+                                    transition: all 0.3s ease;
+                                    transform: ${isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'};" 
+                             id="val-icon-${property.id}">
+                            <svg width="18" height="18" fill="none" stroke="rgba(255,255,255,0.5)" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <!-- Mobile Stats -->
+                    <div class="d-flex d-md-none align-items-center gap-3">
+                        <div class="text-end">
+                            <p class="h6 text-white mb-0" style="font-weight: 400;">${formatCurrency(value)}</p>
+                            <p class="small mb-0" style="color: ${accentColor}; font-weight: 500;">
                                 ${isPositive ? '+' : ''}${percent.toFixed(1)}%
                             </p>
                         </div>
-                    </div>
-
-                    <!-- Right: Chevron -->
-                    <div class="ms-3 text-white-30" style="transition: transform 0.3s ease; transform: ${isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'};" id="val-icon-${property.id}">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"></path></svg>
+                        <div style="transform: ${isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'}; transition: transform 0.3s ease;">
+                            <svg width="16" height="16" fill="none" stroke="rgba(255,255,255,0.4)" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Collapsible Content -->
-                <div id="val-content-${property.id}" style="display: ${isExpanded ? 'block' : 'none'}; border-top: 1px solid rgba(255,255,255,0.05);">
-                    <div class="px-4 py-4" style="background: rgba(0,0,0,0.2);">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h4 class="h6 text-white-50 fw-normal mb-0 small text-uppercase ls-1">History</h4>
-                            <button onclick="${safeOnClick('startAddValuation', property.id)}" 
-                                    class="d-flex align-items-center gap-2 px-3 py-1 rounded-pill transition-all"
-                                    style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); font-size: 0.8rem;">
-                                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                <div id="val-content-${property.id}" 
+                     style="display: ${isExpanded ? 'block' : 'none'}; 
+                            border-top: 1px solid rgba(255,255,255,0.06);
+                            background: rgba(0,0,0,0.15);">
+                    <div class="p-4">
+                        <!-- History Header -->
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="d-flex align-items-center justify-content-center rounded-2"
+                                     style="width: 32px; height: 32px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);">
+                                    <svg width="14" height="14" fill="none" stroke="rgba(255,255,255,0.5)" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
+                                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                                <h4 class="mb-0" style="font-size: 0.85rem; font-weight: 500; color: rgba(255,255,255,0.7); letter-spacing: 0.3px;">
+                                    Valuation History
+                                </h4>
+                            </div>
+                            <button onclick="window.startAddValuation('${property.id}')" 
+                                    class="d-flex align-items-center gap-2 px-4 py-2 rounded-pill"
+                                    style="background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+                                           border: 1px solid rgba(255,255,255,0.12);
+                                           color: rgba(255,255,255,0.9); 
+                                           font-size: 0.8rem; 
+                                           font-weight: 500;
+                                           cursor: pointer;
+                                           transition: all 0.3s ease;
+                                           box-shadow: 0 2px 8px rgba(0,0,0,0.2);"
+                                    onmouseover="this.style.background='linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06))'; this.style.borderColor='rgba(255,255,255,0.2)'"
+                                    onmouseout="this.style.background='linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04))'; this.style.borderColor='rgba(255,255,255,0.12)'">
+                                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                                </svg>
                                 Add Entry
                             </button>
                         </div>
 
-                        <!-- Inner Table -->
-                        <div class="rounded-3 overflow-hidden" style="border: 1px solid rgba(255,255,255,0.05);">
-                            <table class="table table-borderless text-white-90 align-middle mb-0">
-                                <thead style="background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                    <tr>
-                                        <th class="fw-normal py-2 ps-4 small text-white-40 font-family-base">DATE</th>
-                                        <th class="fw-normal py-2 small text-white-40 font-family-base">VALUE</th>
-                                        <th class="fw-normal py-2 small text-white-40 font-family-base">CHANGE</th>
-                                        <th class="fw-normal py-2 pe-4 text-end small text-white-40 font-family-base">ACTION</th>
+                        <!-- History Table with Premium Styling -->
+                        <div class="rounded-3 overflow-hidden" 
+                             style="background: rgba(0,0,0,0.2); 
+                                    border: 1px solid rgba(255,255,255,0.06);
+                                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);">
+                            <table class="table table-borderless align-middle mb-0" style="--bs-table-bg: transparent;">
+                                <thead>
+                                    <tr style="background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));">
+                                        <th class="py-3 ps-4" style="font-size: 0.65rem; font-weight: 600; color: rgba(255,255,255,0.35); letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.05);">Date</th>
+                                        <th class="py-3" style="font-size: 0.65rem; font-weight: 600; color: rgba(255,255,255,0.35); letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.05);">Value</th>
+                                        <th class="py-3" style="font-size: 0.65rem; font-weight: 600; color: rgba(255,255,255,0.35); letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.05);">Change</th>
+                                        <th class="py-3 pe-4 text-end" style="font-size: 0.65rem; font-weight: 600; color: rgba(255,255,255,0.35); letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.05);">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="val-history-body-${property.id}">
@@ -3236,19 +3607,45 @@ function renderValuationHistoryInModal(propertyId) {
 }
 
 function startAddValuation(propertyId) {
+    console.log('startAddValuation called with:', propertyId);
     currentValuationPropertyId = propertyId;
     openAddValuationModal();
 }
 
-// Start Add Valuation
+// Open Add Valuation Modal
 function openAddValuationModal() {
-    document.getElementById('add-valuation-modal').classList.remove('hidden');
-    document.getElementById('val-date').valueAsDate = new Date();
+    console.log('openAddValuationModal called');
+    const modal = document.getElementById('add-valuation-modal');
+    if (!modal) {
+        console.error('Modal not found: add-valuation-modal');
+        return;
+    }
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.zIndex = '9999';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.background = 'rgba(0,0,0,0.8)';
+    modal.style.backdropFilter = 'blur(10px)';
+
+    const dateInput = document.getElementById('val-date');
+    if (dateInput) dateInput.valueAsDate = new Date();
+    console.log('Modal opened successfully');
 }
 
 function closeAddValuationModal() {
-    document.getElementById('add-valuation-modal').classList.add('hidden');
-    document.getElementById('addValuationForm').reset();
+    console.log('closeAddValuationModal called');
+    const modal = document.getElementById('add-valuation-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    const form = document.getElementById('addValuationForm');
+    if (form) form.reset();
 }
 
 function handleValuationSubmit(e) {
@@ -5804,7 +6201,7 @@ function closeAddDocumentModal() {
 // Ensure global scope
 window.openAddBusinessModal = openAddBusinessModal;
 window.closeAddBusinessModal = closeAddBusinessModal;
-window.openAddBusinessDocumentModal = openAddBusinessDocumentModal;
+
 window.closeAddDocumentModal = closeAddDocumentModal;
 
 /**
@@ -7813,241 +8210,5 @@ window.toggleCustomDocName = toggleCustomDocName;
 // ==================== NETWORK CORRELATION ANIMATION ====================
 // Living constellation visualization with floating nodes, parallax, and glow
 
-class NetworkCorrelationAnimation {
-    constructor(canvasId) {
-        this.canvas = document.getElementById(canvasId);
-        if (!this.canvas) return;
-
-        this.ctx = this.canvas.getContext('2d');
-        this.dpr = window.devicePixelRatio || 1;
-        this.mouseX = 0;
-        this.mouseY = 0;
-        this.hoveredNode = null;
-        this.animationId = null;
-        this.startTime = performance.now();
-
-        // Node configuration
-        this.nodes = [
-            { id: 'BTC', baseX: 140, baseY: 55, r: 22, tier: 'primary', mass: 1.0, phase: 0, driftAmp: 3 },
-            { id: 'ETH', baseX: 70, baseY: 145, r: 16, tier: 'secondary', mass: 0.7, phase: 1.2, driftAmp: 4 },
-            { id: 'SOL', baseX: 200, baseY: 145, r: 14, tier: 'secondary', mass: 0.65, phase: 2.4, driftAmp: 4.5 },
-            { id: 'DOT', baseX: 230, baseY: 85, r: 12, tier: 'tertiary', mass: 0.5, phase: 3.6, driftAmp: 5 },
-            { id: 'ADA', baseX: 40, baseY: 110, r: 10, tier: 'tertiary', mass: 0.45, phase: 4.8, driftAmp: 5.5 }
-        ];
-
-        // Connection definitions
-        this.connections = [
-            [0, 1], [0, 2], [0, 3], [1, 2], [1, 4]
-        ];
-
-        this.setupCanvas();
-        this.setupEventListeners();
-        this.animate();
-    }
-
-    setupCanvas() {
-        const rect = this.canvas.getBoundingClientRect();
-        this.width = rect.width * this.dpr;
-        this.height = rect.height * this.dpr;
-
-        console.log('NetworkGraph: setupCanvas', { w: rect.width, h: rect.height, dpr: this.dpr });
-
-        if (rect.width === 0 || rect.height === 0) return;
-
-        this.canvas.width = this.width;
-        this.canvas.height = this.height;
-        this.ctx.scale(this.dpr, this.dpr);
-        this.displayWidth = rect.width;
-        this.displayHeight = rect.height;
-    }
-
-    setupEventListeners() {
-        const container = this.canvas.parentElement;
-
-        container.addEventListener('mousemove', (e) => {
-            const rect = this.canvas.getBoundingClientRect();
-            this.mouseX = e.clientX - rect.left;
-            this.mouseY = e.clientY - rect.top;
-            this.checkHover();
-        });
-
-        container.addEventListener('mouseleave', () => {
-            this.mouseX = this.displayWidth / 2;
-            this.mouseY = this.displayHeight / 2;
-            this.hoveredNode = null;
-        });
-
-        // Use ResizeObserver for robust layout handling (handles display:none -> block transitions)
-        this.resizeObserver = new ResizeObserver(() => {
-            console.log('NetworkGraph: ResizeObserver triggered');
-            this.setupCanvas();
-        });
-        this.resizeObserver.observe(container);
-    }
-
-    destroy() {
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId);
-        }
-        if (this.resizeObserver) {
-            this.resizeObserver.disconnect();
-        }
-    }
-
-    checkHover() {
-        this.hoveredNode = null;
-        for (const node of this.nodes) {
-            const dx = this.mouseX - node.x;
-            const dy = this.mouseY - node.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < node.r + 10) {
-                this.hoveredNode = node;
-                break;
-            }
-        }
-    }
-
-    animate() {
-        if (!this.ctx) return;
-        this.animationId = requestAnimationFrame(() => this.animate());
-
-        const time = performance.now() - this.startTime;
-        this.update(time);
-        this.draw(time);
-    }
-
-    update(time) {
-        if (!this.displayWidth || !this.displayHeight) return;
-
-        const centerX = this.displayWidth / 2;
-        const centerY = this.displayHeight / 2;
-
-        // Parallax offset based on mouse
-        const parallaxX = (this.mouseX - centerX) * 0.015;
-        const parallaxY = (this.mouseY - centerY) * 0.015;
-
-        for (const node of this.nodes) {
-            // Organic floating drift (Perlin-like sinusoidal)
-            const driftX = Math.sin(time * 0.0004 + node.phase) * node.driftAmp;
-            const driftY = Math.cos(time * 0.0003 + node.phase * 1.3) * node.driftAmp * 0.8;
-
-            // Apply parallax (stronger for lighter nodes)
-            const parallaxFactor = 1.2 - node.mass * 0.5;
-
-            node.x = node.baseX + driftX + parallaxX * parallaxFactor;
-            node.y = node.baseY + driftY + parallaxY * parallaxFactor;
-
-            // Breathing glow
-            node.glowIntensity = 0.5 + 0.3 * Math.sin(time * 0.001 + node.phase);
-
-            // Hover boost
-            if (this.hoveredNode === node) {
-                node.glowIntensity = Math.min(1, node.glowIntensity + 0.4);
-            }
-        }
-    }
-
-    draw(time) {
-        if (!this.displayWidth || !this.displayHeight) {
-            // throttle log
-            if (Math.floor(time / 1000) % 2 === 0 && Math.random() < 0.05) console.log('NetworkGraph: Skipping draw, zero dimensions');
-            return;
-        }
-
-        const ctx = this.ctx;
-        ctx.clearRect(0, 0, this.displayWidth, this.displayHeight);
-
-        // Draw ambient center bloom
-        this.drawCenterBloom(ctx, time);
-
-        // Draw connection lines with pulse
-        this.drawConnections(ctx, time);
-
-        // Draw nodes (back to front by tier)
-        const sortedNodes = [...this.nodes].sort((a, b) => a.mass - b.mass);
-        for (const node of sortedNodes) {
-            this.drawNode(ctx, node, time);
-        }
-    }
-
-    drawCenterBloom(ctx, time) {
-        const centerX = this.displayWidth / 2;
-        const centerY = this.displayHeight / 2 - 20;
-        const pulse = 0.8 + 0.2 * Math.sin(time * 0.0008);
-
-        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 80);
-        gradient.addColorStop(0, `rgba(255, 245, 230, ${0.06 * pulse})`);
-        gradient.addColorStop(1, 'transparent');
-
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, this.displayWidth, this.displayHeight);
-    }
-
-    drawConnections(ctx, time) {
-        for (let i = 0; i < this.connections.length; i++) {
-            const [a, b] = this.connections[i];
-            const nodeA = this.nodes[a];
-            const nodeB = this.nodes[b];
-
-            // Pulse alpha
-            const pulse = 0.08 + 0.06 * Math.sin(time * 0.002 + i * 0.5);
-
-            ctx.beginPath();
-            ctx.moveTo(nodeA.x, nodeA.y);
-            ctx.lineTo(nodeB.x, nodeB.y);
-            ctx.strokeStyle = `rgba(255, 225, 200, ${pulse})`;
-            ctx.lineWidth = 0.8;
-            ctx.stroke();
-        }
-    }
-
-    drawNode(ctx, node, time) {
-        const x = node.x;
-        const y = node.y;
-        const r = node.r;
-        const intensity = node.glowIntensity;
-
-        // Tier-based styling — bigger glow for more important nodes
-        let glowSize, labelAlpha, coreIntensity;
-        switch (node.tier) {
-            case 'primary':
-                glowSize = r * 3;
-                labelAlpha = 0.95;
-                coreIntensity = 0.7;
-                break;
-            case 'secondary':
-                glowSize = r * 2.5;
-                labelAlpha = 0.8;
-                coreIntensity = 0.5;
-                break;
-            case 'tertiary':
-                glowSize = r * 2;
-                labelAlpha = 0.6;
-                coreIntensity = 0.35;
-                break;
-        }
-
-        // Pure soft glow orb — no borders, just radial gradient
-        const glowGradient = ctx.createRadialGradient(x, y, 0, x, y, glowSize);
-        glowGradient.addColorStop(0, `rgba(255, 255, 255, ${coreIntensity * intensity})`);
-        glowGradient.addColorStop(0.15, `rgba(255, 252, 245, ${0.4 * intensity})`);
-        glowGradient.addColorStop(0.4, `rgba(255, 245, 230, ${0.15 * intensity})`);
-        glowGradient.addColorStop(0.7, `rgba(255, 235, 210, ${0.06 * intensity})`);
-        glowGradient.addColorStop(1, 'transparent');
-
-        ctx.fillStyle = glowGradient;
-        ctx.beginPath();
-        ctx.arc(x, y, glowSize, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Label floating on top of the glow
-        ctx.font = node.tier === 'primary' ? '500 11px Inter, sans-serif' : '400 9px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = `rgba(255, 255, 255, ${labelAlpha})`;
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.4)';
-        ctx.shadowBlur = 8;
-        ctx.fillText(node.id, x, y);
-        ctx.shadowBlur = 0;
-    }
-}
+// End of NetworkCorrelationAnimation class
+// End of NetworkCorrelationAnimation class moved to top

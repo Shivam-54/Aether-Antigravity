@@ -910,3 +910,45 @@ a:hover {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
 }
+
+/* ═══════════════════════════════════════════════════════
+   VALUATION SECTION — PREMIUM ANIMATIONS & STYLES
+   ═══════════════════════════════════════════════════════ */
+
+/* Staggered fade-in animation for cards */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Smooth pulse for appreciation indicators */
+@keyframes subtlePulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 currentColor;
+    }
+    50% {
+        box-shadow: 0 0 8px 2px currentColor;
+    }
+}
+
+/* Valuation cards hover state enhancement */
+.valuation-card-hover:hover {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3), 
+                inset 0 1px 0 rgba(255,255,255,0.08) !important;
+}
+
+/* Premium table row hover for valuation history */
+.valuation-history-row {
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.valuation-history-row:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
