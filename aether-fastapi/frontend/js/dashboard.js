@@ -2,7 +2,7 @@
 // EXACT REPLICA OF OLD WEBSITE STRUCTURE
 
 // 🔧 DEV MODE: Set to true to disable auth redirects during UI testing
-const DEV_MODE = true;
+const DEV_MODE = false;
 // ==================== SAFE EVENT HANDLER UTILITIES ====================
 /**
  * Safely generate onclick handler with quoted parameters
@@ -685,13 +685,11 @@ function requireAuth() {
 
 // Logout
 function logout() {
-    if (DEV_MODE) {
-        console.log('DEV_MODE: Logout blocked');
-        return;
-    }
-    showToast("Session expired. Please log in again.", "error");
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('user_email');
+    showToast("Session expired. Please log in again.", "info");
+
+    // Clear ALL local storage to prevent data leakage between users
+    localStorage.clear();
+
     window.location.href = 'index.html';
 }
 

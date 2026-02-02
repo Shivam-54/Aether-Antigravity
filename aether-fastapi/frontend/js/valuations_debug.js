@@ -3,6 +3,9 @@
  * Handles folder-based property management with documents and valuations
  */
 
+console.log('!!! VALUATIONS.JS EXECUTING !!!');
+window.VALUATIONS_TEST = true;
+
 const VALUATIONS_API_BASE_URL = 'http://localhost:8000';
 
 // Global state
@@ -34,6 +37,19 @@ async function loadAllProperties() {
         });
 
         if (!response.ok) {
+            if (response.status === 401) {
+                console.warn('[Valuations.js] Unauthorized - clearing session and redirecting');
+                // Use dashboard.js logout if available, otherwise manual clear
+                if (typeof window.logout === 'function') {
+                    window.logout();
+                } else {
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('user_email');
+                    localStorage.removeItem('aether_realestate_transactions');
+                    window.location.href = 'index.html';
+                }
+                return;
+            }
             const errorText = await response.text();
             throw new Error(`Failed to fetch properties: ${response.status} ${response.statusText} - ${errorText}`);
         }
