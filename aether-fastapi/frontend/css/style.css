@@ -921,6 +921,7 @@ a:hover {
         opacity: 0;
         transform: translateY(16px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -929,9 +930,12 @@ a:hover {
 
 /* Smooth pulse for appreciation indicators */
 @keyframes subtlePulse {
-    0%, 100% {
+
+    0%,
+    100% {
         box-shadow: 0 0 0 0 currentColor;
     }
+
     50% {
         box-shadow: 0 0 8px 2px currentColor;
     }
@@ -940,8 +944,8 @@ a:hover {
 /* Valuation cards hover state enhancement */
 .valuation-card-hover:hover {
     border-color: rgba(255, 255, 255, 0.15) !important;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3), 
-                inset 0 1px 0 rgba(255,255,255,0.08) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
 }
 
 /* Premium table row hover for valuation history */
@@ -951,4 +955,139 @@ a:hover {
 
 .valuation-history-row:hover {
     background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* 
+   VALUATION FOLDER CARDS — PREMIUM OVERHAUL 
+   Requested: Black bg, Green/Red borders for value
+*/
+
+.property-folder-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    /* Ensure it stands out against the main bg */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.property-folder-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Status: Positive (Green Border) */
+.property-folder-card.border-success {
+    border-color: #22c55e !important;
+    /* Green-500 */
+    box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.1), 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.property-folder-card.border-success:hover {
+    box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.3), 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(34, 197, 94, 0.1);
+}
+
+/* Status: Negative (Red Border) */
+.property-folder-card.border-danger {
+    border-color: #ef4444 !important;
+    /* Red-500 */
+    box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.1), 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.property-folder-card.border-danger:hover {
+    box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.3), 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(239, 68, 68, 0.1);
+}
+
+/* Ensure text colors inside pop */
+.property-folder-card .text-success {
+    color: #4ade80 !important;
+    /* Lighter green for text on black */
+    text-shadow: 0 0 10px rgba(74, 222, 128, 0.2);
+}
+
+.property-folder-card .text-danger {
+    color: #f87171 !important;
+    /* Lighter red for text on black */
+    text-shadow: 0 0 10px rgba(248, 113, 113, 0.2);
+}
+
+.folder-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    opacity: 0.8;
+}
+
+.folder-stats {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* FORCE MONOCHROME BADGES IN PROPERTY CARDS */
+.property-folder-card .badge,
+.property-folder-card span[class*="text-"],
+.property-folder-card span[class*="bg-"] {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+}
+
+/* Ensure icons are also white */
+.property-folder-card svg,
+.property-folder-card i,
+.property-folder-card .icon {
+    color: rgba(255, 255, 255, 0.8) !important;
+    fill: rgba(255, 255, 255, 0.8) !important;
+    stroke: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Specific overrides for common bootstrap colors if they are being used inline */
+.property-folder-card .text-warning,
+.property-folder-card .text-success,
+.property-folder-card .text-danger,
+.property-folder-card .text-info,
+.property-folder-card .text-primary,
+.property-folder-card .text-secondary {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.property-folder-card .bg-warning,
+.property-folder-card .bg-success,
+.property-folder-card .bg-danger,
+.property-folder-card .bg-info,
+.property-folder-card .bg-primary {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   TABLE ROW ACTIONS — HOVER TO SHOW
+   ═══════════════════════════════════════════════════════ */
+
+/* Hide row actions by default */
+.row-action {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+/* Show row actions when hovering over the table row */
+tr:hover .row-action {
+    opacity: 1;
 }

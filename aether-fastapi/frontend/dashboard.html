@@ -1869,7 +1869,7 @@
 
     <!-- Main Dashboard Logic -->
     <script src="js/real-estate-ai.js"></script>
-    <script src="js/dashboard.js?v=156"></script>
+    <script src="js/dashboard.js?v=160"></script>
     <script src="js/share-transactions.js?v=1"></script>
     <script src="js/modules/crypto/crypto-wallets.js"></script>
     <script src="js/analytics-utils.js"></script> <!-- NEW: Analytics Logic -->
@@ -3878,7 +3878,8 @@
             <!-- Header -->
             <div
                 class="d-flex justify-content-between align-items-center mb-4 border-bottom border-white border-opacity-10 pb-3">
-                <h3 class="h5 fw-light text-white mb-0 tracking-wide">Add Valuation Entry</h3>
+                <h3 class="h5 fw-light text-white mb-0 tracking-wide" id="valuation-modal-title">Add Valuation Entry
+                </h3>
                 <button onclick="closeAddValuationModal()"
                     class="btn btn-icon btn-sm text-white-50 hover-text-white transition-colors p-1 rounded-circle hover-bg-white hover-bg-opacity-10">
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3889,13 +3890,14 @@
             </div>
 
             <form id="addValuationForm" onsubmit="handleValuationSubmit(event)">
+                <input type="hidden" id="val-id">
                 <div class="d-flex flex-column gap-4">
                     <!-- Date Input -->
                     <div class="d-flex flex-column gap-2">
                         <label class="small text-uppercase text-white-50 fw-medium ls-1"
                             style="font-size: 0.7rem;">Valuation Date</label>
                         <input type="date" id="val-date" required class="form-control glass-input text-white fw-light"
-                            style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                            style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; color-scheme: dark;">
                     </div>
 
                     <!-- Amount Input -->
@@ -3917,13 +3919,55 @@
                             class="btn flex-1 py-2 rounded-3 border border-white border-opacity-10 text-white-70 hover-bg-white hover-bg-opacity-5 hover-text-white transition-all fw-medium">
                             Cancel
                         </button>
-                        <button type="submit"
+                        <button type="submit" id="valuation-submit-btn"
                             class="btn flex-1 py-2 rounded-3 bg-white text-black hover-bg-opacity-90 transition-all fw-medium shadow-sm">
                             Add Entry
                         </button>
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+    <!-- Remove Valuation Confirmation Modal -->
+    <div id="remove-valuation-modal" class="position-fixed top-0 start-0 w-100 h-100"
+        style="z-index: 1055; display: none;">
+        <div class="position-absolute w-100 h-100"
+            style="background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); pointer-events: auto;"
+            onclick="closeDeleteValuationModal()">
+        </div>
+        <div class="position-absolute top-50 start-50 translate-middle w-100" style="max-width: 420px; padding: 1rem;">
+            <div class="modal-glass position-relative">
+                <!-- Header -->
+                <div class="p-4 d-flex justify-content-between align-items-start">
+                    <div>
+                        <h2 class="h5 fw-light text-white mb-1" style="letter-spacing: -0.01em;">Delete Entry?</h2>
+                        <p class="small mb-0" style="color: rgba(255, 255, 255, 0.45);">This action cannot be undone
+                        </p>
+                    </div>
+                    <button onclick="closeDeleteValuationModal()" class="modal-close-btn" type="button">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Content -->
+                <div class="px-4 pb-4">
+                    <p class="text-white-70 mb-4">Are you sure you want to delete this valuation entry?</p>
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-3">
+                        <button type="button" onclick="closeDeleteValuationModal()"
+                            class="modal-btn-secondary flex-1 w-50">Cancel</button>
+                        <button type="button" onclick="confirmDeleteValuation()"
+                            class="modal-btn-primary flex-1 w-50 d-flex align-items-center justify-content-center gap-2"
+                            style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #ef4444;">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </body>

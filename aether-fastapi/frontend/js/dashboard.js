@@ -1257,6 +1257,35 @@ async function fetchRealEstateData() {
 
         if (response.ok) {
             const properties = await response.json();
+
+            // Fetch valuation history for each property
+            for (const property of properties) {
+                try {
+                    const valuationsResponse = await fetch(`${API_BASE_URL}/realestate/valuations/${property.id}`, {
+                        headers: getAuthHeaders()
+                    });
+
+                    if (valuationsResponse.ok) {
+                        const valuations = await valuationsResponse.json();
+                        // Transform API response to match frontend structure
+                        property.valuation_history = valuations.map(v => ({
+                            id: v.id,
+                            date: v.valuation_date,
+                            value: v.value,
+                            source: v.source,
+                            notes: v.notes
+                        }));
+                        console.log('✓ Loaded', valuations.length, 'valuations for', property.name);
+                    } else {
+                        console.warn('Failed to fetch valuations for property:', property.id);
+                        property.valuation_history = [];
+                    }
+                } catch (error) {
+                    console.error('Error fetching valuations for property:', property.id, error);
+                    property.valuation_history = [];
+                }
+            }
+
             REAL_ESTATE_DATA.properties = properties;
 
             // Refresh UI
@@ -3242,17 +3271,29 @@ function renderValuationHistoryInline(propertyId) {
     const property = REAL_ESTATE_DATA.properties.find(p => p.id === propertyId);
     if (!property) return;
 
-    let history = property.valuation_history || [];
-    // Sort by date (newest first)
-    history.sort((a, b) => new Date(b.date) - new Date(a.date));
+    // Merge explicit history with the implicit "Purchase" entry
+    const history = property.valuation_history || [];
+    let fullHistory = [...history];
 
-    if (history.length === 0) {
+    if (property.acquisition_date && property.purchase_price) {
+        fullHistory.push({
+            date: property.acquisition_date,
+            value: property.purchase_price,
+            id: 'purchase-event',
+            isPurchase: true
+        });
+    }
+
+    // Sort by date descending (Newest first)
+    fullHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (fullHistory.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-white-30 font-monospace small">No valuation history recorded</td></tr>';
         return;
     }
 
-    tbody.innerHTML = history.map((entry, index) => {
-        const nextEntry = history[index + 1];
+    tbody.innerHTML = fullHistory.map((entry, index) => {
+        const nextEntry = fullHistory[index + 1];
         let changeHtml = '<span class="text-white-20">-</span>';
 
         if (nextEntry) {
@@ -3263,24 +3304,35 @@ function renderValuationHistoryInline(propertyId) {
             // Use inline color styles if custom classes aren't available
             const styleColor = diff >= 0 ? 'color: #34d399;' : 'color: #fb7185;';
             changeHtml = `<span style="${styleColor}">${sign}${percent.toFixed(1)}%</span>`;
-        } else if (index === history.length - 1 && property.purchase_price) {
-            // Compare oldest entry to purchase price if available
-            const diff = entry.value - property.purchase_price;
-            const percent = (diff / property.purchase_price) * 100;
-            const styleColor = diff >= 0 ? 'color: #34d399;' : 'color: #fb7185;';
-            const sign = diff >= 0 ? '+' : '';
-            changeHtml = `<span style="${styleColor}" title="Since Purchase">${sign}${percent.toFixed(1)}% (Initial)</span>`;
+        } else if (entry.isPurchase) {
+            changeHtml = `<span class="text-white-30" style="font-size: 0.7em; letter-spacing: 0.5px;">INITIAL</span>`;
+        }
+
+        const dateStr = new Date(entry.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+
+        let actionButtons = `
+            <button onclick="editValuationEntry('${propertyId}', '${entry.id}')" class="btn btn-icon btn-sm text-white-30 hover-text-white transition-colors p-0 me-3 row-action" title="Edit Entry" style="background: transparent; border: none;">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+            </button>
+            <button onclick="deleteValuationEntry('${propertyId}', '${entry.id}')" class="btn btn-icon btn-sm text-white-30 hover-text-danger transition-colors p-0 row-action" title="Delete Entry" style="background: transparent; border: none;">
+                 <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+        `;
+
+        if (entry.isPurchase) {
+            actionButtons = `<span class="text-white-30 small fst-italic">Purchase Event</span>`;
         }
 
         return `
-            <tr class="border-bottom border-white-05 hover-bg-white-05 transition-colors">
-                <td class="ps-4 py-3 text-white-70 font-monospace small">${new Date(entry.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</td>
+            <tr class="hover-bg-white-05 transition-colors" style="border-bottom: 1px solid rgba(255,255,255,0.03); ${entry.isPurchase ? 'background: rgba(255,255,255,0.01);' : ''}">
+                <td class="ps-4 py-3 text-white-70 font-monospace small">
+                    ${dateStr}
+                    ${entry.isPurchase ? '<span class="badge bg-white bg-opacity-10 text-white-50 ms-2" style="font-size: 0.6em;">ACQUIRED</span>' : ''}
+                </td>
                 <td class="py-3 fw-medium text-white font-family-base">${formatCurrency(entry.value)}</td>
                 <td class="py-3 font-monospace small">${changeHtml}</td>
                 <td class="pe-4 py-3 text-end">
-                    <button class="btn btn-icon btn-sm text-white-30 hover-text-danger transition-colors p-0" title="Delete Entry" style="background: transparent; border: none;">
-                         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    </button>
+                    ${actionButtons}
                 </td>
             </tr>
         `;
@@ -3342,22 +3394,15 @@ function renderValuationCards() {
             }
             const isPositive = appreciation >= 0;
 
-            // Premium color scheme with gradients
-            const accentGradient = isPositive
-                ? 'linear-gradient(135deg, #10b981, #34d399)'
-                : 'linear-gradient(135deg, #ef4444, #fb7185)';
+            // Refined color scheme: Black background with colored border
             const accentColor = isPositive ? '#34d399' : '#fb7185';
-            const accentGlow = isPositive ? 'rgba(52, 211, 153, 0.15)' : 'rgba(251, 113, 133, 0.15)';
 
-            // Type colors for visual variety
-            const typeColors = {
-                'Industrial': { bg: 'rgba(147, 51, 234, 0.12)', border: 'rgba(147, 51, 234, 0.3)', text: '#c4b5fd' },
-                'Residential': { bg: 'rgba(59, 130, 246, 0.12)', border: 'rgba(59, 130, 246, 0.3)', text: '#93c5fd' },
-                'Commercial': { bg: 'rgba(234, 179, 8, 0.12)', border: 'rgba(234, 179, 8, 0.3)', text: '#fde047' },
-                'Land': { bg: 'rgba(34, 197, 94, 0.12)', border: 'rgba(34, 197, 94, 0.3)', text: '#86efac' },
-                'default': { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.15)', text: 'rgba(255,255,255,0.7)' }
+            // Monochrome type colors (Plain white style)
+            const typeStyle = {
+                bg: 'rgba(255,255,255,0.03)',
+                border: 'rgba(255,255,255,0.1)',
+                text: 'rgba(255,255,255,0.8)'
             };
-            const typeStyle = typeColors[type] || typeColors['default'];
 
             return `
             <div class="position-relative rounded-4 overflow-hidden transition-all"
@@ -3380,7 +3425,7 @@ function renderValuationCards() {
                     
                     <!-- Left: Property Identity -->
                     <div class="d-flex align-items-center gap-4 flex-grow-1">
-                        <!-- Property Icon with Glow -->
+                        <!-- Property Icon (Monochrome) -->
                         <div class="position-relative d-none d-lg-flex align-items-center justify-content-center rounded-3"
                              style="width: 56px; height: 56px; 
                                     background: ${typeStyle.bg}; 
@@ -3394,7 +3439,7 @@ function renderValuationCards() {
                         
                         <!-- Property Details -->
                         <div class="d-flex flex-column gap-1">
-                            <!-- Type Badge -->
+                            <!-- Type Badge (Monochrome) -->
                             <div class="d-inline-flex">
                                 <span class="px-2 py-1 rounded-pill d-inline-flex align-items-center gap-1" 
                                       style="background: ${typeStyle.bg}; 
@@ -3421,20 +3466,24 @@ function renderValuationCards() {
                             <p class="mb-0" style="font-size: 1.25rem; font-weight: 300; color: rgba(255,255,255,0.95); letter-spacing: -0.02em;">${formatCurrency(value)}</p>
                         </div>
                         
-                        <!-- Appreciation Pill -->
+                        <!-- Appreciation Pill (Glass bg, Colored Border) -->
                         <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-3"
-                             style="background: ${accentGlow}; 
-                                    border: 1px solid ${accentColor}30;
+                             style="background: rgba(255,255,255,0.06); 
+                                    border: 1px solid ${accentColor};
                                     min-width: 100px;">
                             <div class="d-flex align-items-center justify-content-center rounded-circle"
-                                 style="width: 28px; height: 28px; background: ${accentGradient}; flex-shrink: 0;">
+                                 style="width: 24px; height: 24px; background: ${accentColor}; flex-shrink: 0;">
                                 ${isPositive
-                    ? '<svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>'
-                    : '<svg width="14" height="14" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>'
+                    ? `<svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                         <path d="M5 2L5 8M5 2L2 5M5 2L8 5" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                       </svg>`
+                    : `<svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                         <path d="M5 8L5 2M5 8L2 5M5 8L8 5" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                       </svg>`
                 }
                             </div>
                             <div class="text-end">
-                                <p class="mb-0" style="font-size: 1rem; font-weight: 600; color: ${accentColor}; letter-spacing: -0.02em;">
+                                <p class="mb-0" style="font-size: 0.95rem; font-weight: 500; color: ${accentColor}; letter-spacing: -0.02em;">
                                     ${isPositive ? '+' : ''}${percent.toFixed(1)}%
                                 </p>
                             </div>
@@ -3490,7 +3539,14 @@ function renderValuationCards() {
                                     Valuation History
                                 </h4>
                             </div>
-                            <button onclick="window.startAddValuation('${property.id}')" 
+                            ${property.status === 'Sold'
+                    ? `<div class="d-flex align-items-center gap-2 px-3 py-2 rounded-pill" 
+                                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); cursor: not-allowed;">
+                                       <span style="font-size: 0.8rem; color: rgba(255,255,255,0.4); font-weight: 500; font-style: italic;">
+                                           Property Sold - Editing Disabled
+                                       </span>
+                                   </div>`
+                    : `<button onclick="window.startAddValuation('${property.id}')" 
                                     class="d-flex align-items-center gap-2 px-4 py-2 rounded-pill"
                                     style="background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
                                            border: 1px solid rgba(255,255,255,0.12);
@@ -3506,7 +3562,8 @@ function renderValuationCards() {
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
                                 </svg>
                                 Add Entry
-                            </button>
+                            </button>`
+                }
                         </div>
 
                         <!-- History Table with Premium Styling -->
@@ -3592,7 +3649,7 @@ function renderValuationHistoryInModal(propertyId) {
         }
 
         return `
-            <tr class="border-bottom border-white-05 hover-bg-white-05 transition-colors">
+            <tr class="hover-bg-white-05 transition-colors" style="border-bottom: 1px solid rgba(255,255,255,0.03);">
                 <td class="ps-4 py-3">${new Date(entry.date).toLocaleDateString()}</td>
                 <td class="py-3 fw-medium">${formatCurrency(entry.value)}</td>
                 <td class="py-3">${changeHtml}</td>
@@ -3609,6 +3666,18 @@ function renderValuationHistoryInModal(propertyId) {
 function startAddValuation(propertyId) {
     console.log('startAddValuation called with:', propertyId);
     currentValuationPropertyId = propertyId;
+
+    // Reset UI for Add Mode
+    const title = document.getElementById('valuation-modal-title');
+    const btn = document.getElementById('valuation-submit-btn');
+    const idInput = document.getElementById('val-id');
+    const form = document.getElementById('addValuationForm');
+
+    if (title) title.textContent = 'Add Valuation Entry';
+    if (btn) btn.textContent = 'Add Entry';
+    if (idInput) idInput.value = '';
+    if (form) form.reset();
+
     openAddValuationModal();
 }
 
@@ -3648,24 +3717,286 @@ function closeAddValuationModal() {
     if (form) form.reset();
 }
 
-function handleValuationSubmit(e) {
+async function handleValuationSubmit(e) {
     e.preventDefault();
     const amount = parseFloat(document.getElementById('val-amount').value);
-    const date = document.getElementById('val-date').value;
+    const dateInput = document.getElementById('val-date');
+    // Ensure proper YYYY-MM-DD format by using valueAsDate and converting to ISO
+    const dateValue = dateInput.valueAsDate;
+    const date = dateValue ? dateValue.toISOString().split('T')[0] : dateInput.value;
+    const entryId = document.getElementById('val-id').value;
 
     if (!currentValuationPropertyId || isNaN(amount)) return;
 
     const property = REAL_ESTATE_DATA.properties.find(p => p.id === currentValuationPropertyId);
-    if (property) {
-        if (!property.valuation_history) property.valuation_history = [];
-        property.valuation_history.push({ date: date, value: amount, id: Date.now().toString() });
-        property.current_value = amount;
+    if (!property) return;
 
-        renderValuationHistoryInModal(currentValuationPropertyId);
-        renderValuationCards(); // Update background card
+    const isEdit = !!entryId && entryId !== 'acquisition';
 
-        closeAddValuationModal();
-        showToast('Valuation added successfully', 'success');
+    // Build valuation data payload
+    const valuationData = {
+        date: date,
+        value: amount,
+        id: entryId || undefined
+    };
+
+    // Save to backend first
+    const savedValuation = await saveValuationToBackend(currentValuationPropertyId, valuationData, isEdit);
+    if (!savedValuation) {
+        showToast('Failed to save valuation', 'error');
+        return;
+    }
+
+    // Update local data with backend response
+    if (!property.valuation_history) property.valuation_history = [];
+
+    if (isEdit) {
+        // Update existing entry
+        const index = property.valuation_history.findIndex(x => x.id === entryId);
+        if (index !== -1) {
+            property.valuation_history[index] = {
+                id: savedValuation.id,
+                date: savedValuation.valuation_date,
+                value: savedValuation.value
+            };
+        }
+    } else {
+        // Add new entry with ID from backend
+        property.valuation_history.push({
+            id: savedValuation.id,
+            date: savedValuation.valuation_date,
+            value: savedValuation.value
+        });
+    }
+
+    // Update current value based on chronological latest (Valuation OR Purchase)
+    let allEvents = [...property.valuation_history];
+    if (property.acquisition_date && property.purchase_price) {
+        allEvents.push({ date: property.acquisition_date, value: property.purchase_price });
+    }
+    allEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (allEvents.length > 0) {
+        const newCurrentValue = allEvents[0].value;
+        property.current_value = newCurrentValue;
+
+        // Update property's current_value in backend
+        await updatePropertyCurrentValue(currentValuationPropertyId, newCurrentValue);
+    }
+
+    // Re-render UI
+    renderValuationHistoryInline(currentValuationPropertyId);
+    renderValuationCards();
+
+    closeAddValuationModal();
+    showToast(entryId ? 'Valuation updated successfully' : 'Valuation added successfully', 'success');
+}
+
+
+// Save valuation to backend using the Valuations API
+async function saveValuationToBackend(propertyId, valuation, isEdit = false) {
+    try {
+        let payload;
+        let response;
+
+        if (isEdit && valuation.id && valuation.id !== 'acquisition') {
+            // Update existing valuation - ValuationUpdate schema (no property_id)
+            payload = {
+                valuation_date: valuation.date,
+                value: valuation.value,
+                source: valuation.source || 'Manual Entry',
+                notes: valuation.notes || ''
+            };
+
+            response = await fetch(`${API_BASE_URL}/realestate/valuations/${valuation.id}`, {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify(payload)
+            });
+        } else if (!isEdit) {
+            // Create new valuation - ValuationCreate schema (includes property_id)
+            payload = {
+                property_id: propertyId,
+                valuation_date: valuation.date,
+                value: valuation.value,
+                source: valuation.source || 'Manual Entry',
+                notes: valuation.notes || ''
+            };
+
+            response = await fetch(`${API_BASE_URL}/realestate/valuations/`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify(payload)
+            });
+        }
+
+        if (!response || !response.ok) {
+            if (response && response.status === 401) {
+                logout();
+                return null;
+            }
+            const errorText = await response.text();
+            console.error('Backend error:', errorText);
+            throw new Error('Failed to save valuation');
+        }
+
+        const savedValuation = await response.json();
+        console.log('✓ Valuation saved to backend:', savedValuation);
+        return savedValuation;
+    } catch (error) {
+        console.error('Error saving valuation:', error);
+        showToast('Failed to save valuation to server', 'error');
+        return null;
+    }
+}
+
+// Update property's current value
+async function updatePropertyCurrentValue(propertyId, newValue) {
+    try {
+        const payload = {
+            current_value: newValue
+        };
+
+        const response = await fetch(`${API_BASE_URL}/realestate/${propertyId}`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                logout();
+                return false;
+            }
+            throw new Error('Failed to update current value');
+        }
+
+        console.log('✓ Property current value updated:', newValue);
+        return true;
+    } catch (error) {
+        console.error('Error updating current value:', error);
+        return false;
+    }
+}
+
+
+
+function editValuationEntry(propertyId, entryId) {
+    console.log('Edit valuation:', propertyId, entryId);
+    currentValuationPropertyId = propertyId;
+    const property = REAL_ESTATE_DATA.properties.find(p => p.id === propertyId);
+    if (!property) return;
+
+    const entry = property.valuation_history.find(e => e.id === entryId);
+    if (!entry) return;
+
+    // Open modal first to set up basic styles
+    openAddValuationModal();
+
+    // Override for Edit Mode
+    const title = document.getElementById('valuation-modal-title');
+    const btn = document.getElementById('valuation-submit-btn');
+    const idInput = document.getElementById('val-id');
+    const dateInput = document.getElementById('val-date');
+    const amountInput = document.getElementById('val-amount');
+
+    if (title) title.textContent = 'Edit Valuation Entry';
+    if (btn) btn.textContent = 'Update Entry';
+    if (idInput) idInput.value = entry.id;
+    if (dateInput) dateInput.value = entry.date;
+    if (amountInput) amountInput.value = entry.value;
+}
+
+// Delete Valuation Logic with Custom Modal
+let pendingValuationDelete = null;
+
+function deleteValuationEntry(propertyId, entryId) {
+    console.log('Request delete valuation:', propertyId, entryId);
+
+    // Don't allow deleting purchase events
+    if (entryId === 'purchase-event') {
+        showToast('Cannot delete acquisition entry', 'error');
+        return;
+    }
+
+    // Store state and show modal
+    pendingValuationDelete = { propertyId, entryId };
+
+    const modal = document.getElementById('remove-valuation-modal');
+    if (modal) {
+        modal.style.display = 'block';
+    } else {
+        console.error('Remove valuation modal not found');
+        // Fallback for safety
+        if (confirm('Are you sure you want to delete this valuation entry?')) {
+            confirmDeleteValuation(true);
+        }
+    }
+}
+
+function closeDeleteValuationModal() {
+    pendingValuationDelete = null;
+    const modal = document.getElementById('remove-valuation-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+async function confirmDeleteValuation(isFallback = false) {
+    if (!pendingValuationDelete && !isFallback) return;
+
+    const { propertyId, entryId } = pendingValuationDelete || {};
+    if (!propertyId || !entryId) return;
+
+    try {
+        // Delete from backend
+        const response = await fetch(`${API_BASE_URL}/realestate/valuations/${entryId}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                logout();
+                return;
+            }
+            throw new Error('Failed to delete valuation');
+        }
+
+        // Remove from local data
+        const property = REAL_ESTATE_DATA.properties.find(p => p.id === propertyId);
+        if (property && property.valuation_history) {
+            property.valuation_history = property.valuation_history.filter(e => e.id !== entryId);
+
+            // Recalculate current value from remaining history
+            const allEvents = [...property.valuation_history];
+            if (property.acquisition_date && property.purchase_price) {
+                allEvents.push({
+                    date: property.acquisition_date,
+                    value: property.purchase_price
+                });
+            }
+            allEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (allEvents.length > 0) {
+                const newCurrentValue = allEvents[0].value;
+                property.current_value = newCurrentValue;
+                await updatePropertyCurrentValue(propertyId, newCurrentValue);
+            }
+        }
+
+        // Re-render UI
+        renderValuationHistoryInline(propertyId);
+        renderValuationCards();
+
+        closeDeleteValuationModal();
+        showToast('Valuation entry deleted successfully', 'success');
+        console.log('✓ Valuation entry deleted');
+
+    } catch (error) {
+        console.error('Error deleting valuation:', error);
+        showToast('Failed to delete valuation entry', 'error');
+        closeDeleteValuationModal();
     }
 }
 
@@ -3679,6 +4010,10 @@ window.openAddValuationModal = openAddValuationModal;
 window.closeAddValuationModal = closeAddValuationModal;
 window.handleValuationSubmit = handleValuationSubmit;
 window.startAddValuation = startAddValuation;
+window.closeDeleteValuationModal = closeDeleteValuationModal;
+window.confirmDeleteValuation = confirmDeleteValuation;
+window.editValuationEntry = editValuationEntry;
+window.deleteValuationEntry = deleteValuationEntry;
 window.toggleValuationRow = toggleValuationRow;
 
 // Helper for file size
