@@ -472,10 +472,10 @@ async def refresh_all_prices(
             "message": f"Successfully updated {updated_count} holdings"
         }
     
-    except ImportError:
+    except ImportError as e:
         raise HTTPException(
             status_code=500,
-            detail="Stock API service not available"
+            detail=f"Stock API service not available: {str(e)}"
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Price refresh failed: {str(e)}")

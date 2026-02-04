@@ -1607,8 +1607,7 @@ function renderRealEstateProperties() {
 
     // Noise Texture SVG Data URL
 
-    container.className = 'row row-cols-1 row-cols-md-2 g-4';
-    container.className = 'row row-cols-1 row-cols-md-2 g-4';
+    container.className = 'row g-4';
 
     // Filter properties based on current selection
     const activeProperties = REAL_ESTATE_DATA.properties.filter(p => {
@@ -1619,7 +1618,7 @@ function renderRealEstateProperties() {
         const appreciation = calculateAppreciation(property.current_value, property.purchase_price);
 
         return `
-        <div class="col">
+        <div class="col-12 col-md-6">
             <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all glass-card" style="transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                 <!-- Hover Texture -->
 
@@ -1677,6 +1676,7 @@ function renderRealEstateProperties() {
                     </div>
                 </div>
             </div>
+        </div>
         `;
     }).join('');
 }
