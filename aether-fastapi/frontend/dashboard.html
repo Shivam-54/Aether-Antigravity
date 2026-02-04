@@ -1207,25 +1207,174 @@
 
                     <!-- 5. AI Insights Section -->
                     <div id="crypto-section-ai-insights" class="crypto-section" style="display: none;">
-                        <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2">AI Insights</h2>
-                            <p class="text-white-50 fw-light">AI-powered analysis of your crypto
-                                portfolio
-                            </p>
-                        </div>
-                        <div class="glass-card glass-empty-state">
-                            <div class="glass-empty-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-                                    stroke-linejoin="round" class="text-white-80">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                                </svg>
+                        <div class="d-flex flex-column gap-4">
+                            <div class="glass-header">
+                                <h2 class="h3 fw-light mb-2">AI Insights</h2>
+                                <p class="text-white-50 fw-light">Smart analysis and predictions for your portfolio</p>
                             </div>
-                            <h3 class="h4 fw-light text-white-90 mb-2">Coming Soon</h3>
-                            <p class="text-white-50 fw-light">AI-powered portfolio analysis is under
-                                development.</p>
+
+                            <!-- Top Row: Health Score & Forecast -->
+                            <div class="row g-4">
+                                <!-- Health Score -->
+                                <div class="col-lg-4">
+                                    <div class="glass-card p-4 h-100 d-flex flex-column justify-content-between">
+                                        <div>
+                                            <h3 class="h5 fw-light text-white-90 mb-3">Portfolio Health</h3>
+                                            <p class="text-white-50 small mb-4">Composite score based on
+                                                diversification,
+                                                volatility, and trend.</p>
+                                        </div>
+
+                                        <div class="d-flex align-items-center justify-content-center position-relative mb-3"
+                                            style="height: 180px;">
+                                            <!-- Gauge Canvas -->
+                                            <canvas id="healthScoreGauge"></canvas>
+                                            <!-- Score Text Overlay -->
+                                            <div class="position-absolute top-50 start-50 translate-middle text-center"
+                                                style="margin-top: 20px;">
+                                                <h2 class="display-4 fw-light text-white mb-0" id="health-score-value">
+                                                    --
+                                                </h2>
+                                                <span class="text-white-50 small">/ 100</span>
+                                            </div>
+                                        </div>
+
+                                        <div id="health-components"
+                                            class="d-flex justify-content-between text-center pt-3 border-top border-white border-opacity-10">
+                                            <!-- Injected via JS -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Forecast Chart -->
+                                <div class="col-lg-8">
+                                    <div class="glass-card p-4 h-100">
+                                        <div class="d-flex justify-content-between align-items-center mb-4">
+                                            <div>
+                                                <h3 class="h5 fw-light text-white-90 mb-1">30-Day Value Forecast</h3>
+                                                <p class="text-white-50 small mb-0">Projected total portfolio valuation
+                                                </p>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span
+                                                    class="badge bg-primary bg-opacity-10 text-primary fw-light px-3 py-1 rounded-pill">
+                                                    ML Confidence: 80%
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div style="height: 250px; width: 100%;">
+                                            <canvas id="cryptoForecastChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Recent Insights -->
+                            <div>
+                                <h3 class="h6 text-white-50 text-uppercase fw-light mb-3" style="letter-spacing: 1px;">
+                                    Recent Analysis</h3>
+                                <div id="ai-insights-container" class="row g-3">
+                                    <!-- Injected via JS -->
+                                </div>
+                            </div>
+
+                            <!-- What-If Simulator -->
+                            <div class="glass-card p-4 border-warning border-opacity-10"
+                                style="background: rgba(255, 193, 7, 0.02);">
+                                <div class="d-flex justify-content-between align-items-start mb-4">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <div class="p-1 rounded bg-warning bg-opacity-10 text-warning">
+                                                <svg width="16" height="16" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path d="M12 2v20M2 12h20" stroke-width="2"
+                                                        stroke-linecap="round" />
+                                                    <circle cx="12" cy="12" r="10" stroke-width="2" />
+                                                </svg>
+                                            </div>
+                                            <h3 class="h5 fw-light text-white-90 mb-0">Scenario Simulator</h3>
+                                        </div>
+                                        <p class="text-white-50 small mb-0">Stress-test your portfolio against market
+                                            events.</p>
+                                    </div>
+                                </div>
+
+                                <div class="row g-5 align-items-center">
+                                    <!-- Controls -->
+                                    <div class="col-lg-5">
+                                        <label class="form-label text-white-80 small mb-3">Simulate Market Shock
+                                            (Bitcoin Move)</label>
+                                        <div class="d-flex align-items-center gap-3 mb-2">
+                                            <span class="text-danger small fw-bold">-50%</span>
+                                            <input type="range" class="form-range glass-range" id="simulatorShockInput"
+                                                min="-50" max="50" value="0" step="5">
+                                            <span class="text-success small fw-bold">+50%</span>
+                                        </div>
+                                        <div class="text-center">
+                                            <span id="simulatorShockValue"
+                                                class="badge bg-white bg-opacity-10 text-white fw-light px-3 py-2">
+                                                0% Change
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Results -->
+                                    <div class="col-lg-7">
+                                        <div
+                                            class="d-flex align-items-center justify-content-around p-3 rounded glass-inset">
+                                            <div class="text-center opacity-50">
+                                                <div class="small text-white-50 mb-1">Current Value</div>
+                                                <div class="h5 fw-light text-white mb-0" id="sim-current-value">...
+                                                </div>
+                                            </div>
+                                            <div class="text-white-20 h3 fw-light mb-0">→</div>
+                                            <div class="text-center">
+                                                <div class="small text-white-50 mb-1">Projected Value</div>
+                                                <div class="h3 fw-light text-white mb-0" id="sim-projected-value">...
+                                                </div>
+                                                <div class="small" id="sim-change-percent">--</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Detailed Impact (Hidden by default, shown on interaction) -->
+                                <div id="simulation-impact-details"
+                                    class="mt-4 pt-3 border-top border-white border-opacity-10" style="display: none;">
+                                    <h5 class="h6 text-white-50 mb-3">Projected Impact per Asset</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm text-white-80 mb-0" style="font-size: 0.85rem;">
+                                            <thead>
+                                                <tr>
+                                                    <th class="fw-light text-white-40">Asset</th>
+                                                    <th class="fw-light text-white-40 text-end">Correlation</th>
+                                                    <th class="fw-light text-white-40 text-end">Impact</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="simulation-impact-body">
+                                                <!-- Injected via JS -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Chat Area -->
+                            <div class="glass-card p-4 mt-2">
+                                <h3 class="h5 fw-light text-white-90 mb-3">Ask Aether AI</h3>
+                                <div class="input-group glass-input-group">
+                                    <input type="text" class="form-control bg-transparent border-0 text-white fw-light"
+                                        placeholder="Ask about your portfolio risks, tax implications, or market trends...">
+                                    <button class="btn text-white-50" type="button">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3961,6 +4110,9 @@
             </div>
         </div>
     </div>
+    <script src="js/modules/crypto/crypto-holdings.js"></script>
+    <script src="js/modules/crypto/crypto-simulator.js"></script>
+    <script src="js/modules/crypto/crypto-insights.js"></script>
 </body>
 
 

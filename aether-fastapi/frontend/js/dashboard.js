@@ -1112,6 +1112,15 @@ function navigateToSection(sectionId, sectionName, btn) {
             if (sectionId === 'holdings') {
                 renderCryptoHoldings();
             }
+
+            // If navigating to AI Insights section, call ML-powered insights
+            if (sectionId === 'ai-insights') {
+                if (window.renderAIInsights) {
+                    window.renderAIInsights();
+                } else {
+                    console.error('renderAIInsights not found');
+                }
+            }
         } else {
             console.warn(`Section crypto-section-${sectionId} not found`);
             // Fallback to overview
@@ -1119,6 +1128,7 @@ function navigateToSection(sectionId, sectionName, btn) {
             if (overview) overview.style.display = 'block';
         }
     }
+
 
     // Handle Shares Sub-navigation
     if (currentSource === 'shares') {
