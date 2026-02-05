@@ -113,15 +113,14 @@ function renderSimulationResults(data) {
     pctEl.innerText = `${changePct >= 0 ? '▲' : '▼'} ${Math.abs(changePct)}%`;
     pctEl.className = `small ${changePct >= 0 ? 'text-success' : 'text-warning'}`;
 
-    // Render Breakdown Table
-    const tableBody = document.getElementById('simulation-impact-body');
-    if (tableBody && data.holdings) {
-        tableBody.innerHTML = data.holdings.map(h => {
+    // Render Breakdown Cards
+    const cardContainer = document.getElementById('simulation-impact-body');
+    if (cardContainer && data.holdings) {
+        cardContainer.innerHTML = data.holdings.map(h => {
             // Skip small impacts for cleaner UI
             if (Math.abs(h.change_percent) < 0.1) return '';
 
             // Calculate a proxy correlation for display (Impact / Shock)
-            // Avoid division by zero
             const shock = parseFloat(document.getElementById('simulatorShockInput').value);
             let correlation = shock !== 0 ? (h.change_percent / shock).toFixed(2) : '0.00';
 
@@ -129,22 +128,39 @@ function renderSimulationResults(data) {
             if (correlation > 1) correlation = '1.00';
             if (correlation < -1) correlation = '-1.00';
 
+            const isPositive = h.change_percent >= 0;
+
             return `
-                <tr>
-                    <td class="text-white-80">
-                        <div class="d-flex align-items-center gap-2">
-                             <div class="p-1 rounded bg-white bg-opacity-10">${h.symbol}</div>
+                <div class="col-4">
+                    <div class="p-3 rounded" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);">
+                        <!-- Asset Symbol -->
+                        <div class="text-center mb-3">
+                            <div class="badge px-3 py-2" style="background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); border: 1px solid rgba(255,255,255,0.15); font-size: 0.9rem;">
+                                ${h.symbol}
+                            </div>
                         </div>
-                    </td>
-                    <td class="text-end font-monospace small text-white-50">${correlation}</td>
-                    <td class="text-end ${h.change_percent >= 0 ? 'text-success' : 'text-danger'}">
-                        ${h.change_percent.toFixed(1)}%
-                    </td>
-                </tr>
+                        
+                        <!-- Impact Percentage -->
+                        <div class="text-center mb-3">
+                            <div class="h4 mb-0" style="color: ${isPositive ? '#22d399' : '#ef4444'}; font-weight: 600;">
+                                ${isPositive ? '▲' : '▼'} ${Math.abs(h.change_percent).toFixed(1)}%
+                            </div>
+                            <div class="text-white-40 small mt-1" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;">Impact</div>
+                        </div>
+                        
+                        <!-- Correlation -->
+                        <div class="text-center">
+                            <div class="badge bg-white bg-opacity-10 text-white font-monospace px-2 py-1" style="font-size: 0.75rem;">
+                                ${correlation}
+                            </div>
+                            <div class="text-white-40 small mt-1" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;">Correlation</div>
+                        </div>
+                    </div>
+                </div>
             `;
         }).join('');
 
-        // Show table
+        // Show cards
         document.getElementById('simulation-impact-details').style.display = 'block';
     }
 }

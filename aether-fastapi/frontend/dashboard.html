@@ -1205,12 +1205,22 @@
                         </div>
                     </div>
 
-                    <!-- 5. AI Insights Section -->
-                    <div id="crypto-section-ai-insights" class="crypto-section" style="display: none;">
+                    <!-- 5. AI Lab Section -->
+                    <div id="crypto-section-ai-lab" class="crypto-section" style="display: none;">
                         <div class="d-flex flex-column gap-4">
                             <div class="glass-header">
-                                <h2 class="h3 fw-light mb-2">AI Insights</h2>
-                                <p class="text-white-50 fw-light">Smart analysis and predictions for your portfolio</p>
+                                <div class="d-flex align-items-center gap-3 mb-2">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" class="text-primary">
+                                        <path
+                                            d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2" />
+                                        <path d="M8.5 2h7" />
+                                        <path d="M7 16h10" />
+                                    </svg>
+                                    <h2 class="h3 fw-light mb-0">AI Lab</h2>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary">Experimental</span>
+                                </div>
+                                <p class="text-white-50 fw-light">Machine Learning insights powered by PyTorch LSTM</p>
                             </div>
 
                             <!-- Top Row: Health Score & Forecast -->
@@ -1341,20 +1351,10 @@
                                 <!-- Detailed Impact (Hidden by default, shown on interaction) -->
                                 <div id="simulation-impact-details"
                                     class="mt-4 pt-3 border-top border-white border-opacity-10" style="display: none;">
-                                    <h5 class="h6 text-white-50 mb-3">Projected Impact per Asset</h5>
-                                    <div class="table-responsive">
-                                        <table class="table table-sm text-white-80 mb-0" style="font-size: 0.85rem;">
-                                            <thead>
-                                                <tr>
-                                                    <th class="fw-light text-white-40">Asset</th>
-                                                    <th class="fw-light text-white-40 text-end">Correlation</th>
-                                                    <th class="fw-light text-white-40 text-end">Impact</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="simulation-impact-body">
-                                                <!-- Injected via JS -->
-                                            </tbody>
-                                        </table>
+                                    <h5 class="h6 text-white-50 text-uppercase mb-3" style="letter-spacing: 1px;">Asset
+                                        Impact Breakdown</h5>
+                                    <div id="simulation-impact-body" class="row g-3">
+                                        <!-- Injected via JS as glass cards in grid -->
                                     </div>
                                 </div>
                             </div>
@@ -4113,6 +4113,7 @@
     <script src="js/modules/crypto/crypto-holdings.js"></script>
     <script src="js/modules/crypto/crypto-simulator.js"></script>
     <script src="js/modules/crypto/crypto-insights.js"></script>
+    <script src="js/modules/crypto/crypto-ai-lab.js"></script>
 </body>
 
 

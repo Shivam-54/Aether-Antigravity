@@ -149,7 +149,7 @@ const SIDEBAR_CONFIG = {
         { icon: 'receipt', text: 'Rental / S...', id: 'rental-sale' },
         { icon: 'document', text: 'Documents', id: 'documents' },
         { icon: 'trending', text: 'Valuation', id: 'valuation' },
-        { icon: 'bulb', text: 'AI Insights', id: 'ai-insights' },
+        { icon: 'flask', text: 'AI Lab', id: 'ai-lab' },
         { divider: true },
         { icon: 'arrow-up', text: 'Upgrade', id: 'upgrade' },
         { icon: 'help', text: 'Help', id: 'help' },
@@ -160,7 +160,7 @@ const SIDEBAR_CONFIG = {
         { icon: 'wallet', text: 'Holdings', id: 'holdings' },
         { icon: 'activity', text: 'On-Chain...', id: 'on-chain' },
         { icon: 'wallet-2', text: 'Wallets', id: 'wallets' },
-        { icon: 'bulb', text: 'AI Insights', id: 'ai-insights' },
+        { icon: 'flask', text: 'AI Lab', id: 'ai-lab' },
         { divider: true },
         { icon: 'arrow-up', text: 'Upgrade', id: 'upgrade' },
         { icon: 'help', text: 'Help', id: 'help' },
@@ -171,7 +171,7 @@ const SIDEBAR_CONFIG = {
         { icon: 'wallet', text: 'Holdings', id: 'holdings' },
         { icon: 'trending', text: 'Market Act...', id: 'market-activity' },
         { icon: 'chart', text: 'Performan...', id: 'performance' },
-        { icon: 'bulb', text: 'AI Insights', id: 'ai-insights' },
+        { icon: 'flask', text: 'AI Lab', id: 'ai-lab' },
         { divider: true },
         { icon: 'arrow-up', text: 'Upgrade', id: 'upgrade' },
         { icon: 'help', text: 'Help', id: 'help' },
@@ -183,7 +183,7 @@ const SIDEBAR_CONFIG = {
         { icon: 'calendar', text: 'Maturity S...', id: 'maturity' },
         { icon: 'chart', text: 'Bond Alloc...', id: 'bond-allocation' },
         { icon: 'trending', text: 'Yield Analysis', id: 'yield-analysis' },
-        { icon: 'bulb', text: 'AI Insights', id: 'ai-insights' },
+        { icon: 'flask', text: 'AI Lab', id: 'ai-lab' },
         { divider: true },
         { icon: 'arrow-up', text: 'Upgrade', id: 'upgrade' },
         { icon: 'help', text: 'Help', id: 'help' },
@@ -196,7 +196,7 @@ const SIDEBAR_CONFIG = {
 
         { icon: 'receipt', text: 'Statements', id: 'statements' },
         { icon: 'document', text: 'Documents', id: 'documentation' },
-        { icon: 'bulb', text: 'AI Insights', id: 'ai-insights' },
+        { icon: 'flask', text: 'AI Lab', id: 'ai-lab' },
         { divider: true },
         { icon: 'arrow-up', text: 'Upgrade', id: 'upgrade' },
         { icon: 'help', text: 'Help', id: 'help' },
@@ -211,6 +211,7 @@ const ICONS = {
     receipt: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17V7"/></svg>',
     document: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>',
     bulb: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>',
+    flask: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></svg>',
     wallet: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>',
     activity: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
     'wallet-2': '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>',
@@ -1085,8 +1086,8 @@ function navigateToSection(sectionId, sectionName, btn) {
                 filterValuationCards('active'); // Default to active
             }
 
-            // If navigating to AI Insights, generate insights
-            if (sectionId === 'ai-insights') {
+            // If navigating to AI Lab (for real estate)
+            if (sectionId === 'ai-lab') {
                 if (window.renderRealEstateAIInsights) {
                     window.renderRealEstateAIInsights();
                 } else {
@@ -1113,12 +1114,11 @@ function navigateToSection(sectionId, sectionName, btn) {
                 renderCryptoHoldings();
             }
 
-            // If navigating to AI Insights section, call ML-powered insights
-            if (sectionId === 'ai-insights') {
-                if (window.renderAIInsights) {
-                    window.renderAIInsights();
-                } else {
-                    console.error('renderAIInsights not found');
+            // If navigating to AI Lab section, initialize the ML interface
+            if (sectionId === 'ai-lab') {
+                // Call the new AI Lab initialization
+                if (typeof initializeAILab === 'function') {
+                    initializeAILab();
                 }
             }
         } else {
@@ -1169,7 +1169,7 @@ function navigateToSection(sectionId, sectionName, btn) {
             if (sectionId === 'maturity') renderBondMaturity();
             if (sectionId === 'bond-allocation') renderBondAllocation();
             if (sectionId === 'yield-analysis') renderBondYieldAnalysis();
-            if (sectionId === 'ai-insights') renderBondAIInsights();
+            if (sectionId === 'ai-lab') renderBondAIInsights();
 
         } else {
             console.warn(`Section bonds-section-${sectionId} not found`);
@@ -1191,7 +1191,7 @@ function navigateToSection(sectionId, sectionName, btn) {
             if (sectionId === 'cash-flow') renderBusinessCashFlow();
             if (sectionId === 'statements') renderBusinessStatements();
             if (sectionId === 'documentation') renderBusinessDocumentation();
-            if (sectionId === 'ai-insights') renderBusinessAIInsights();
+            if (sectionId === 'ai-lab') renderBusinessAIInsights();
 
         } else {
             console.warn(`Section business-section-${sectionId} not found`);
