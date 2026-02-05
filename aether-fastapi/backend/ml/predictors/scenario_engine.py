@@ -9,7 +9,24 @@ import logging
 from typing import Dict, List, Optional
 from datetime import datetime
 
-from services.coingecko_service import fetch_historical_prices
+# Try to import coingecko service, fallback to mock if httpx fails (Python 3.14 incompatibility)
+try:
+    from services.coingecko_service import fetch_historical_prices
+    USING_MOCK_DATA = False
+except (ImportError, AttributeError) as e:
+    logging.warning(f"Using mock data for scenario engine due to import error: {e}")
+    USING_MOCK_DATA = True
+    
+    async def fetch_historical_prices(symbol: str, days: int = 365) -> Optional[pd.DataFrame]:
+        """Mock historical price data"""
+        dates = pd.date_range(end=datetime.now(), periods=days, freq='D')
+        base_prices = {'BTC': 70000, 'ETH': 3500, 'SOL': 140, 'ADA': 0.6}
+        base = base_prices.get(symbol.upper(), 100)
+        np.random.seed(hash(symbol) % 2**32)
+        returns = np.random.normal(0.001, 0.03, days)
+        prices = base * np.cumprod(1 + returns)
+        return pd.DataFrame({'date': dates, 'price': prices})
+
 
 logger = logging.getLogger(__name__)
 
