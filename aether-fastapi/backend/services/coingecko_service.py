@@ -3,7 +3,9 @@ CoinGecko API Service
 Fetches historical cryptocurrency price data for ML predictions
 """
 
-import httpx
+import aiohttp
+import ssl
+import certifi
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
@@ -83,10 +85,18 @@ async def fetch_historical_prices(
     }
     
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(url, params=params)
-            response.raise_for_status()
-            data = response.json()
+        # Create SSL context
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                url, 
+                params=params, 
+                timeout=aiohttp.ClientTimeout(total=30),
+                ssl=ssl_context
+            ) as response:
+                response.raise_for_status()
+                data = await response.json()
         
         # Parse prices
         prices = data.get("prices", [])
@@ -110,8 +120,8 @@ async def fetch_historical_prices(
         logger.info(f"Fetched {len(df)} days of data for {symbol}")
         return df
     
-    except httpx.HTTPStatusError as e:
-        logger.error(f"HTTP error fetching {symbol}: {e.response.status_code}")
+    except aiohttp.ClientResponseError as e:
+        logger.error(f"HTTP error fetching {symbol}: {e.status}")
         return None
     except Exception as e:
         logger.error(f"Error fetching {symbol}: {str(e)}")
@@ -149,10 +159,18 @@ async def fetch_current_prices(symbols: List[str], vs_currency: str = "usd") -> 
     }
     
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(url, params=params)
-            response.raise_for_status()
-            data = response.json()
+        # Create SSL context
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                url, 
+                params=params, 
+                timeout=aiohttp.ClientTimeout(total=30),
+                ssl=ssl_context
+            ) as response:
+                response.raise_for_status()
+                data = await response.json()
         
         result = {}
         for coin_id, price_data in data.items():
@@ -168,6 +186,7 @@ async def fetch_current_prices(symbols: List[str], vs_currency: str = "usd") -> 
     except Exception as e:
         logger.error(f"Error fetching current prices: {str(e)}")
         return {}
+
 
 
 def calculate_technical_indicators(df: pd.DataFrame) -> pd.DataFrame:

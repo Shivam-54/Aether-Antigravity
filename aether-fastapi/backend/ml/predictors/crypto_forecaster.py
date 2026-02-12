@@ -11,37 +11,11 @@ from typing import Dict, List, Optional, Tuple
 import logging
 import asyncio
 
-# Try to import coingecko service, fallback to mock if httpx fails (Python 3.14 incompatibility)
-try:
-    from services.coingecko_service import (
-        fetch_historical_prices,
-        calculate_technical_indicators,
-        get_coin_id
-    )
-    USING_MOCK_DATA = False
-except (ImportError, AttributeError) as e:
-    # httpx has Python 3.14 compatibility issues, use mock data temporarily
-    USING_MOCK_DATA = True
-    logging.warning(f"Using mock data for crypto forecaster due to import error: {e}")
-    
-    async def fetch_historical_prices(symbol: str, days: int = 365) -> Optional[pd.DataFrame]:
-        """Mock historical price data"""
-        dates = pd.date_range(end=datetime.now(), periods=days, freq='D')
-        base_prices = {'BTC': 70000, 'ETH': 3500, 'SOL': 140, 'ADA': 0.6}
-        base = base_prices.get(symbol.upper(), 100)
-        np.random.seed(hash(symbol) % 2**32)
-        returns = np.random.normal(0.001, 0.03, days)
-        prices = base * np.cumprod(1 + returns)
-        return pd.DataFrame({'date': dates, 'price': prices})
-    
-    def calculate_technical_indicators(df: pd.DataFrame) -> pd.DataFrame:
-        """Mock technical indicators"""
-        return df
-    
-    def get_coin_id(symbol: str) -> str:
-        """Mock coin ID"""
-        return symbol.lower()
-
+from services.coingecko_service import (
+    fetch_historical_prices,
+    calculate_technical_indicators,
+    get_coin_id
+)
 
 logger = logging.getLogger(__name__)
 
@@ -105,19 +79,33 @@ class CryptoPriceForecaster:
         # Prepare data for Prophet
         prophet_df = self._prepare_prophet_data(df)
         
-        # Initialize Prophet with crypto-optimized settings
+        # Initialize Prophet with conservative settings for stable predictions
         model = Prophet(
             yearly_seasonality=True,
-            weekly_seasonality=True,
+            weekly_seasonality=False,  # Disabled for short-term stability
             daily_seasonality=False,
-            changepoint_prior_scale=0.1,  # Higher for volatile crypto
-            seasonality_prior_scale=10.0,
-            interval_width=0.80,  # 80% confidence interval
+            changepoint_prior_scale=0.03,  # Lower = more stable (reduced from 0.1)
+            seasonality_prior_scale=1.0,   # Conservative (reduced from 10.0)
+            interval_width=0.95,           # 95% confidence interval (increased from 80%)
             mcmc_samples=0  # Faster, less accurate (use >0 for production)
         )
         
-        # Add custom seasonality for crypto (24/7 market)
-        model.add_seasonality(name="monthly", period=30.5, fourier_order=5)
+        # Note: Removed aggressive monthly seasonality for more stable predictions
+        
+        try:
+            # Train the model (suppress Prophet's verbose output)
+            model.fit(prophet_df)
+            
+            # Store model
+            self.models[symbol] = model
+            self.last_trained[symbol] = datetime.now()
+            
+            logger.info(f"Successfully trained model for {symbol}")
+            return True
+        
+        except Exception as e:
+            logger.error(f"Training failed for {symbol}: {str(e)}")
+            return False
         
         try:
             # Train the model (suppress Prophet's verbose output)
@@ -164,25 +152,38 @@ class CryptoPriceForecaster:
             return None
         
         try:
+            # Fetch recent historical data for current price
+            df = await fetch_historical_prices(symbol, days=7)
+            if df is None or len(df) == 0:
+                return None
+            actual_current_price = float(df['price'].iloc[-1])
+            
             # Create future dataframe
             future = model.make_future_dataframe(periods=days_ahead)
             forecast = model.predict(future)
             
-            # Get current and predicted values
-            current_row = forecast.iloc[-days_ahead - 1] if len(forecast) > days_ahead else forecast.iloc[0]
+            # Get predicted value (last row is the furthest prediction)
             predicted_row = forecast.iloc[-1]
             
-            current_price = float(current_row["yhat"])
             predicted_price = float(predicted_row["yhat"])
             confidence_lower = float(predicted_row["yhat_lower"])
             confidence_upper = float(predicted_row["yhat_upper"])
             
-            # Calculate metrics
-            absolute_change = predicted_price - current_price
-            percent_change = (absolute_change / current_price) * 100 if current_price > 0 else 0
+            # Calculate metrics using actual current price
+            absolute_change = predicted_price - actual_current_price
+            percent_change = (absolute_change / actual_current_price) * 100 if actual_current_price > 0 else 0
+            
+            # Add validation: cap extreme predictions  
+            if abs(percent_change) > 50:
+                logger.warning(f"Extreme prediction detected for {symbol}: {percent_change}%, capping to ±50%")
+                percent_change = np.clip(percent_change, -50, 50)
+                predicted_price = actual_current_price * (1 + percent_change/100)
+                # Recalculate confidence bounds
+                range_width = confidence_upper - confidence_lower
+                confidence_lower = predicted_price - range_width/2
+                confidence_upper = predicted_price + range_width/2
             
             # Determine trend
-            trend_component = float(predicted_row["trend"]) - float(current_row["trend"])
             if percent_change > 5:
                 trend = "bullish"
                 trend_confidence = min(85, 50 + abs(percent_change))
@@ -199,7 +200,7 @@ class CryptoPriceForecaster:
             
             return {
                 "symbol": symbol,
-                "current_price": round(current_price, 2),
+                "current_price": round(actual_current_price, 2),
                 "predicted_price": round(predicted_price, 2),
                 "confidence_lower": round(confidence_lower, 2),
                 "confidence_upper": round(confidence_upper, 2),
@@ -211,7 +212,7 @@ class CryptoPriceForecaster:
                 "trend_confidence": round(trend_confidence, 1),
                 "volatility_score": round(volatility_score, 2),
                 "model_trained_at": self.last_trained.get(symbol, datetime.now()).isoformat(),
-                "confidence_interval": 80  # 80% CI
+                "confidence_interval": 95  # 95% CI
             }
         
         except Exception as e:

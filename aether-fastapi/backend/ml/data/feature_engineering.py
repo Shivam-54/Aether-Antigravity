@@ -86,7 +86,7 @@ class CryptoFeatureEngineer:
         ]
         
         # Fill NaN values (from indicators that need warmup)
-        df = df.fillna(method='bfill').fillna(method='ffill')
+        df = df.bfill().ffill()
         
         return df
     

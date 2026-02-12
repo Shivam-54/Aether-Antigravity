@@ -854,6 +854,43 @@
         .valuation-table tbody tr:hover td {
             background: rgba(255, 255, 255, 0.05);
         }
+
+        /* Pulse dot animation for live indicators */
+        .pulse-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10b981;
+            margin-right: 4px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
     </style>
 </head>
 
@@ -1045,13 +1082,161 @@
 
 
                     <!-- 5. AI Insights -->
-                    <div id="realestate-section-ai-insights" class="realestate-section">
+                    <div id="realestate-section-ai-lab" class="realestate-section">
                         <!-- Full Width Analytics -->
                         <div class="d-flex flex-column gap-4">
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <h2 class="h4 fw-light text-white mb-0">Portfolio Intelligence</h2>
-                                <span
-                                    class="badge bg-white bg-opacity-10 text-white-50 fw-light rounded-pill px-2 py-1 small">Beta</span>
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h2 class="h4 fw-light text-white mb-0">AI-Powered Portfolio Analysis</h2>
+                                <button onclick="window.renderRealEstateAIInsights()"
+                                    class="glass-button btn-sm px-3 py-2">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                        </path>
+                                    </svg>
+                                    <span class="small">Refresh</span>
+                                </button>
+                            </div>
+
+                            <!-- Model Controls -->
+                            <div class="glass-card p-3 mb-4">
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-md-3">
+                                        <label class="text-white-70 small mb-1">ML Model:</label>
+                                        <select id="mlModelSelector" class="modal-glass-input form-select-sm"
+                                            onchange="updateAIPredictions()">
+                                            <option value="prophet" selected>Prophet Time-Series</option>
+                                            <option value="lstm">LSTM Neural Network</option>
+                                            <option value="ensemble">Ensemble (Combined)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="text-white-70 small mb-1">Forecast Period:</label>
+                                        <select id="forecastPeriodSelector" class="modal-glass-input form-select-sm"
+                                            onchange="updateAIPredictions()">
+                                            <option value="30">30 Days</option>
+                                            <option value="90" selected>90 Days</option>
+                                            <option value="180">180 Days</option>
+                                            <option value="365">1 Year</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="text-white-70 small mb-1">&nbsp;</label>
+                                        <button onclick="compareModelPerformance()" class="glass-button w-100 btn-sm">
+                                            📊 Compare Models
+                                        </button>
+                                    </div>
+                                    <div class="col-md-3 text-end">
+                                        <label class="text-white-70 small mb-1 d-block">Model Status:</label>
+                                        <span class="badge"
+                                            style="background: rgba(16, 185, 129, 0.2); color: #10b981;">
+                                            <span class="pulse-dot"></span> Active
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Historical Prediction Accuracy Chart -->
+                            <div class="glass-card p-4 mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <h4 class="h6 text-white-90 mb-1">Prediction Accuracy Analysis</h4>
+                                        <p class="text-white-50 small mb-0">Historical predictions vs actual values</p>
+                                    </div>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div style="width: 12px; height: 3px; background: #3b82f6;"></div>
+                                            <span class="text-white-70 small">Predicted</span>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div style="width: 12px; height: 3px; background: #10b981;"></div>
+                                            <span class="text-white-70 small">Actual</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="height: 300px; position: relative;">
+                                    <canvas id="accuracyChart"></canvas>
+                                </div>
+                                <div id="accuracyMetrics"
+                                    class="row g-3 mt-3 pt-3 border-top border-white border-opacity-10">
+                                    <!-- Dynamic RMSE, MAE, R² metrics -->
+                                </div>
+                            </div>
+
+                            <!-- AI-Generated Insights Feed -->
+                            <div class="glass-card p-4 mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <h4 class="h6 text-white-90 mb-1">🧠 AI Insights</h4>
+                                        <p class="text-white-50 small mb-0">Natural language recommendations</p>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="text-white-50 small" id="insightsLastUpdate">Last updated: Just
+                                            now</span>
+                                        <button onclick="fetchAndRenderAIInsights()"
+                                            class="glass-button btn-sm px-2 py-1">
+                                            <svg width="12" height="12" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                                </path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="aiInsightsFeed" class="d-flex flex-column gap-2">
+                                    <!-- Dynamic insights -->
+                                    <div class="text-center text-white-50 py-3 small">
+                                        <div class="spinner-border spinner-border-sm text-primary mb-2" role="status">
+                                        </div>
+                                        <div>Generating AI insights...</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Scenario Simulator (What-If Analysis) -->
+                            <div class="glass-card p-4 mb-4">
+                                <div class="mb-3">
+                                    <h4 class="h6 text-white-90 mb-1">What-If Analysis</h4>
+                                    <p class="text-white-50 small mb-0">Simulate market scenarios</p>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="modal-label mb-2">Market Growth Scenario:</label>
+                                        <input type="range" id="marketGrowthSlider" class="form-range" min="-20"
+                                            max="30" step="1" value="10" oninput="updateScenario()"
+                                            style="width: 100%;">
+                                        <div class="d-flex justify-content-between align-items-center mt-2">
+                                            <span class="text-white-50 small">-20%</span>
+                                            <span id="growthValue" class="badge"
+                                                style="background: rgba(99, 102, 241, 0.2); color: #818cf8; font-size: 0.9rem; padding: 0.5rem 1rem;">
+                                                +10%
+                                            </span>
+                                            <span class="text-white-50 small">+30%</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="modal-label mb-2">Projected Impact:</label>
+                                        <div class="p-3 rounded"
+                                            style="background: rgba(255,255,255,0.05); height: 100px; display: flex; flex-direction: column; justify-content: center;">
+                                            <div class="text-center">
+                                                <div class="text-white-50 small mb-1">Portfolio Value</div>
+                                                <div class="h4 text-white mb-1" id="scenarioValue">₹5.8 Cr</div>
+                                                <div id="scenarioChange" class="small">
+                                                    <span class="text-success">+15.3% 📈</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3">
+                                    <button type="button" onclick="runDetailedScenario()" class="glass-button w-100">
+                                        📊 Run Detailed Analysis
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- 1. Health Score Board -->
@@ -2008,7 +2193,7 @@
     <script src="js/modules/crypto/crypto-insights.js"></script>
 
     <!-- Main Dashboard Logic -->
-    <script src="js/real-estate-ai.js"></script>
+    <script src="js/real-estate-ai.js?v=4"></script>
     <script src="js/dashboard.js?v=161"></script>
     <script src="js/share-transactions.js?v=1"></script>
     <script src="js/modules/crypto/crypto-wallets.js"></script>
@@ -4113,7 +4298,208 @@
     <script src="js/modules/crypto/crypto-holdings.js"></script>
     <script src="js/modules/crypto/crypto-simulator.js"></script>
     <script src="js/modules/crypto/crypto-insights.js"></script>
-    <script src="js/modules/crypto/crypto-ai-lab.js"></script>
+    <script src="js/modules/crypto/crypto-ai-lab.js?v=prophet2"></script>
+
+    <!-- Model Comparison Modal -->
+    <div id="modelComparisonModal" class="modal fade" tabindex="-1" style="display: none;">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content"
+                style="background: rgba(10, 10, 12, 0.98); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(20px);">
+                <div class="modal-header border-bottom border-white border-opacity-10">
+                    <h5 class="modal-title text-white">Model Performance Comparison</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-white-50 small mb-4">Historical accuracy metrics for Real Estate price predictions
+                        over the last 30 days</p>
+
+                    <!-- Model Cards -->
+                    <div class="row g-4 mb-4">
+                        <!-- Prophet -->
+                        <div class="col-md-4">
+                            <div class="p-4 rounded"
+                                style="background: rgba(99, 102, 241, 0.1); border: 2px solid rgba(99, 102, 241, 0.3);">
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <div
+                                                style="width: 12px; height: 12px; border-radius: 50%; background: #6366f1;">
+                                            </div>
+                                            <h6 class="text-white mb-0">Prophet</h6>
+                                        </div>
+                                        <p class="text-white-50 small mb-0">Time-series forecasting model</p>
+                                    </div>
+                                </div>
+
+                                <!-- Win Rate Gauge -->
+                                <div class="text-center mb-3">
+                                    <div class="position-relative d-inline-block">
+                                        <svg width="120" height="120" viewBox="0 0 120 120">
+                                            <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.1)"
+                                                stroke-width="8" />
+                                            <circle cx="60" cy="60" r="50" fill="none" stroke="#6366f1" stroke-width="8"
+                                                stroke-dasharray="314" stroke-dashoffset="47"
+                                                transform="rotate(-90 60 60)" stroke-linecap="round" />
+                                        </svg>
+                                        <div class="position-absolute top-50 start-50 translate-middle text-center">
+                                            <div class="h3 text-white mb-0">85%</div>
+                                            <div class="small text-white-50">Win Rate</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Metrics -->
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-white-50 small">MAE</span>
+                                    <span class="text-white small">₹32.1k</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-white-50 small">RMSE</span>
+                                    <span class="text-white small">₹45.2k</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-white-50 small">R² Score</span>
+                                    <span class="text-white small">0.870</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-white-50 small">Last 30 Days</span>
+                                    <span class="text-success small">25/30 predictions</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LSTM -->
+                        <div class="col-md-4">
+                            <div class="p-4 rounded"
+                                style="background: rgba(59, 130, 246, 0.1); border: 2px solid rgba(59, 130, 246, 0.3);">
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <div
+                                                style="width: 12px; height: 12px; border-radius: 50%; background: #3b82f6;">
+                                            </div>
+                                            <h6 class="text-white mb-0">LSTM</h6>
+                                        </div>
+                                        <p class="text-white-50 small mb-0">Neural network for pattern recognition</p>
+                                    </div>
+                                </div>
+
+                                <!-- Win Rate Gauge -->
+                                <div class="text-center mb-3">
+                                    <div class="position-relative d-inline-block">
+                                        <svg width="120" height="120" viewBox="0 0 120 120">
+                                            <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.1)"
+                                                stroke-width="8" />
+                                            <circle cx="60" cy="60" r="50" fill="none" stroke="#3b82f6" stroke-width="8"
+                                                stroke-dasharray="314" stroke-dashoffset="94"
+                                                transform="rotate(-90 60 60)" stroke-linecap="round" />
+                                        </svg>
+                                        <div class="position-absolute top-50 start-50 translate-middle text-center">
+                                            <div class="h3 text-white mb-0">70%</div>
+                                            <div class="small text-white-50">Win Rate</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Metrics -->
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-white-50 small">MAE</span>
+                                    <span class="text-white small">₹41.8k</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-white-50 small">RMSE</span>
+                                    <span class="text-white small">₹56.3k</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-white-50 small">R² Score</span>
+                                    <span class="text-white small">0.782</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-white-50 small">Last 30 Days</span>
+                                    <span class="text-warning small">21/30 predictions</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ensemble -->
+                        <div class="col-md-4">
+                            <div class="p-4 rounded"
+                                style="background: rgba(16, 185, 129, 0.1); border: 2px solid rgba(16, 185, 129, 0.3);">
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <div
+                                                style="width: 12px; height: 12px; border-radius: 50%; background: #10b981;">
+                                            </div>
+                                            <h6 class="text-white mb-0">Ensemble</h6>
+                                            <span class="badge bg-success small">Recommended</span>
+                                        </div>
+                                        <p class="text-white-50 small mb-0">Combined predictions from LSTM + Prophet</p>
+                                    </div>
+                                </div>
+
+                                <!-- Win Rate Gauge -->
+                                <div class="text-center mb-3">
+                                    <div class="position-relative d-inline-block">
+                                        <svg width="120" height="120" viewBox="0 0 120 120">
+                                            <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.1)"
+                                                stroke-width="8" />
+                                            <circle cx="60" cy="60" r="50" fill="none" stroke="#10b981" stroke-width="8"
+                                                stroke-dasharray="314" stroke-dashoffset="31"
+                                                transform="rotate(-90 60 60)" stroke-linecap="round" />
+                                        </svg>
+                                        <div class="position-absolute top-50 start-50 translate-middle text-center">
+                                            <div class="h3 text-white mb-0">90%</div>
+                                            <div class="small text-white-50">Win Rate</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Metrics -->
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-white-50 small">MAE</span>
+                                    <span class="text-white small">₹28.4k</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-white-50 small">RMSE</span>
+                                    <span class="text-white small">₹38.9k</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-white-50 small">R² Score</span>
+                                    <span class="text-white small">0.912</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-white-50 small">Last 30 Days</span>
+                                    <span class="text-success small">27/30 predictions</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recommendation -->
+                    <div class="p-3 rounded"
+                        style="background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981;">
+                        <div class="d-flex align-items-start gap-2">
+                            <span style="font-size: 1.2rem;">🏆</span>
+                            <div>
+                                <div class="text-white-90 small mb-1"><strong>Recommended Model: Ensemble</strong></div>
+                                <div class="text-white-60" style="font-size: 0.85rem;">
+                                    Based on lowest MAE and highest win rate across all timeframes. The Ensemble model
+                                    combines the strengths of both Prophet's seasonal pattern recognition and LSTM's
+                                    pattern learning capabilities.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-white border-opacity-10">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 

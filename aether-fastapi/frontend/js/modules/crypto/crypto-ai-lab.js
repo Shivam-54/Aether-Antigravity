@@ -136,7 +136,7 @@ class CryptoAILab {
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
-                    <p class="text-white-50 mt-3 small">Training LSTM model and generating predictions...</p>
+                    <p class="text-white-50 mt-3 small">Training Prophet model and generating predictions...</p>
                 </div>
 
                 <!-- Predictions Content -->
@@ -163,59 +163,58 @@ class CryptoAILab {
         contentEl.innerHTML = '';
 
         try {
-            // Fetch real Prophet predictions from compare endpoint
-            const response = await fetch(`${this.apiBaseUrl}/compare/${symbol}`);
-            const compareData = await response.json();
+            // Fetch Prophet predictions directly (more reliable than LSTM)
+            const responses = await Promise.all([
+                fetch(`${this.apiBaseUrl}/predict/prophet/${symbol}?days_ahead=1`),
+                fetch(`${this.apiBaseUrl}/predict/prophet/${symbol}?days_ahead=7`),
+                fetch(`${this.apiBaseUrl}/predict/prophet/${symbol}?days_ahead=30`)
+            ]);
 
-            // Extract predictions from all models (REAL DATA - not mock)
-            // API returns: compareData.lstm, compareData.prophet, compareData.ensemble
-            const prophetData = compareData.prophet || {};
-            const lstmData = compareData.lstm || {};
-            const ensembleData = compareData.ensemble || {};
+            const [pred1Day, pred7Day, pred30Day] = await Promise.all(
+                responses.map(r => r.json())
+            );
 
-            // Use LSTM's current_price (fresh data) instead of Prophet's (stale from training time)
-            const currentPrice = lstmData.current_price || compareData.current_price || prophetData.current_price;
-
-            // Helper function to safely extract prediction data with fallback chain
-            const getPrediction = (horizon) => {
-                // Priority: Ensemble > LSTM > Prophet (for best accuracy)
-                const ensemblePred = ensembleData.predictions?.[horizon];
-                const lstmPred = lstmData.predictions?.[horizon];
-                const prophetPred = prophetData.predictions?.[horizon];
-
-                // Use ensemble if available (most accurate), fallback to LSTM, then Prophet
-                const pred = ensemblePred || lstmPred || prophetPred || {};
-
-                return {
-                    price: pred.price || currentPrice,
-                    change: pred.change || 0,
-                    change_percent: pred.change_percent || 0,
-                    confidence: pred.confidence || 0.65,
-                    confidence_lower: pred.confidence_lower || (currentPrice * 0.95),
-                    confidence_upper: pred.confidence_upper || (currentPrice * 1.05)
-                };
-            };
+            // Use the current price from the most recent prediction
+            const currentPrice = pred1Day.current_price;
 
             const data = {
                 symbol: symbol,
-                model: ensembleData.predictions ? 'Ensemble' : (lstmData.predictions ? 'LSTM' : 'Prophet'),
+                model: 'Prophet',
                 current_price: currentPrice,
                 predictions: {
-                    '1_day': getPrediction('1_day'),
-                    '7_day': getPrediction('7_day'),
-                    '30_day': getPrediction('30_day')
+                    '1_day': {
+                        price: pred1Day.predicted_price,
+                        change: pred1Day.absolute_change,
+                        change_percent: pred1Day.percent_change,
+                        confidence: pred1Day.trend_confidence / 100,
+                        confidence_lower: pred1Day.confidence_lower,
+                        confidence_upper: pred1Day.confidence_upper
+                    },
+                    '7_day': {
+                        price: pred7Day.predicted_price,
+                        change: pred7Day.absolute_change,
+                        change_percent: pred7Day.percent_change,
+                        confidence: pred7Day.trend_confidence / 100,
+                        confidence_lower: pred7Day.confidence_lower,
+                        confidence_upper: pred7Day.confidence_upper
+                    },
+                    '30_day': {
+                        price: pred30Day.predicted_price,
+                        change: pred30Day.absolute_change,
+                        change_percent: pred30Day.percent_change,
+                        confidence: pred30Day.trend_confidence / 100,
+                        confidence_lower: pred30Day.confidence_lower,
+                        confidence_upper: pred30Day.confidence_upper
+                    }
                 },
                 model_metrics: {
-                    // Show ensemble/LSTM metrics if available, fallback to Prophet
-                    mae: ensembleData.model_metrics?.mae || lstmData.model_metrics?.train_rmse,
-                    rmse: ensembleData.model_metrics?.rmse || lstmData.model_metrics?.val_rmse,
-                    trend_confidence: prophetData.trend_confidence,
-                    volatility_score: prophetData.volatility_score,
-                    model_trained_at: lstmData.model_metrics?.model_trained || prophetData.model_trained_at,
-                    prediction_date: prophetData.prediction_date,
-                    model_used: ensembleData.predictions ? 'Ensemble' : (lstmData.predictions ? 'LSTM' : 'Prophet')
+                    trend_confidence: pred1Day.trend_confidence,
+                    volatility_score: pred1Day.volatility_score,
+                    model_trained_at: pred1Day.model_trained_at,
+                    prediction_date: pred1Day.prediction_date,
+                    model_used: 'Prophet'
                 },
-                timestamp: compareData.timestamp
+                timestamp: new Date().toISOString()
             };
 
             // Hide loading
