@@ -1150,6 +1150,13 @@ function navigateToSection(sectionId, sectionName, btn) {
                     console.error('renderShareTransactions not found');
                 }
             }
+
+            // If navigating to AI Lab section, initialize Shares AI Lab
+            if (sectionId === 'ai-lab') {
+                if (typeof window.initializeSharesAILab === 'function') {
+                    window.initializeSharesAILab();
+                }
+            }
         } else {
             console.warn(`Section shares-section-${sectionId} not found`);
             // Fallback to overview

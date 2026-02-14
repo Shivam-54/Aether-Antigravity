@@ -1619,25 +1619,106 @@
                     </div>
 
                     <!-- 6. AI Insights Section -->
-                    <div id="shares-section-ai-insights" class="shares-section" style="display: none;">
+                    <div id="shares-section-ai-lab" class="shares-section" style="display: none;">
                         <div class="glass-header mb-4">
                             <h2 class="h3 fw-light mb-2">AI Insights</h2>
-                            <p class="text-white-50 fw-light">AI-powered analysis of your share
-                                portfolio</p>
+                            <p class="text-white-50 fw-light">AI-powered stock price predictions</p>
                         </div>
-                        <div class="glass-card glass-empty-state">
-                            <div class="glass-empty-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-                                    stroke-linejoin="round" class="text-white-80">
-                                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                                    <path d="M2 17l10 5 10-5"></path>
-                                    <path d="M2 12l10 5 10-5"></path>
-                                </svg>
+
+                        <!-- Controls Row -->
+                        <div class="glass-card mb-4 p-3">
+                            <div class="row g-3 align-items-center">
+                                <div class="col-md-4">
+                                    <label class="form-label text-white-80 small mb-1">Stock Ticker</label>
+                                    <select id="ticker-select" class="form-select glass-input"
+                                        onchange="onTickerChange(this.value)">
+                                        <option value="AAPL">AAPL - Apple Inc.</option>
+                                        <option value="MSFT">MSFT - Microsoft</option>
+                                        <option value="GOOGL">GOOGL - Alphabet</option>
+                                        <option value="AMZN">AMZN - Amazon</option>
+                                        <option value="TSLA">TSLA - Tesla</option>
+                                        <option value="NVDA">NVDA - NVIDIA</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-white-80 small mb-1">Prediction Horizon</label>
+                                    <select id="horizon-select" class="form-select glass-input"
+                                        onchange="onHorizonChange(this.value)">
+                                        <option value="7">7 Days</option>
+                                        <option value="30" selected>30 Days</option>
+                                        <option value="90">90 Days</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-white-80 small mb-1">ML Model</label>
+                                    <div class="px-3 py-2 rounded"
+                                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                                        <span class="text-white-90 small">Prophet 60% + ARIMA 40%</span>
+                                    </div>
+                                </div>
                             </div>
-                            <h3 class="h4 fw-light text-white-90 mb-2">Coming Soon</h3>
-                            <p class="text-white-50 fw-light">AI-powered portfolio analysis is under
-                                development.</p>
+                        </div>
+
+                        <!-- Metrics Row -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <div class="glass-card p-3 text-center">
+                                    <div class="text-white-50 small mb-2">Current Price</div>
+                                    <div class="h4 text-white fw-light mb-0" id="current-price-value">--</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="glass-card p-3 text-center">
+                                    <div class="text-white-50 small mb-2">Predicted Price</div>
+                                    <div class="h4 text-white fw-light mb-0" id="predicted-price-value">--</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="glass-card p-3 text-center">
+                                    <div class="text-white-50 small mb-2">Expected Change</div>
+                                    <div class="h4 fw-light mb-0" id="change-pct-value">--</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="glass-card p-3 text-center">
+                                    <div class="text-white-50 small mb-2">Model RMSE</div>
+                                    <div class="h4 text-white fw-light mb-0" id="rmse-value">--</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Price Prediction Chart -->
+                        <div class="glass-card mb-4 p-4">
+                            <div id="shares-prediction-chart" style="min-height: 400px;">
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-light" role="status"
+                                        style="width: 3rem; height: 3rem;">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="text-white-50 mt-3">Loading predictions...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Info Card -->
+                        <div class="glass-card p-4">
+                            <h3 class="h5 fw-light mb-3 text-white">About These Predictions</h3>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="text-white-50 small">
+                                        <strong class="text-white">Ensemble Model:</strong><br>
+                                        Combines Prophet (60%) for trend & seasonality with ARIMA (40%) for time series
+                                        analysis.
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="text-white-50 small">
+                                        <strong class="text-white">Confidence Intervals:</strong><br>
+                                        The shaded area represents 95% confidence. Prices have 95% probability of
+                                        falling within this range.
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2200,6 +2281,7 @@
     <script src="js/analytics-utils.js"></script> <!-- NEW: Analytics Logic -->
     <script src="js/shares-module.js?v=12"></script>
     <script src="js/shares-performance.js?v=1"></script>
+    <script src="js/shares-ai.js?v=1"></script> <!-- NEW: AI Lab price predictions -->
 
 
     <!-- Add Property Modal -->
