@@ -1,10 +1,11 @@
 /**
- * Shares AI Lab - Price Prediction Frontend
+ * Shares AI Lab - Price Prediction & Risk Analysis Frontend
  */
 
 let currentTicker = 'AAPL';
 let currentHorizon = 30;
 let predictionChart = null;
+let riskChart = null;
 
 /**
  * Initialize Shares AI Lab when section becomes visible
@@ -12,6 +13,7 @@ let predictionChart = null;
 function initializeSharesAILab() {
     console.log('Initializing Shares AI Lab');
     loadSharesForPrediction();
+    loadPortfolioRiskAnalysis();
 }
 
 /**
@@ -288,6 +290,242 @@ function onTickerChange(newTicker) {
 
 function onHorizonChange(newHorizon) {
     loadPricePrediction(currentTicker, parseInt(newHorizon));
+}
+
+// ===== PORTFOLIO RISK ANALYSIS =====
+
+/**
+ * Load portfolio risk analysis
+ */
+async function loadPortfolioRiskAnalysis() {
+    try {
+        showRiskLoading();
+
+        // Get user's shares using correct API pattern
+        const response = await fetch(`${API_BASE_URL}/shares/holdings`, {
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch shares');
+        }
+
+        const shares = await response.json();
+        if (!shares || shares.length === 0) {
+            showRiskEmptyState();
+            return;
+        }
+
+        // Calculate total portfolio value and tickers
+        const tickers = [...new Set(shares.map(s => s.symbol))].join(',');
+        const totalValue = shares.reduce((sum, s) => sum + (s.quantity * s.avg_buy_price), 0);
+
+        // Call risk analysis API
+        const riskResponse = await fetch(
+            `/api/shares/ml/risk-analysis?tickers=${tickers}&investment_amount=${totalValue}&simulations=5000`
+        );
+
+        if (!riskResponse.ok) {
+            throw new Error('Risk analysis failed');
+        }
+
+        const result = await riskResponse.json();
+
+        if (result.status === 'success') {
+            displayRiskMetrics(result.data);
+            displayRiskChart(result.data);
+        }
+
+    } catch (error) {
+        console.error('Error loading risk analysis:', error);
+        showRiskError(error.message);
+    }
+}
+
+/**
+ * Display risk metrics in cards
+ */
+function displayRiskMetrics(data) {
+    // VaR 95%
+    const var95El = document.getElementById('var-95-value');
+    if (var95El) {
+        var95El.textContent = '$' + data.risk_metrics.var_95.toLocaleString();
+    }
+
+    // CVaR 95%
+    const cvar95El = document.getElementById('cvar-95-value');
+    if (cvar95El) {
+        cvar95El.textContent = '$' + data.risk_metrics.cvar_95.toLocaleString();
+    }
+
+    // Sharpe Ratio
+    const sharpeEl = document.getElementById('sharpe-ratio-value');
+    if (sharpeEl) {
+        const sharpe = data.risk_metrics.sharpe_ratio;
+        sharpeEl.textContent = sharpe.toFixed(3);
+        // Color code: >1 good, 0-1 okay, <0 bad
+        if (sharpe > 1) {
+            sharpeEl.style.color = '#10b981';
+        } else if (sharpe > 0) {
+            sharpeEl.style.color = '#fbbf24';
+        } else {
+            sharpeEl.style.color = '#ef4444';
+        }
+    }
+
+    // Expected Return
+    const returnEl = document.getElementById('expected-return-value');
+    if (returnEl) {
+        const ret = data.portfolio_statistics.expected_return_pct;
+        returnEl.textContent = (ret >= 0 ? '+' : '') + ret.toFixed(2) + '%';
+        returnEl.style.color = ret >= 0 ? '#10b981' : '#ef4444';
+    }
+}
+
+/**
+ * Display risk distribution chart
+ */
+function displayRiskChart(data) {
+    const chartContainer = document.getElementById('shares-risk-chart');
+    if (!chartContainer) return;
+
+    // Destroy existing chart
+    if (riskChart) {
+        riskChart.destroy();
+    }
+
+    // Create canvas
+    const canvas = document.createElement('canvas');
+    canvas.id = 'riskCanvas';
+    canvas.height = 300;
+
+    chartContainer.innerHTML = '';
+    chartContainer.appendChild(canvas);
+
+    const ctx = canvas.getContext('2d');
+
+    // Prepare data
+    const bins = data.distribution.bins;
+    const frequencies = data.distribution.frequencies;
+    const initial = data.portfolio_info.initial_investment;
+
+    riskChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: bins.map(b => '$' + Math.round(b).toLocaleString()),
+            datasets: [{
+                label: 'Frequency',
+                data: frequencies,
+                backgroundColor: frequencies.map((_, i) => {
+                    const value = bins[i];
+                    if (value < initial * 0.9) return 'rgba(239, 68, 68, 0.7)'; // Red for losses
+                    if (value > initial * 1.1) return 'rgba(16, 185, 129, 0.7)'; // Green for gains
+                    return 'rgba(99, 102, 241, 0.7)'; // Blue for neutral
+                }),
+                borderColor: 'rgba(255, 255, 255, 0.2)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: `Portfolio Value Distribution (${data.num_simulations.toLocaleString()} Simulations)`,
+                    color: '#fff',
+                    font: { size: 16 }
+                },
+                subtitle: {
+                    display: true,
+                    text: '💡 Click legend to toggle visibility',
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    font: { size: 11, style: 'italic' }
+                },
+                legend: {
+                    labels: { color: '#fff' }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return 'Occurrences: ' + context.parsed.y;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        color: '#ccc',
+                        maxRotation: 45,
+                        minRotation: 45,
+                        autoSkip: true,
+                        maxTicksLimit: 10
+                    },
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    title: {
+                        display: true,
+                        text: 'Portfolio Value',
+                        color: '#fff'
+                    }
+                },
+                y: {
+                    ticks: { color: '#ccc' },
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    title: {
+                        display: true,
+                        text: 'Frequency',
+                        color: '#fff'
+                    }
+                }
+            }
+        }
+    });
+}
+
+/**
+ * Show loading state for risk analysis
+ */
+function showRiskLoading() {
+    const chartContainer = document.getElementById('shares-risk-chart');
+    if (chartContainer) {
+        chartContainer.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-white-50 mt-3">Running Monte Carlo simulation...</p>
+            </div>
+        `;
+    }
+}
+
+/**
+ * Show empty state for risk analysis
+ */
+function showRiskEmptyState() {
+    const chartContainer = document.getElementById('shares-risk-chart');
+    if (chartContainer) {
+        chartContainer.innerHTML = `
+            <div class="text-center py-5">
+                <p class="text-white-50">Add shares to your portfolio to see risk analysis</p>
+            </div>
+        `;
+    }
+}
+
+/**
+ * Show error state for risk analysis
+ */
+function showRiskError(message) {
+    const chartContainer = document.getElementById('shares-risk-chart');
+    if (chartContainer) {
+        chartContainer.innerHTML = `
+            <div class="text-center py-5">
+                <p class="text-danger">Error: ${message}</p>
+            </div>
+        `;
+    }
 }
 
 // Make function globally accessible

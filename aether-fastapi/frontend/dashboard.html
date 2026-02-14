@@ -1720,6 +1720,82 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- PORTFOLIO RISK ANALYSIS SECTION -->
+                        <div class="mt-5">
+                            <h3 class="h4 fw-light mb-3 text-white">Portfolio Risk Analysis</h3>
+
+                            <!-- Risk Metrics Row -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-3">
+                                    <div class="glass-card p-3 text-center">
+                                        <div class="text-white-50 small mb-2">VaR (95%)</div>
+                                        <div class="h5 fw-light mb-0 text-danger" id="var-95-value">--</div>
+                                        <div class="text-white-50" style="font-size: 0.7rem;">Maximum Loss</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="glass-card p-3 text-center">
+                                        <div class="text-white-50 small mb-2">CVaR (95%)</div>
+                                        <div class="h5 fw-light mb-0 text-danger" id="cvar-95-value">--</div>
+                                        <div class="text-white-50" style="font-size: 0.7rem;">Avg. Loss (Worst 5%)</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="glass-card p-3 text-center">
+                                        <div class="text-white-50 small mb-2">Sharpe Ratio</div>
+                                        <div class="h5 fw-light mb-0" id="sharpe-ratio-value">--</div>
+                                        <div class="text-white-50" style="font-size: 0.7rem;">Risk-Adjusted Return</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="glass-card p-3 text-center">
+                                        <div class="text-white-50 small mb-2">Expected Return</div>
+                                        <div class="h5 fw-light mb-0" id="expected-return-value">--</div>
+                                        <div class="text-white-50" style="font-size: 0.7rem;">1 Year Projection</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Risk Distribution Chart -->
+                            <div class="glass-card mb-4 p-4">
+                                <div id="shares-risk-chart" style="min-height: 400px;">
+                                    <div class="text-center py-5">
+                                        <div class="spinner-border text-light" role="status"
+                                            style="width: 3rem; height: 3rem;">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="text-white-50 mt-3">Loading risk analysis...</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Risk Info Card -->
+                            <div class="glass-card p-4">
+                                <h4 class="h6 fw-light mb-3 text-white">Understanding Risk Metrics</h4>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div class="text-white-50 small">
+                                            <strong class="text-white">VaR (Value at Risk):</strong><br>
+                                            Maximum expected loss at 95% confidence. There's only a 5% chance of losing
+                                            more.
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="text-white-50 small">
+                                            <strong class="text-white">CVaR (Conditional VaR):</strong><br>
+                                            Average loss in the worst 5% of scenarios. Shows tail risk exposure.
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="text-white-50 small">
+                                            <strong class="text-white">Sharpe Ratio:</strong><br>
+                                            Risk-adjusted return. >1 is good, >2 is excellent. Negative means loss.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
