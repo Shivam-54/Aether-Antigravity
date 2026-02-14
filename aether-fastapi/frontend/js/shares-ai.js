@@ -14,6 +14,7 @@ function initializeSharesAILab() {
     console.log('Initializing Shares AI Lab');
     loadSharesForPrediction();
     loadPortfolioRiskAnalysis();
+    loadAIInsights();
 }
 
 /**
@@ -526,6 +527,123 @@ function showRiskError(message) {
             </div>
         `;
     }
+}
+
+// ===== AI-GENERATED INSIGHTS =====
+
+/**
+ * Load AI-generated portfolio insights
+ */
+async function loadAIInsights() {
+    try {
+        const insightsContainer = document.getElementById('ai-insights-feed');
+        if (!insightsContainer) return;
+
+        insightsContainer.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-light" role="status" style="width: 2rem; height: 2rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-white-50 mt-2 small">Generating AI insights...</p>
+            </div>
+        `;
+
+        // Get user's shares
+        const response = await fetch(`${API_BASE_URL}/shares/holdings`, {
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch shares');
+
+        const shares = await response.json();
+        if (!shares || shares.length === 0) {
+            insightsContainer.innerHTML = `
+                <div class="text-center py-4">
+                    <p class="text-white-50 small">Add shares to get AI-powered insights</p>
+                </div>
+            `;
+            return;
+        }
+
+        const tickers = [...new Set(shares.map(s => s.symbol))].join(',');
+        const totalValue = shares.reduce((sum, s) => sum + (s.quantity * s.avg_buy_price), 0);
+
+        const insightsResponse = await fetch(
+            `/api/shares/ml/insights?tickers=${tickers}&portfolio_value=${totalValue}`
+        );
+
+        if (!insightsResponse.ok) throw new Error('Insights generation failed');
+
+        const result = await insightsResponse.json();
+
+        if (result.status === 'success') {
+            displayInsights(result.data, insightsContainer);
+        }
+
+    } catch (error) {
+        console.error('Error loading AI insights:', error);
+        const container = document.getElementById('ai-insights-feed');
+        if (container) {
+            container.innerHTML = `
+                <div class="text-center py-4">
+                    <p class="text-danger small">Error: ${error.message}</p>
+                    <button class="btn btn-sm btn-outline-light mt-2" onclick="loadAIInsights()">Retry</button>
+                </div>
+            `;
+        }
+    }
+}
+
+/**
+ * Display AI insights in the feed
+ */
+function displayInsights(data, container) {
+    if (!data.insights || data.insights.length === 0) {
+        container.innerHTML = '<p class="text-white-50 text-center py-3">No insights available</p>';
+        return;
+    }
+
+    const severityColors = {
+        'high': 'border-left: 3px solid #ef4444;',
+        'medium': 'border-left: 3px solid #fbbf24;',
+        'low': 'border-left: 3px solid #10b981;'
+    };
+
+    const categoryBadges = {
+        'overview': '<span class="badge" style="background: rgba(99,102,241,0.3); color: #a5b4fc;">Overview</span>',
+        'stock': '<span class="badge" style="background: rgba(59,130,246,0.3); color: #93c5fd;">Stock</span>',
+        'risk': '<span class="badge" style="background: rgba(239,68,68,0.3); color: #fca5a5;">Risk</span>',
+        'opportunity': '<span class="badge" style="background: rgba(16,185,129,0.3); color: #6ee7b7;">Opportunity</span>',
+        'action': '<span class="badge" style="background: rgba(251,191,36,0.3); color: #fde68a;">Action</span>'
+    };
+
+    let html = '';
+
+    for (const insight of data.insights) {
+        const borderStyle = severityColors[insight.severity] || severityColors['medium'];
+        const badge = categoryBadges[insight.category] || categoryBadges['overview'];
+        const tickerTag = insight.ticker ? `<span class="badge bg-dark ms-1">${insight.ticker}</span>` : '';
+
+        html += `
+            <div class="insight-card p-3 mb-3" style="${borderStyle} background: rgba(255,255,255,0.03); border-radius: 8px;">
+                <div class="d-flex align-items-center mb-2">
+                    <span class="me-2" style="font-size: 1.2rem;">${insight.icon}</span>
+                    <strong class="text-white small">${insight.title}</strong>
+                    <div class="ms-auto">${badge}${tickerTag}</div>
+                </div>
+                <p class="text-white-50 small mb-0">${insight.content}</p>
+            </div>
+        `;
+    }
+
+    // Add timestamp
+    const genTime = data.generated_at ? new Date(data.generated_at).toLocaleTimeString() : 'now';
+    html += `<div class="text-end mt-2">
+        <span class="text-white-50" style="font-size: 0.7rem;">Generated at ${genTime}</span>
+        <button class="btn btn-sm btn-outline-light ms-2" style="font-size: 0.7rem; padding: 2px 8px;" onclick="loadAIInsights()">🔄 Refresh</button>
+    </div>`;
+
+    container.innerHTML = html;
 }
 
 // Make function globally accessible

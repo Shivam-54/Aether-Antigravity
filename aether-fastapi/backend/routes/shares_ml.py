@@ -9,6 +9,7 @@ from typing import Optional, List
 from database import get_db
 from ml.shares.price_predictor import PricePredictor
 from ml.shares.risk_analyzer import RiskAnalyzer
+from ml.shares.insights_generator import InsightsGenerator
 
 # Isolated router for Shares ML
 router = APIRouter(prefix="/api", tags=["Shares ML"])
@@ -116,6 +117,48 @@ async def get_risk_analysis(
         )
 
 
+@router.get("/shares/ml/insights")
+async def get_portfolio_insights(
+    tickers: str = Query(..., description="Comma-separated list of tickers"),
+    portfolio_value: Optional[float] = Query(None, description="Total portfolio value"),
+    db: Session = Depends(get_db)
+):
+    """
+    AI-generated portfolio insights using Google Gemini.
+    
+    Args:
+        tickers: Comma-separated ticker symbols
+        portfolio_value: Optional total portfolio value for context
+    
+    Returns:
+        Structured insights with categories, severity, and actionable content
+    """
+    try:
+        ticker_list = [t.strip().upper() for t in tickers.split(',')]
+        
+        generator = InsightsGenerator()
+        results = generator.generate_insights(
+            tickers=ticker_list,
+            portfolio_value=portfolio_value
+        )
+        
+        return {
+            "status": "success",
+            "data": results
+        }
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid input: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Insights generation error: {str(e)}"
+        )
+
+
 @router.get("/shares/ml/test")
 async def test_shares_ml():
     """Test endpoint to verify Shares ML router is working"""
@@ -125,6 +168,7 @@ async def test_shares_ml():
         "endpoints": [
             "/api/shares/ml/price-prediction",
             "/api/shares/ml/risk-analysis",
+            "/api/shares/ml/insights",
             "/api/shares/ml/test"
         ]
     }
