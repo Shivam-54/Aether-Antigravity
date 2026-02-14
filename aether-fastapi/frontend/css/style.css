@@ -1246,3 +1246,55 @@ tr:hover .row-action {
 .ai-lab-panel {
     animation: fadeIn 0.3s ease;
 }
+
+/* ═══════════════════════════════════════════════════════
+   SENTIMENT ANALYSIS — Pill badges & headline items
+   ═══════════════════════════════════════════════════════ */
+
+.sentiment-pill {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    background: rgba(96, 165, 250, 0.12);
+    color: #93c5fd;
+    border: 1px solid rgba(96, 165, 250, 0.15);
+    transition: all 0.25s ease;
+    cursor: default;
+}
+
+.sentiment-pill:hover {
+    background: rgba(96, 165, 250, 0.2);
+    border-color: rgba(96, 165, 250, 0.3);
+    transform: translateY(-1px);
+}
+
+.sentiment-pill-secondary {
+    background: rgba(167, 139, 250, 0.1);
+    color: #c4b5fd;
+    border-color: rgba(167, 139, 250, 0.15);
+}
+
+.sentiment-pill-secondary:hover {
+    background: rgba(167, 139, 250, 0.2);
+    border-color: rgba(167, 139, 250, 0.3);
+}
+
+.sentiment-headline-item {
+    transition: background 0.2s ease;
+    padding: 4px 6px;
+    border-radius: 8px;
+    margin-left: -6px;
+    margin-right: -6px;
+}
+
+.sentiment-headline-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.sentiment-headline-item:last-child {
+    border-bottom: none !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}

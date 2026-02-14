@@ -45,6 +45,10 @@ function switchAILabTab(tabName) {
         insightsLoaded = true;
         loadAIInsights();
     }
+    if (tabName === 'sentiment' && !sentimentLoaded) {
+        sentimentLoaded = true;
+        loadSentimentAnalysis();
+    }
 }
 
 /**
@@ -676,5 +680,290 @@ function displayInsights(data, container) {
     container.innerHTML = html;
 }
 
-// Make function globally accessible
+// ═══════════════════════════════════════════════════════
+//  SENTIMENT ANALYSIS (Feature 4)
+// ═══════════════════════════════════════════════════════
+
+let sentimentLoaded = false;
+let sentimentChart = null;
+
+/**
+ * Get sentiment color based on score
+ */
+function sentimentColor(score) {
+    if (score >= 0.5) return '#34d399';   // Very Bullish — green
+    if (score >= 0.15) return '#6ee7b7';  // Bullish — light green
+    if (score >= -0.15) return '#fbbf24'; // Neutral — amber
+    if (score >= -0.5) return '#f87171';  // Bearish — red
+    return '#ef4444';                     // Very Bearish — dark red
+}
+
+/**
+ * Get trend icon
+ */
+function trendIcon(trend) {
+    if (trend === 'Improving') return '📈 Improving';
+    if (trend === 'Declining') return '📉 Declining';
+    return '➡️ Stable';
+}
+
+/**
+ * Load sentiment analysis for the current ticker
+ */
+async function loadSentimentAnalysis(ticker) {
+    ticker = ticker || currentTicker || 'AAPL';
+
+    // Update badge
+    const badge = document.getElementById('sentiment-ticker-badge');
+    if (badge) badge.textContent = ticker;
+
+    // Show loading, hide content
+    const loading = document.getElementById('sentiment-loading');
+    const content = document.getElementById('sentiment-content');
+    if (loading) loading.style.display = 'block';
+    if (content) content.style.display = 'none';
+
+    try {
+        // Fetch sentiment data
+        const response = await fetch(`/api/shares/ml/sentiment?ticker=${ticker}`);
+        if (!response.ok) throw new Error('API error');
+        const result = await response.json();
+        const data = result.data;
+
+        // Populate metric cards
+        renderSentimentMetrics(data);
+
+        // Render source breakdown bars
+        renderSentimentBreakdown(data.breakdown);
+
+        // Render headlines
+        renderSentimentHeadlines(data.recent_headlines);
+
+        // Render social buzz
+        renderSocialBuzz(data.social_buzz);
+
+        // Fetch and render history chart
+        const histResp = await fetch(`/api/shares/ml/sentiment/history?ticker=${ticker}&days=30`);
+        if (histResp.ok) {
+            const histResult = await histResp.json();
+            renderSentimentHistoryChart(histResult.data.history);
+        }
+
+        // Show content, hide loading
+        if (loading) loading.style.display = 'none';
+        if (content) content.style.display = 'block';
+
+    } catch (error) {
+        console.error('Sentiment analysis error:', error);
+        if (loading) loading.style.display = 'none';
+        if (content) {
+            content.style.display = 'block';
+            content.innerHTML = `<div class="glass-card p-4 text-center">
+                <div style="font-size: 2rem;">⚠️</div>
+                <p class="text-white-50 mt-2 small">Failed to load sentiment data. Try refreshing.</p>
+            </div>`;
+        }
+    }
+}
+
+/**
+ * Populate the 4 metric cards
+ */
+function renderSentimentMetrics(data) {
+    const color = sentimentColor(data.sentiment_score);
+
+    // Score
+    const scoreEl = document.getElementById('sentiment-score-display');
+    if (scoreEl) {
+        scoreEl.textContent = data.sentiment_score.toFixed(2);
+        scoreEl.style.color = color;
+    }
+
+    // Classification
+    const classEl = document.getElementById('sentiment-classification');
+    if (classEl) classEl.textContent = data.classification;
+
+    // Confidence
+    const confEl = document.getElementById('sentiment-confidence');
+    if (confEl) confEl.textContent = data.confidence + '%';
+
+    // Trend
+    const trendEl = document.getElementById('sentiment-trend');
+    if (trendEl) {
+        trendEl.innerHTML = trendIcon(data.trend);
+        trendEl.style.color = data.trend === 'Improving' ? '#34d399' :
+            data.trend === 'Declining' ? '#f87171' : '#fbbf24';
+    }
+
+    // Social mentions
+    const mentionsEl = document.getElementById('sentiment-mentions');
+    if (mentionsEl && data.social_buzz) {
+        const m = data.social_buzz.mentions_24h;
+        mentionsEl.textContent = m >= 1000 ? (m / 1000).toFixed(1) + 'K' : m;
+    }
+}
+
+/**
+ * Render horizontal breakdown bars (News, Social, Technical, Market)
+ */
+function renderSentimentBreakdown(breakdown) {
+    const container = document.getElementById('sentiment-breakdown-bars');
+    if (!container) return;
+
+    const sources = [
+        { label: 'News', key: 'news', weight: '45%' },
+        { label: 'Social', key: 'social', weight: '25%' },
+        { label: 'Technical', key: 'technical', weight: '20%' },
+        { label: 'Market', key: 'market', weight: '10%' },
+    ];
+
+    let html = '';
+    sources.forEach(s => {
+        const score = breakdown[s.key] || 0;
+        const pct = Math.round((score + 1) * 50); // -1→0%, 0→50%, 1→100%
+        const color = sentimentColor(score);
+        html += `
+            <div class="mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-white small">${s.label} <span class="text-white-50">(${s.weight})</span></span>
+                    <span class="small" style="color: ${color};">${score >= 0 ? '+' : ''}${score.toFixed(3)}</span>
+                </div>
+                <div style="height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden;">
+                    <div style="width: ${pct}%; height: 100%; background: ${color}; border-radius: 3px; transition: width 0.6s ease;"></div>
+                </div>
+            </div>`;
+    });
+    container.innerHTML = html;
+}
+
+/**
+ * Render headline feed
+ */
+function renderSentimentHeadlines(headlines) {
+    const container = document.getElementById('sentiment-headlines-feed');
+    if (!container || !headlines) return;
+
+    let html = '';
+    headlines.forEach(h => {
+        const color = sentimentColor(h.sentiment);
+        html += `
+            <div class="sentiment-headline-item d-flex align-items-start gap-2 mb-3 pb-3" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                <span style="font-size: 1.2rem; flex-shrink: 0; margin-top: 2px;">${h.emoji}</span>
+                <div style="min-width: 0; flex: 1;">
+                    <div class="text-white small" style="line-height: 1.35; margin-bottom: 4px;">${h.title}</div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-white-50" style="font-size: 0.65rem;">${h.source}</span>
+                        <span class="text-white-50" style="font-size: 0.65rem;">•</span>
+                        <span class="text-white-50" style="font-size: 0.65rem;">${h.hours_ago}h ago</span>
+                        <span style="font-size: 0.6rem; color: ${color}; margin-left: auto;">${h.sentiment >= 0 ? '+' : ''}${h.sentiment.toFixed(2)}</span>
+                    </div>
+                </div>
+            </div>`;
+    });
+    container.innerHTML = html;
+}
+
+/**
+ * Render social buzz pills (hashtags + keywords)
+ */
+function renderSocialBuzz(buzz) {
+    if (!buzz) return;
+
+    const hashContainer = document.getElementById('sentiment-hashtags');
+    if (hashContainer && buzz.trending_hashtags) {
+        hashContainer.innerHTML = buzz.trending_hashtags.map(tag =>
+            `<span class="sentiment-pill">${tag}</span>`
+        ).join('');
+    }
+
+    const kwContainer = document.getElementById('sentiment-keywords');
+    if (kwContainer && buzz.top_keywords) {
+        kwContainer.innerHTML = buzz.top_keywords.map(kw =>
+            `<span class="sentiment-pill sentiment-pill-secondary">${kw}</span>`
+        ).join('');
+    }
+}
+
+/**
+ * Render 30-day sentiment history chart
+ */
+function renderSentimentHistoryChart(history) {
+    if (!history || !history.length) return;
+
+    const ctx = document.getElementById('sentiment-history-chart');
+    if (!ctx) return;
+
+    // Destroy existing chart
+    if (sentimentChart) {
+        sentimentChart.destroy();
+        sentimentChart = null;
+    }
+
+    const labels = history.map(h => {
+        const d = new Date(h.date);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+    const scores = history.map(h => h.score);
+
+    // Gradient fill
+    const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 260);
+    gradient.addColorStop(0, 'rgba(96, 165, 250, 0.3)');
+    gradient.addColorStop(1, 'rgba(96, 165, 250, 0.0)');
+
+    sentimentChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Sentiment',
+                data: scores,
+                borderColor: '#60a5fa',
+                backgroundColor: gradient,
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                pointHoverBackgroundColor: '#60a5fa',
+                tension: 0.4,
+                fill: true,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleColor: 'rgba(255,255,255,0.7)',
+                    bodyColor: '#fff',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: ctx => `Score: ${ctx.parsed.y.toFixed(3)}`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 }, maxTicksLimit: 8 },
+                    grid: { color: 'rgba(255,255,255,0.04)' },
+                    border: { color: 'rgba(255,255,255,0.06)' }
+                },
+                y: {
+                    min: -1, max: 1,
+                    ticks: {
+                        color: 'rgba(255,255,255,0.3)',
+                        font: { size: 10 },
+                        callback: v => v.toFixed(1)
+                    },
+                    grid: { color: 'rgba(255,255,255,0.04)' },
+                    border: { color: 'rgba(255,255,255,0.06)' }
+                }
+            }
+        }
+    });
+}
+
+// Make functions globally accessible
 window.initializeSharesAILab = initializeSharesAILab;
+window.loadSentimentAnalysis = loadSentimentAnalysis;

@@ -19,7 +19,7 @@
         rel="stylesheet">
 
     <!-- Custom CSS -->
-    <link href="css/style.css?v=86" rel="stylesheet">
+    <link href="css/style.css?v=87" rel="stylesheet">
 
 
     <style>
@@ -1675,8 +1675,6 @@
                                         <span class="tab-title">Sentiment</span>
                                         <span class="tab-desc">News analysis</span>
                                     </div>
-                                    <span class="tab-badge"
-                                        style="background: rgba(251,191,36,0.15); color: #fde68a;">Soon</span>
                                 </button>
                             </div>
                         </div>
@@ -1908,11 +1906,160 @@
 
                         <!-- Tab Panel: Sentiment (Coming Soon) -->
                         <div class="ai-lab-panel" id="ai-lab-panel-sentiment" style="display: none;">
-                            <div class="glass-card p-5 text-center">
-                                <div style="font-size: 3rem; margin-bottom: 1rem;">📰</div>
-                                <h3 class="h4 fw-light text-white mb-3">Sentiment Analysis</h3>
-                                <p class="text-white-50 mb-0">News sentiment analysis with VADER scoring is coming
-                                    soon.<br>Track market sentiment across your portfolio in real-time.</p>
+
+                            <!-- Header -->
+                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                <h3 class="h5 fw-light text-white mb-0">
+                                    📰 Sentiment Analysis
+                                    <span class="badge ms-2"
+                                        style="background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); font-size: 0.65rem; font-weight: 400;"
+                                        id="sentiment-ticker-badge">AAPL</span>
+                                </h3>
+                                <button class="btn btn-sm btn-outline-light" onclick="loadSentimentAnalysis()"
+                                    style="font-size: 0.75rem;">🔄 Refresh</button>
+                            </div>
+
+                            <!-- Loading state -->
+                            <div id="sentiment-loading" style="display: none;">
+                                <div class="glass-card p-5 text-center">
+                                    <div class="spinner-border text-light" role="status"
+                                        style="width: 2rem; height: 2rem;">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="text-white-50 mt-2 small">Analyzing sentiment...</p>
+                                </div>
+                            </div>
+
+                            <!-- Sentiment content (hidden until data loads) -->
+                            <div id="sentiment-content" style="display: none;">
+
+                                <!-- Metric Cards Row -->
+                                <div class="row g-3 mb-4">
+                                    <!-- Overall Score -->
+                                    <div class="col-md-3 col-6">
+                                        <div class="glass-card p-3 text-center">
+                                            <div class="text-white-50 small mb-2">Overall Score</div>
+                                            <div id="sentiment-score-display"
+                                                style="font-size: 2rem; font-weight: 300; line-height: 1;">
+                                                --
+                                            </div>
+                                            <div id="sentiment-classification" class="small mt-1"
+                                                style="color: rgba(255,255,255,0.5);">--</div>
+                                        </div>
+                                    </div>
+                                    <!-- Confidence -->
+                                    <div class="col-md-3 col-6">
+                                        <div class="glass-card p-3 text-center">
+                                            <div class="text-white-50 small mb-2">Confidence</div>
+                                            <div id="sentiment-confidence"
+                                                style="font-size: 2rem; font-weight: 300; color: #a78bfa; line-height: 1;">
+                                                --
+                                            </div>
+                                            <div class="text-white-50 small mt-1">Source agreement</div>
+                                        </div>
+                                    </div>
+                                    <!-- Trend -->
+                                    <div class="col-md-3 col-6">
+                                        <div class="glass-card p-3 text-center">
+                                            <div class="text-white-50 small mb-2">Trend</div>
+                                            <div id="sentiment-trend"
+                                                style="font-size: 1.4rem; font-weight: 400; line-height: 1;">
+                                                --
+                                            </div>
+                                            <div class="text-white-50 small mt-1">Direction</div>
+                                        </div>
+                                    </div>
+                                    <!-- Social Mentions -->
+                                    <div class="col-md-3 col-6">
+                                        <div class="glass-card p-3 text-center">
+                                            <div class="text-white-50 small mb-2">Social Mentions</div>
+                                            <div id="sentiment-mentions"
+                                                style="font-size: 2rem; font-weight: 300; color: #60a5fa; line-height: 1;">
+                                                --
+                                            </div>
+                                            <div class="text-white-50 small mt-1">Last 24h</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Two column layout: Source Breakdown + Headlines -->
+                                <div class="row g-3 mb-4">
+                                    <!-- Source Breakdown -->
+                                    <div class="col-md-5">
+                                        <div class="glass-card p-4 h-100">
+                                            <h4 class="h6 fw-light text-white mb-3">Sentiment Breakdown</h4>
+                                            <div id="sentiment-breakdown-bars">
+                                                <!-- JS fills these -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Recent Headlines -->
+                                    <div class="col-md-7">
+                                        <div class="glass-card p-4 h-100">
+                                            <h4 class="h6 fw-light text-white mb-3">Recent Headlines</h4>
+                                            <div id="sentiment-headlines-feed">
+                                                <!-- JS fills these -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Social Buzz -->
+                                <div class="glass-card p-4 mb-4">
+                                    <h4 class="h6 fw-light text-white mb-3">Social Buzz</h4>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="text-white-50 small mb-2">Trending Tags</div>
+                                            <div id="sentiment-hashtags" class="d-flex flex-wrap gap-2">
+                                                <!-- JS fills -->
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="text-white-50 small mb-2">Top Keywords</div>
+                                            <div id="sentiment-keywords" class="d-flex flex-wrap gap-2">
+                                                <!-- JS fills -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Sentiment History Chart -->
+                                <div class="glass-card p-4 mb-4">
+                                    <h4 class="h6 fw-light text-white mb-3">30-Day Sentiment History</h4>
+                                    <div style="height: 260px;">
+                                        <canvas id="sentiment-history-chart"></canvas>
+                                    </div>
+                                </div>
+
+                                <!-- How it works -->
+                                <div class="glass-card p-4">
+                                    <h4 class="h6 fw-light mb-3 text-white">How Sentiment Analysis Works</h4>
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <div class="text-white-50 small">
+                                                <strong class="text-white">📰 News Scraping:</strong><br>
+                                                Fetches real-time headlines from multiple news APIs and analyzes each
+                                                with VADER sentiment scoring.
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="text-white-50 small">
+                                                <strong class="text-white">📊 Multi-Source:</strong><br>
+                                                Combines news (45%), social (25%), technical (20%), and market signals
+                                                (10%) into a weighted score.
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="text-white-50 small">
+                                                <strong class="text-white">🎯 Confidence:</strong><br>
+                                                Confidence increases when sources agree. High confidence = reliable
+                                                signal across all channels.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </div>

@@ -10,6 +10,7 @@ from database import get_db
 from ml.shares.price_predictor import PricePredictor
 from ml.shares.risk_analyzer import RiskAnalyzer
 from ml.shares.insights_generator import InsightsGenerator
+from ml.shares.sentiment_analyzer import stock_sentiment_analyzer
 
 # Isolated router for Shares ML
 router = APIRouter(prefix="/api", tags=["Shares ML"])
@@ -159,6 +160,56 @@ async def get_portfolio_insights(
         )
 
 
+@router.get("/shares/ml/sentiment")
+async def get_stock_sentiment(
+    ticker: str = Query(..., description="Stock ticker symbol"),
+    db: Session = Depends(get_db)
+):
+    """
+    Sentiment analysis for a stock ticker using VADER + news APIs.
+
+    Args:
+        ticker: Stock ticker symbol (e.g., 'AAPL', 'MSFT')
+
+    Returns:
+        Sentiment score, classification, breakdown, headlines, social buzz
+    """
+    try:
+        result = stock_sentiment_analyzer.analyze(ticker)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Sentiment analysis error: {str(e)}"
+        )
+
+
+@router.get("/shares/ml/sentiment/history")
+async def get_stock_sentiment_history(
+    ticker: str = Query(..., description="Stock ticker symbol"),
+    days: int = Query(30, description="Number of days of history"),
+    db: Session = Depends(get_db)
+):
+    """
+    Historical sentiment scores for charting.
+    """
+    try:
+        history = stock_sentiment_analyzer.get_history(ticker, days)
+        return {
+            "status": "success",
+            "data": {
+                "symbol": ticker.upper(),
+                "history": history,
+                "days": days,
+            }
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Sentiment history error: {str(e)}"
+        )
+
+
 @router.get("/shares/ml/test")
 async def test_shares_ml():
     """Test endpoint to verify Shares ML router is working"""
@@ -169,6 +220,8 @@ async def test_shares_ml():
             "/api/shares/ml/price-prediction",
             "/api/shares/ml/risk-analysis",
             "/api/shares/ml/insights",
+            "/api/shares/ml/sentiment",
+            "/api/shares/ml/sentiment/history",
             "/api/shares/ml/test"
         ]
     }
