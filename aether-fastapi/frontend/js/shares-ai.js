@@ -6,6 +6,8 @@ let currentTicker = 'AAPL';
 let currentHorizon = 30;
 let predictionChart = null;
 let riskChart = null;
+let riskLoaded = false;
+let insightsLoaded = false;
 
 /**
  * Initialize Shares AI Lab when section becomes visible
@@ -13,8 +15,36 @@ let riskChart = null;
 function initializeSharesAILab() {
     console.log('Initializing Shares AI Lab');
     loadSharesForPrediction();
-    loadPortfolioRiskAnalysis();
-    loadAIInsights();
+    // Risk and Insights load lazily when their tabs are clicked
+}
+
+/**
+ * Switch between AI Lab sub-tabs
+ */
+function switchAILabTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.ai-lab-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabName);
+    });
+
+    // Update tab panels
+    document.querySelectorAll('.ai-lab-panel').forEach(panel => {
+        panel.style.display = 'none';
+    });
+    const activePanel = document.getElementById(`ai-lab-panel-${tabName}`);
+    if (activePanel) {
+        activePanel.style.display = 'block';
+    }
+
+    // Lazy load data for tabs that haven't been loaded yet
+    if (tabName === 'risk' && !riskLoaded) {
+        riskLoaded = true;
+        loadPortfolioRiskAnalysis();
+    }
+    if (tabName === 'insights' && !insightsLoaded) {
+        insightsLoaded = true;
+        loadAIInsights();
+    }
 }
 
 /**

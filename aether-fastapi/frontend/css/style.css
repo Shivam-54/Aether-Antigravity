@@ -1091,3 +1091,158 @@ a:hover {
 tr:hover .row-action {
     opacity: 1;
 }
+
+/* ═══════════════════════════════════════════════════════
+   AI LAB — PREMIUM FEATURE-CARD TAB NAVIGATION
+   ═══════════════════════════════════════════════════════ */
+
+/* Grid layout for tab cards */
+.ai-lab-tab-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+@media (max-width: 768px) {
+    .ai-lab-tab-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Individual tab card */
+.ai-lab-tab {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04) !important;
+    color: rgba(255, 255, 255, 0.55);
+    cursor: pointer;
+    transition: all 0.3s var(--ease-smooth);
+    text-align: left;
+    overflow: hidden;
+}
+
+/* Subtle gradient shine on hover */
+.ai-lab-tab::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none !important;
+    border-radius: 12px;
+}
+
+.ai-lab-tab:hover {
+    background: rgba(255, 255, 255, 0.07) !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
+    color: rgba(255, 255, 255, 0.9);
+    transform: translateY(-1px);
+}
+
+.ai-lab-tab:hover::before {
+    opacity: 1;
+}
+
+/* Active tab — bright highlight */
+.ai-lab-tab.active {
+    background: rgba(255, 255, 255, 0.10) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    color: #fff;
+    box-shadow:
+        0 0 25px rgba(255, 255, 255, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.ai-lab-tab.active::before {
+    opacity: 1;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, transparent 50%);
+}
+
+/* Active indicator — left edge bar */
+.ai-lab-tab.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 20%;
+    height: 60%;
+    width: 3px;
+    background: #fff;
+    border-radius: 0 3px 3px 0;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+    pointer-events: none !important;
+}
+
+/* Icon container */
+.ai-lab-tab .tab-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.ai-lab-tab.active .tab-icon-wrap {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.20);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.10);
+}
+
+/* Text content */
+.ai-lab-tab .tab-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.ai-lab-tab .tab-title {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: inherit;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ai-lab-tab .tab-desc {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.3);
+    line-height: 1;
+    letter-spacing: 0.02em;
+}
+
+.ai-lab-tab.active .tab-desc {
+    color: rgba(255, 255, 255, 0.45);
+}
+
+/* Badge (AI / Soon) */
+.ai-lab-tab .tab-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 0.55rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1.3;
+}
+
+/* Tab panels - smooth transition */
+.ai-lab-panel {
+    animation: fadeIn 0.3s ease;
+}
