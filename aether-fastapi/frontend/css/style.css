@@ -1096,7 +1096,7 @@ tr:hover .row-action {
    AI LAB — PREMIUM FEATURE-CARD TAB NAVIGATION
    ═══════════════════════════════════════════════════════ */
 
-/* Grid layout for tab cards */
+/* Grid layout for tab cards — 1x4 horizontal row */
 .ai-lab-tab-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -1107,6 +1107,35 @@ tr:hover .row-action {
     .ai-lab-tab-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+}
+
+@media (max-width: 576px) {
+    .ai-lab-tab-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Section divider between features within a bucket */
+.ai-lab-section-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 32px 0 24px;
+}
+
+.ai-lab-section-divider .divider-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+}
+
+.ai-lab-section-divider .divider-label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.5);
+    white-space: nowrap;
+    text-transform: uppercase;
 }
 
 /* Individual tab card */
@@ -1297,4 +1326,17 @@ tr:hover .row-action {
     border-bottom: none !important;
     margin-bottom: 0 !important;
     padding-bottom: 0 !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   AI INSIGHTS — Card hover glow
+   ═══════════════════════════════════════════════════════ */
+
+.insight-card {
+    transition: background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.insight-card:hover {
+    background: rgba(99, 102, 241, 0.06) !important;
+    box-shadow: 0 0 12px rgba(129, 140, 248, 0.08);
 }

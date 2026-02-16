@@ -11,6 +11,8 @@ from ml.shares.price_predictor import PricePredictor
 from ml.shares.risk_analyzer import RiskAnalyzer
 from ml.shares.insights_generator import InsightsGenerator
 from ml.shares.sentiment_analyzer import stock_sentiment_analyzer
+from ml.shares.anomaly_detector import AnomalyDetector
+from ml.shares.correlation_analyzer import CorrelationAnalyzer
 
 # Isolated router for Shares ML
 router = APIRouter(prefix="/api", tags=["Shares ML"])
@@ -208,6 +210,56 @@ async def get_stock_sentiment_history(
             status_code=500,
             detail=f"Sentiment history error: {str(e)}"
         )
+
+
+@router.get("/shares/ml/anomaly-detection")
+async def get_anomaly_detection(
+    tickers: str = Query(..., description="Comma-separated list of tickers"),
+    db: Session = Depends(get_db)
+):
+    """
+    Detect anomalies in stock price and volume using Isolation Forest.
+
+    Args:
+        tickers: Comma-separated ticker symbols (e.g., 'AAPL,MSFT,GOOGL')
+
+    Returns:
+        Anomaly events with severity, descriptions, and summary stats
+    """
+    try:
+        ticker_list = [t.strip().upper() for t in tickers.split(',')]
+        detector = AnomalyDetector()
+        results = detector.detect(ticker_list)
+        return {"status": "success", "data": results}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid input: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Anomaly detection error: {str(e)}")
+
+
+@router.get("/shares/ml/correlation")
+async def get_correlation_analysis(
+    tickers: str = Query(..., description="Comma-separated list of tickers"),
+    db: Session = Depends(get_db)
+):
+    """
+    Portfolio correlation analysis with diversification scoring.
+
+    Args:
+        tickers: Comma-separated ticker symbols (min 2)
+
+    Returns:
+        Correlation matrix, diversification score, warnings, and insights
+    """
+    try:
+        ticker_list = [t.strip().upper() for t in tickers.split(',')]
+        analyzer = CorrelationAnalyzer()
+        results = analyzer.analyze(ticker_list)
+        return {"status": "success", "data": results}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid input: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Correlation analysis error: {str(e)}")
 
 
 @router.get("/shares/ml/test")

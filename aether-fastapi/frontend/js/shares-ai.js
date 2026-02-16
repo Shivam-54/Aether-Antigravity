@@ -8,6 +8,9 @@ let predictionChart = null;
 let riskChart = null;
 let riskLoaded = false;
 let insightsLoaded = false;
+let sentimentLoaded = false;
+let anomalyLoaded = false;
+let correlationLoaded = false;
 
 /**
  * Initialize Shares AI Lab when section becomes visible
@@ -15,11 +18,13 @@ let insightsLoaded = false;
 function initializeSharesAILab() {
     console.log('Initializing Shares AI Lab');
     loadSharesForPrediction();
-    // Risk and Insights load lazily when their tabs are clicked
+    // Also load risk analysis since it's in the same bucket
+    // No need to set riskLoaded here, it will be handled by switchAILabTab or loadPortfolioRiskAnalysis itself
+    loadPortfolioRiskAnalysis();
 }
 
 /**
- * Switch between AI Lab sub-tabs
+ * Switch between AI Lab sub-tabs (bucket mode: 2 features per tab)
  */
 function switchAILabTab(tabName) {
     // Update tab buttons
@@ -36,18 +41,27 @@ function switchAILabTab(tabName) {
         activePanel.style.display = 'block';
     }
 
-    // Lazy load data for tabs that haven't been loaded yet
-    if (tabName === 'risk' && !riskLoaded) {
-        riskLoaded = true;
-        loadPortfolioRiskAnalysis();
+    // Lazy load data for bucket features
+    if (tabName === 'predictions-risk') {
+        if (!riskLoaded) {
+            loadPortfolioRiskAnalysis();
+        }
     }
-    if (tabName === 'insights' && !insightsLoaded) {
-        insightsLoaded = true;
-        loadAIInsights();
+    if (tabName === 'insights-sentiment') {
+        if (!insightsLoaded) {
+            loadAIInsights();
+        }
+        if (!sentimentLoaded) {
+            loadSentimentAnalysis();
+        }
     }
-    if (tabName === 'sentiment' && !sentimentLoaded) {
-        sentimentLoaded = true;
-        loadSentimentAnalysis();
+    if (tabName === 'anomaly-correlation') {
+        if (!anomalyLoaded) {
+            loadAnomalyDetection();
+        }
+        if (!correlationLoaded) {
+            loadCorrelationAnalysis();
+        }
     }
 }
 
@@ -341,13 +355,18 @@ async function loadPortfolioRiskAnalysis() {
             headers: getAuthHeaders()
         });
 
+        if (response.status === 401) {
+            showRiskError('Session expired. Please <a href="/login.html" style="color:#a78bfa">log in again</a>.');
+            return;
+        }
         if (!response.ok) {
-            throw new Error('Failed to fetch shares');
+            throw new Error('Failed to fetch shares (status ' + response.status + ')');
         }
 
         const shares = await response.json();
         if (!shares || shares.length === 0) {
             showRiskEmptyState();
+            riskLoaded = true;
             return;
         }
 
@@ -357,11 +376,11 @@ async function loadPortfolioRiskAnalysis() {
 
         // Call risk analysis API
         const riskResponse = await fetch(
-            `/api/shares/ml/risk-analysis?tickers=${tickers}&investment_amount=${totalValue}&simulations=5000`
+            `/api/shares/ml/risk-analysis?tickers=${tickers}&investment_amount=${totalValue}&simulations=1000`
         );
 
         if (!riskResponse.ok) {
-            throw new Error('Risk analysis failed');
+            throw new Error('Risk analysis failed (status ' + riskResponse.status + ')');
         }
 
         const result = await riskResponse.json();
@@ -369,11 +388,12 @@ async function loadPortfolioRiskAnalysis() {
         if (result.status === 'success') {
             displayRiskMetrics(result.data);
             displayRiskChart(result.data);
+            riskLoaded = true;
         }
 
     } catch (error) {
         console.error('Error loading risk analysis:', error);
-        showRiskError(error.message);
+        showRiskError(error.message + ' <button class="btn btn-sm btn-outline-light mt-2" onclick="riskLoaded=false;loadPortfolioRiskAnalysis()">Retry</button>');
     }
 }
 
@@ -418,72 +438,154 @@ function displayRiskMetrics(data) {
 }
 
 /**
- * Display risk distribution chart
+ * Display risk distribution chart — redesigned for clarity.
+ * Shows a smooth area chart with % change on x-axis,
+ * a VaR annotation line, and labeled risk / profit zones.
  */
 function displayRiskChart(data) {
     const chartContainer = document.getElementById('shares-risk-chart');
     if (!chartContainer) return;
 
-    // Destroy existing chart
-    if (riskChart) {
-        riskChart.destroy();
-    }
+    if (riskChart) riskChart.destroy();
 
-    // Create canvas
     const canvas = document.createElement('canvas');
     canvas.id = 'riskCanvas';
     canvas.height = 300;
-
     chartContainer.innerHTML = '';
     chartContainer.appendChild(canvas);
 
     const ctx = canvas.getContext('2d');
 
-    // Prepare data
+    // Convert bins to % change from initial investment
+    const initial = data.portfolio_info.initial_investment;
     const bins = data.distribution.bins;
     const frequencies = data.distribution.frequencies;
-    const initial = data.portfolio_info.initial_investment;
+
+    const pctLabels = bins.map(b => (((b - initial) / initial) * 100).toFixed(0));
+    const varPct = ((data.risk_metrics.var_95 / initial) * -100).toFixed(1);
+
+    // Find the bin index closest to VaR for the annotation
+    const varValue = initial - data.risk_metrics.var_95;
+    let varIndex = 0;
+    let minDist = Infinity;
+    bins.forEach((b, i) => {
+        const d = Math.abs(b - varValue);
+        if (d < minDist) { minDist = d; varIndex = i; }
+    });
+
+    // Build gradient-colored bars: red (loss) → indigo (neutral) → green (profit)
+    const barColors = bins.map(b => {
+        const pct = ((b - initial) / initial) * 100;
+        if (pct < -5) return 'rgba(248,113,113,0.65)';
+        if (pct < 0) return 'rgba(251,146,60,0.55)';
+        if (pct < 5) return 'rgba(129,140,248,0.55)';
+        if (pct < 15) return 'rgba(52,211,153,0.5)';
+        return 'rgba(16,185,129,0.6)';
+    });
+
+    // Custom plugin: draw VaR annotation line
+    const varLinePlugin = {
+        id: 'varLine',
+        afterDraw(chart) {
+            const { ctx: c, chartArea, scales } = chart;
+            const xScale = scales.x;
+            const meta = chart.getDatasetMeta(0);
+            if (!meta.data[varIndex]) return;
+
+            const xPos = meta.data[varIndex].x;
+            const top = chartArea.top;
+            const bottom = chartArea.bottom;
+
+            // Dashed vertical line
+            c.save();
+            c.beginPath();
+            c.setLineDash([6, 4]);
+            c.strokeStyle = '#f87171';
+            c.lineWidth = 2;
+            c.moveTo(xPos, top);
+            c.lineTo(xPos, bottom);
+            c.stroke();
+
+            // Label
+            c.setLineDash([]);
+            c.fillStyle = 'rgba(248,113,113,0.9)';
+            c.font = 'bold 11px Inter, sans-serif';
+            c.textAlign = 'center';
+
+            // Background pill for label
+            const label = `VaR 95%: -${varPct}%`;
+            const textWidth = c.measureText(label).width;
+            const padding = 6;
+            const pillX = xPos - textWidth / 2 - padding;
+            const pillY = top - 4;
+
+            c.beginPath();
+            c.roundRect(pillX, pillY - 14, textWidth + padding * 2, 18, 4);
+            c.fillStyle = 'rgba(127,29,29,0.85)';
+            c.fill();
+
+            c.fillStyle = '#fca5a5';
+            c.fillText(label, xPos, pillY);
+            c.restore();
+        }
+    };
 
     riskChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: bins.map(b => '$' + Math.round(b).toLocaleString()),
+            labels: pctLabels.map(p => p + '%'),
             datasets: [{
-                label: 'Frequency',
+                label: 'Scenarios',
                 data: frequencies,
-                backgroundColor: frequencies.map((_, i) => {
-                    const value = bins[i];
-                    if (value < initial * 0.9) return 'rgba(239, 68, 68, 0.7)'; // Red for losses
-                    if (value > initial * 1.1) return 'rgba(16, 185, 129, 0.7)'; // Green for gains
-                    return 'rgba(99, 102, 241, 0.7)'; // Blue for neutral
-                }),
-                borderColor: 'rgba(255, 255, 255, 0.2)',
-                borderWidth: 1
+                backgroundColor: barColors,
+                borderColor: 'rgba(255,255,255,0.08)',
+                borderWidth: 1,
+                borderRadius: 3,
+                barPercentage: 1.0,
+                categoryPercentage: 1.0
             }]
         },
+        plugins: [varLinePlugin],
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
                 title: {
                     display: true,
-                    text: `Portfolio Value Distribution (${data.num_simulations.toLocaleString()} Simulations)`,
-                    color: '#fff',
-                    font: { size: 16 }
+                    text: 'What could happen to your portfolio?',
+                    color: 'rgba(255,255,255,0.9)',
+                    font: { size: 14, weight: '400', family: 'Inter, sans-serif' },
+                    padding: { bottom: 4 }
                 },
                 subtitle: {
                     display: true,
-                    text: '💡 Click legend to toggle visibility',
-                    color: 'rgba(255, 255, 255, 0.5)',
-                    font: { size: 11, style: 'italic' }
+                    text: `Based on ${data.num_simulations.toLocaleString()} Monte Carlo simulations over 1 year`,
+                    color: 'rgba(255,255,255,0.4)',
+                    font: { size: 10, style: 'italic' },
+                    padding: { bottom: 16 }
                 },
-                legend: {
-                    labels: { color: '#fff' }
-                },
+                legend: { display: false },
                 tooltip: {
+                    backgroundColor: 'rgba(15,23,42,0.9)',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1,
+                    titleFont: { size: 11 },
+                    bodyFont: { size: 11 },
                     callbacks: {
-                        label: function (context) {
-                            return 'Occurrences: ' + context.parsed.y;
+                        title: context => {
+                            const idx = context[0].dataIndex;
+                            const val = bins[idx];
+                            return `Portfolio → $${Math.round(val).toLocaleString()}`;
+                        },
+                        label: context => {
+                            const idx = context.dataIndex;
+                            const pct = pctLabels[idx];
+                            const count = context.parsed.y;
+                            const prob = ((count / data.num_simulations) * 100).toFixed(1);
+                            return [
+                                `Change: ${pct >= 0 ? '+' : ''}${pct}%`,
+                                `Probability: ~${prob}%`
+                            ];
                         }
                     }
                 }
@@ -491,26 +593,36 @@ function displayRiskChart(data) {
             scales: {
                 x: {
                     ticks: {
-                        color: '#ccc',
-                        maxRotation: 45,
-                        minRotation: 45,
-                        autoSkip: true,
-                        maxTicksLimit: 10
+                        color: 'rgba(255,255,255,0.45)',
+                        font: { size: 9 },
+                        maxTicksLimit: 12,
+                        autoSkip: true
                     },
-                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    grid: { color: 'rgba(255,255,255,0.03)' },
+                    border: { color: 'rgba(255,255,255,0.06)' },
                     title: {
                         display: true,
-                        text: 'Portfolio Value',
-                        color: '#fff'
+                        text: 'Portfolio Change (%)',
+                        color: 'rgba(255,255,255,0.5)',
+                        font: { size: 10 }
                     }
                 },
                 y: {
-                    ticks: { color: '#ccc' },
-                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: {
+                        color: 'rgba(255,255,255,0.35)',
+                        font: { size: 9 },
+                        callback: v => {
+                            const prob = ((v / data.num_simulations) * 100).toFixed(0);
+                            return prob + '%';
+                        }
+                    },
+                    grid: { color: 'rgba(255,255,255,0.03)' },
+                    border: { color: 'rgba(255,255,255,0.06)' },
                     title: {
                         display: true,
-                        text: 'Frequency',
-                        color: '#fff'
+                        text: 'Likelihood',
+                        color: 'rgba(255,255,255,0.5)',
+                        font: { size: 10 }
                     }
                 }
             }
@@ -587,7 +699,15 @@ async function loadAIInsights() {
             headers: getAuthHeaders()
         });
 
-        if (!response.ok) throw new Error('Failed to fetch shares');
+        if (response.status === 401) {
+            insightsContainer.innerHTML = `
+                <div class="text-center py-4">
+                    <p class="text-warning small">Session expired. Please <a href="/login.html" style="color:#a78bfa">log in again</a>.</p>
+                </div>
+            `;
+            return;
+        }
+        if (!response.ok) throw new Error('Failed to fetch shares (status ' + response.status + ')');
 
         const shares = await response.json();
         if (!shares || shares.length === 0) {
@@ -596,6 +716,7 @@ async function loadAIInsights() {
                     <p class="text-white-50 small">Add shares to get AI-powered insights</p>
                 </div>
             `;
+            insightsLoaded = true;
             return;
         }
 
@@ -612,6 +733,7 @@ async function loadAIInsights() {
 
         if (result.status === 'success') {
             displayInsights(result.data, insightsContainer);
+            insightsLoaded = true;
         }
 
     } catch (error) {
@@ -621,7 +743,7 @@ async function loadAIInsights() {
             container.innerHTML = `
                 <div class="text-center py-4">
                     <p class="text-danger small">Error: ${error.message}</p>
-                    <button class="btn btn-sm btn-outline-light mt-2" onclick="loadAIInsights()">Retry</button>
+                    <button class="btn btn-sm btn-outline-light mt-2" onclick="insightsLoaded=false;loadAIInsights()">Retry</button>
                 </div>
             `;
         }
@@ -638,17 +760,24 @@ function displayInsights(data, container) {
     }
 
     const severityColors = {
-        'high': 'border-left: 3px solid #ef4444;',
-        'medium': 'border-left: 3px solid #fbbf24;',
-        'low': 'border-left: 3px solid #10b981;'
+        'high': 'border-left: 3px solid #fb7185;',
+        'medium': 'border-left: 3px solid #fcd34d;',
+        'low': 'border-left: 3px solid #2dd4bf;'
     };
 
     const categoryBadges = {
-        'overview': '<span class="badge" style="background: rgba(99,102,241,0.3); color: #a5b4fc;">Overview</span>',
-        'stock': '<span class="badge" style="background: rgba(59,130,246,0.3); color: #93c5fd;">Stock</span>',
-        'risk': '<span class="badge" style="background: rgba(239,68,68,0.3); color: #fca5a5;">Risk</span>',
-        'opportunity': '<span class="badge" style="background: rgba(16,185,129,0.3); color: #6ee7b7;">Opportunity</span>',
-        'action': '<span class="badge" style="background: rgba(251,191,36,0.3); color: #fde68a;">Action</span>'
+        'overview': '<span class="badge" style="background: rgba(99,102,241,0.15); color: #a5b4fc;">Overview</span>',
+        'stock': '<span class="badge" style="background: rgba(96,165,250,0.15); color: #93c5fd;">Stock</span>',
+        'risk': '<span class="badge" style="background: rgba(251,113,133,0.15); color: #fda4af;">Risk</span>',
+        'opportunity': '<span class="badge" style="background: rgba(45,212,191,0.15); color: #5eead4;">Opportunity</span>',
+        'action': '<span class="badge" style="background: rgba(252,211,77,0.15); color: #fde68a;">Action</span>'
+    };
+
+    // Replace childish emojis with mature icons
+    const matureIcons = {
+        '📊': '◈', '⚠️': '⚡', '🚀': '↗', '📉': '↘',
+        '🎯': '◎', '💡': '✦', '🔍': '⊘', '💰': '◇',
+        '📈': '↗', '🐂': '↗', '🐻': '↘'
     };
 
     let html = '';
@@ -661,7 +790,7 @@ function displayInsights(data, container) {
         html += `
             <div class="insight-card p-3 mb-3" style="${borderStyle} background: rgba(255,255,255,0.03); border-radius: 8px;">
                 <div class="d-flex align-items-center mb-2">
-                    <span class="me-2" style="font-size: 1.2rem;">${insight.icon}</span>
+                    <span class="me-2" style="font-size: 1.1rem; color: #a78bfa; font-weight: 600;">${matureIcons[insight.icon] || insight.icon}</span>
                     <strong class="text-white small">${insight.title}</strong>
                     <div class="ms-auto">${badge}${tickerTag}</div>
                 </div>
@@ -684,27 +813,26 @@ function displayInsights(data, container) {
 //  SENTIMENT ANALYSIS (Feature 4)
 // ═══════════════════════════════════════════════════════
 
-let sentimentLoaded = false;
 let sentimentChart = null;
 
 /**
  * Get sentiment color based on score
  */
 function sentimentColor(score) {
-    if (score >= 0.5) return '#34d399';   // Very Bullish — green
-    if (score >= 0.15) return '#6ee7b7';  // Bullish — light green
-    if (score >= -0.15) return '#fbbf24'; // Neutral — amber
-    if (score >= -0.5) return '#f87171';  // Bearish — red
-    return '#ef4444';                     // Very Bearish — dark red
+    if (score >= 0.5) return '#2dd4bf';   // Very Bullish — icy teal
+    if (score >= 0.15) return '#5eead4';  // Bullish — mint
+    if (score >= -0.15) return 'rgba(255,255,255,0.7)'; // Neutral — white
+    if (score >= -0.5) return '#fb7185';  // Bearish — cool rose
+    return '#f471b5';                     // Very Bearish — icy pink
 }
 
 /**
  * Get trend icon
  */
 function trendIcon(trend) {
-    if (trend === 'Improving') return '📈 Improving';
-    if (trend === 'Declining') return '📉 Declining';
-    return '➡️ Stable';
+    if (trend === 'Improving') return '↗ Improving';
+    if (trend === 'Declining') return '↘ Declining';
+    return '→ Stable';
 }
 
 /**
@@ -724,9 +852,9 @@ async function loadSentimentAnalysis(ticker) {
     if (content) content.style.display = 'none';
 
     try {
-        // Fetch sentiment data
+        // Fetch sentiment data (no auth needed)
         const response = await fetch(`/api/shares/ml/sentiment?ticker=${ticker}`);
-        if (!response.ok) throw new Error('API error');
+        if (!response.ok) throw new Error('Sentiment API error (status ' + response.status + ')');
         const result = await response.json();
         const data = result.data;
 
@@ -752,6 +880,7 @@ async function loadSentimentAnalysis(ticker) {
         // Show content, hide loading
         if (loading) loading.style.display = 'none';
         if (content) content.style.display = 'block';
+        sentimentLoaded = true;
 
     } catch (error) {
         console.error('Sentiment analysis error:', error);
@@ -760,7 +889,8 @@ async function loadSentimentAnalysis(ticker) {
             content.style.display = 'block';
             content.innerHTML = `<div class="glass-card p-4 text-center">
                 <div style="font-size: 2rem;">⚠️</div>
-                <p class="text-white-50 mt-2 small">Failed to load sentiment data. Try refreshing.</p>
+                <p class="text-white-50 mt-2 small">Failed to load sentiment data.</p>
+                <button class="btn btn-sm btn-outline-light mt-2" onclick="sentimentLoaded=false;loadSentimentAnalysis()">Retry</button>
             </div>`;
         }
     }
@@ -791,8 +921,8 @@ function renderSentimentMetrics(data) {
     const trendEl = document.getElementById('sentiment-trend');
     if (trendEl) {
         trendEl.innerHTML = trendIcon(data.trend);
-        trendEl.style.color = data.trend === 'Improving' ? '#34d399' :
-            data.trend === 'Declining' ? '#f87171' : '#fbbf24';
+        trendEl.style.color = data.trend === 'Improving' ? '#2dd4bf' :
+            data.trend === 'Declining' ? '#fb7185' : 'rgba(255,255,255,0.7)';
     }
 
     // Social mentions
@@ -811,25 +941,25 @@ function renderSentimentBreakdown(breakdown) {
     if (!container) return;
 
     const sources = [
-        { label: 'News', key: 'news', weight: '45%' },
-        { label: 'Social', key: 'social', weight: '25%' },
-        { label: 'Technical', key: 'technical', weight: '20%' },
-        { label: 'Market', key: 'market', weight: '10%' },
+        { label: 'News', key: 'news', weight: '45%', color: '#60a5fa' },
+        { label: 'Social', key: 'social', weight: '25%', color: '#a78bfa' },
+        { label: 'Technical', key: 'technical', weight: '20%', color: '#2dd4bf' },
+        { label: 'Market', key: 'market', weight: '10%', color: '#fcd34d' },
     ];
 
     let html = '';
     sources.forEach(s => {
         const score = breakdown[s.key] || 0;
         const pct = Math.round((score + 1) * 50); // -1→0%, 0→50%, 1→100%
-        const color = sentimentColor(score);
+        const scoreColor = score >= 0 ? '#2dd4bf' : '#fb7185';
         html += `
             <div class="mb-3">
                 <div class="d-flex justify-content-between mb-1">
                     <span class="text-white small">${s.label} <span class="text-white-50">(${s.weight})</span></span>
-                    <span class="small" style="color: ${color};">${score >= 0 ? '+' : ''}${score.toFixed(3)}</span>
+                    <span class="small" style="color: ${scoreColor};">${score >= 0 ? '+' : ''}${score.toFixed(3)}</span>
                 </div>
                 <div style="height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden;">
-                    <div style="width: ${pct}%; height: 100%; background: ${color}; border-radius: 3px; transition: width 0.6s ease;"></div>
+                    <div style="width: ${pct}%; height: 100%; background: ${s.color}; border-radius: 3px; transition: width 0.6s ease;"></div>
                 </div>
             </div>`;
     });
@@ -967,3 +1097,390 @@ function renderSentimentHistoryChart(history) {
 // Make functions globally accessible
 window.initializeSharesAILab = initializeSharesAILab;
 window.loadSentimentAnalysis = loadSentimentAnalysis;
+window.loadAnomalyDetection = loadAnomalyDetection;
+window.loadCorrelationAnalysis = loadCorrelationAnalysis;
+
+// ========== ANOMALY DETECTION ==========
+
+/**
+ * Load anomaly detection results
+ */
+async function loadAnomalyDetection() {
+    anomalyLoaded = true;
+    const timelineEl = document.getElementById('anomaly-timeline');
+    if (!timelineEl) return;
+
+    try {
+        // Get user's tickers from holdings
+        const sharesRes = await fetch(`${API_BASE_URL}/shares/holdings`, { headers: getAuthHeaders() });
+        if (!sharesRes.ok) {
+            timelineEl.innerHTML = '<div class="text-white-50 text-center py-3">Please log in to run anomaly detection</div>';
+            return;
+        }
+        const sharesData = await sharesRes.json();
+        const holdings = Array.isArray(sharesData) ? sharesData : [];
+        const tickers = [...new Set(holdings.filter(s => s.status === 'active').map(s => s.symbol).filter(Boolean))];
+
+        if (tickers.length === 0) {
+            timelineEl.innerHTML = '<div class="text-white-50 text-center py-3">Add shares to your portfolio to run anomaly detection</div>';
+            return;
+        }
+
+        const tickerStr = tickers.join(',');
+        const response = await fetch(`/api/shares/ml/anomaly-detection?tickers=${tickerStr}`);
+        const result = await response.json();
+
+        if (result.status !== 'success') throw new Error('Anomaly detection failed');
+
+        const data = result.data;
+
+        // Update summary cards
+        const totalEl = document.getElementById('anomaly-total');
+        const highEl = document.getElementById('anomaly-high');
+        const mediumEl = document.getElementById('anomaly-medium');
+        const tickersEl = document.getElementById('anomaly-tickers');
+
+        if (totalEl) totalEl.textContent = data.summary.total_anomalies;
+        if (highEl) highEl.textContent = data.summary.high_severity;
+        if (mediumEl) mediumEl.textContent = data.summary.medium_severity;
+        if (tickersEl) tickersEl.textContent = data.summary.tickers_analyzed;
+
+        // Render timeline
+        if (data.events.length === 0) {
+            timelineEl.innerHTML = `
+                <div class="text-center py-4">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">\u2713</div>
+                    <div class="text-white-50">No anomalies detected in the last 6 months — your portfolio looks stable</div>
+                </div>
+            `;
+            return;
+        }
+
+        const severityColors = {
+            'high': '#fb7185',
+            'medium': '#fcd34d',
+            'low': '#94a3b8'
+        };
+        const severityIcons = {
+            'high': '\u26a1',
+            'medium': '\u25c8',
+            'low': '\u00b7'
+        };
+
+        let html = '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">';
+        data.events.forEach(event => {
+            const color = severityColors[event.severity] || '#94a3b8';
+            const icon = severityIcons[event.severity] || '\u00b7';
+            const priceStr = `${event.metrics.price_change > 0 ? '+' : ''}${event.metrics.price_change}%`;
+            html += `
+                <div style="border-left: 3px solid ${color}; background: rgba(255,255,255,0.02); border-radius: 0 8px 8px 0; padding: 10px 12px;">
+                    <div class="d-flex justify-content-between align-items-center" style="margin-bottom: 4px;">
+                        <div class="d-flex align-items-center gap-2">
+                            <span style="font-size: 0.9rem;">${icon}</span>
+                            <span class="text-white fw-medium" style="font-size: 0.8rem;">${event.ticker}</span>
+                            <span class="badge" style="background: ${color}20; color: ${color}; font-size: 0.55rem; padding: 2px 6px;">${event.severity.toUpperCase()}</span>
+                        </div>
+                        <span class="text-white-50" style="font-size: 0.65rem;">${event.date}</span>
+                    </div>
+                    <div class="text-white-50" style="font-size: 0.72rem; line-height: 1.3; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${event.description}</div>
+                    <div class="d-flex gap-3">
+                        <span style="font-size: 0.6rem; color: ${event.metrics.price_change >= 0 ? '#2dd4bf' : '#fb7185'};">▸ Price ${priceStr}</span>
+                        <span class="text-white-50" style="font-size: 0.6rem;">▸ Vol ${event.metrics.volume_change > 0 ? '+' : ''}${event.metrics.volume_change}%</span>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+
+        timelineEl.innerHTML = html;
+
+    } catch (error) {
+        console.error('Anomaly detection error:', error);
+        timelineEl.innerHTML = `<div class="text-white-50 text-center py-3">Anomaly detection failed: ${error.message}</div>`;
+    }
+}
+
+// ========== CORRELATION ANALYSIS ==========
+
+/**
+ * Load correlation analysis results
+ */
+async function loadCorrelationAnalysis() {
+    correlationLoaded = true;
+    const heatmapEl = document.getElementById('correlation-heatmap');
+    if (!heatmapEl) return;
+
+    try {
+        // Get user's tickers from holdings
+        const sharesRes = await fetch(`${API_BASE_URL}/shares/holdings`, { headers: getAuthHeaders() });
+        if (!sharesRes.ok) {
+            heatmapEl.innerHTML = '<div class="text-white-50 text-center py-3">Please log in to run correlation analysis</div>';
+            return;
+        }
+        const sharesData = await sharesRes.json();
+        const holdings = Array.isArray(sharesData) ? sharesData : [];
+        const tickers = [...new Set(holdings.filter(s => s.status === 'active').map(s => s.symbol).filter(Boolean))];
+
+        if (tickers.length < 2) {
+            heatmapEl.innerHTML = '<div class="text-white-50 text-center py-3">Add at least 2 shares to your portfolio for correlation analysis</div>';
+            return;
+        }
+
+        const tickerStr = tickers.join(',');
+        const response = await fetch(`/api/shares/ml/correlation?tickers=${tickerStr}`);
+        const result = await response.json();
+
+        if (result.status !== 'success') throw new Error('Correlation analysis failed');
+
+        const data = result.data;
+
+        // Update diversification score
+        const scoreEl = document.getElementById('diversification-score');
+        const barEl = document.getElementById('diversification-bar');
+        const avgEl = document.getElementById('diversification-avg');
+        const labelEl = document.getElementById('diversification-label');
+
+        if (scoreEl) {
+            const score = data.diversification_score;
+            scoreEl.textContent = score;
+            const scoreColor = score >= 70 ? '#2dd4bf' : score >= 40 ? '#fcd34d' : '#fb7185';
+            scoreEl.style.color = scoreColor;
+
+            if (barEl) {
+                barEl.style.width = score + '%';
+                barEl.style.background = `linear-gradient(90deg, ${scoreColor}, ${scoreColor}88)`;
+            }
+            if (labelEl) {
+                const labelText = score >= 70 ? 'Well Diversified' : score >= 40 ? 'Moderately Diversified' : 'Low Diversification';
+                labelEl.textContent = labelText;
+            }
+        }
+        if (avgEl) {
+            avgEl.textContent = `Avg correlation: ${(data.avg_correlation * 100).toFixed(1)}%`;
+        }
+
+        // Render correlation heatmap
+        renderCorrelationHeatmap(heatmapEl, data.tickers, data.matrix);
+
+        // Render warnings
+        const warningsEl = document.getElementById('correlation-warnings');
+        if (warningsEl) {
+            if (data.warnings.length === 0) {
+                warningsEl.innerHTML = '<div class="text-white-50 small">\u2713 No high-correlation warnings</div>';
+            } else {
+                warningsEl.innerHTML = data.warnings.map(w => `
+                    <div class="mb-2 p-2" style="border-left: 2px solid #fb7185; background: rgba(251,113,133,0.05); border-radius: 0 6px 6px 0;">
+                        <div class="text-white small">${w.pair} <span style="color: #fb7185;">(${(w.correlation * 100).toFixed(0)}%)</span></div>
+                        <div class="text-white-50" style="font-size: 0.75rem;">${w.message}</div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Render insights
+        const insightsEl = document.getElementById('correlation-insights');
+        if (insightsEl) {
+            if (data.insights.length === 0) {
+                insightsEl.innerHTML = '<div class="text-white-50 small">No insights available</div>';
+            } else {
+                const typeColors = { 'positive': '#2dd4bf', 'warning': '#fcd34d', 'neutral': '#94a3b8' };
+                insightsEl.innerHTML = data.insights.map(ins => {
+                    const c = typeColors[ins.type] || '#94a3b8';
+                    return `
+                        <div class="mb-2 p-2" style="border-left: 2px solid ${c}; background: rgba(255,255,255,0.02); border-radius: 0 6px 6px 0;">
+                            <div class="text-white-50" style="font-size: 0.8rem;">${ins.message}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+    } catch (error) {
+        console.error('Correlation analysis error:', error);
+        heatmapEl.innerHTML = `<div class="text-white-50 text-center py-3">Correlation analysis failed: ${error.message}</div>`;
+    }
+}
+
+/**
+ * Render correlation heatmap as an HTML table with color-coded cells
+ */
+function renderCorrelationHeatmap(container, tickers, matrix) {
+    const n = tickers.length;
+
+    // Smooth gradient color interpolation: teal (low) → blue → yellow → pink → red (high)
+    function corrColor(val, forGlow = false) {
+        const t = Math.abs(val);
+        let r, g, b;
+        if (t < 0.25) {
+            // Teal to Blue
+            const p = t / 0.25;
+            r = Math.round(45 + (96 - 45) * p);
+            g = Math.round(212 + (165 - 212) * p);
+            b = Math.round(191 + (250 - 191) * p);
+        } else if (t < 0.5) {
+            // Blue to Yellow
+            const p = (t - 0.25) / 0.25;
+            r = Math.round(96 + (252 - 96) * p);
+            g = Math.round(165 + (211 - 165) * p);
+            b = Math.round(250 + (77 - 250) * p);
+        } else if (t < 0.75) {
+            // Yellow to Pink
+            const p = (t - 0.5) / 0.25;
+            r = Math.round(252 + (251 - 252) * p);
+            g = Math.round(211 + (113 - 211) * p);
+            b = Math.round(77 + (133 - 77) * p);
+        } else {
+            // Pink to Red
+            const p = (t - 0.75) / 0.25;
+            r = Math.round(251 + (239 - 251) * p);
+            g = Math.round(113 + (68 - 113) * p);
+            b = Math.round(133 + (68 - 133) * p);
+        }
+        const alpha = forGlow ? 0.5 : (0.15 + t * 0.55);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function corrTextColor(val) {
+        const t = Math.abs(val);
+        if (t < 0.25) return '#5eead4';
+        if (t < 0.5) return '#93c5fd';
+        if (t < 0.75) return '#fde68a';
+        return '#fda4af';
+    }
+
+    function corrLabel(val) {
+        const t = Math.abs(val);
+        if (t >= 0.8) return 'Very High';
+        if (t >= 0.6) return 'High';
+        if (t >= 0.4) return 'Moderate';
+        if (t >= 0.2) return 'Low';
+        return 'Very Low';
+    }
+
+    // Generate unique tooltip ID
+    const tooltipId = 'corr-tooltip-' + Date.now();
+
+    let html = `
+        <style>
+            .corr-cell {
+                text-align: center;
+                padding: 10px 6px;
+                border-radius: 8px;
+                font-size: 0.78rem;
+                font-weight: 500;
+                min-width: 56px;
+                cursor: pointer;
+                transition: all 0.25s ease;
+                position: relative;
+                letter-spacing: 0.02em;
+            }
+            .corr-cell:hover {
+                transform: scale(1.12);
+                z-index: 10;
+                box-shadow: 0 0 18px var(--cell-glow);
+            }
+            .corr-diag {
+                background: linear-gradient(135deg, rgba(99,102,241,0.35), rgba(139,92,246,0.25)) !important;
+                box-shadow: inset 0 0 12px rgba(139,92,246,0.15);
+            }
+            .corr-diag:hover {
+                box-shadow: 0 0 20px rgba(139,92,246,0.4), inset 0 0 12px rgba(139,92,246,0.15);
+            }
+            .corr-header {
+                padding: 8px 6px;
+                font-size: 0.7rem;
+                color: rgba(255,255,255,0.55);
+                font-weight: 600;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+            }
+            .corr-row-label {
+                padding: 8px 10px;
+                font-size: 0.7rem;
+                color: rgba(255,255,255,0.55);
+                font-weight: 600;
+                text-align: right;
+                letter-spacing: 0.05em;
+                white-space: nowrap;
+            }
+            #${tooltipId} {
+                position: fixed;
+                pointer-events: none;
+                background: rgba(15, 15, 30, 0.95);
+                border: 1px solid rgba(255,255,255,0.12);
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+                border-radius: 10px;
+                padding: 10px 14px;
+                font-size: 0.72rem;
+                color: rgba(255,255,255,0.85);
+                z-index: 9999;
+                display: none;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 1px rgba(255,255,255,0.1);
+                min-width: 140px;
+            }
+        </style>
+        <div id="${tooltipId}"></div>
+    `;
+
+    html += '<div style="overflow-x: auto; padding: 4px;">';
+    html += '<table style="border-collapse: separate; border-spacing: 4px; width: 100%; table-layout: fixed;">';
+
+    // Header row
+    html += '<tr><td></td>';
+    for (let j = 0; j < n; j++) {
+        html += `<td class="corr-header" style="text-align: center;">${tickers[j]}</td>`;
+    }
+    html += '</tr>';
+
+    // Data rows
+    for (let i = 0; i < n; i++) {
+        html += `<tr><td class="corr-row-label">${tickers[i]}</td>`;
+        for (let j = 0; j < n; j++) {
+            const val = matrix[i][j];
+            const isDiag = i === j;
+            const bg = isDiag ? '' : `background: ${corrColor(val)};`;
+            const tc = isDiag ? '#c4b5fd' : corrTextColor(val);
+            const displayVal = val.toFixed(2);
+            const glowColor = isDiag ? 'rgba(139,92,246,0.4)' : corrColor(val, true);
+            const diagClass = isDiag ? 'corr-diag' : '';
+            const fw = Math.abs(val) >= 0.6 ? '600' : '500';
+            const pair = isDiag ? tickers[i] : `${tickers[i]} × ${tickers[j]}`;
+            const label = isDiag ? 'Self' : corrLabel(val);
+            const sign = val > 0 ? 'Positive' : val < 0 ? 'Negative' : 'None';
+
+            html += `<td class="corr-cell ${diagClass}" style="${bg} color: ${tc}; font-weight: ${fw}; --cell-glow: ${glowColor};"
+                onmouseenter="(() => {
+                    const tt = document.getElementById('${tooltipId}');
+                    tt.innerHTML = '<div style=\\'font-weight:600;margin-bottom:4px;color:${tc}\\'>${pair}</div><div style=\\'color:rgba(255,255,255,0.5);font-size:0.65rem;\\'>${label} · ${sign}</div><div style=\\'font-size:1rem;font-weight:700;color:${tc};margin-top:3px;\\'>${displayVal}</div>';
+                    tt.style.display = 'block';
+                })()"
+                onmousemove="(() => {
+                    const tt = document.getElementById('${tooltipId}');
+                    tt.style.left = (event.clientX + 14) + 'px';
+                    tt.style.top = (event.clientY - 10) + 'px';
+                })()"
+                onmouseleave="document.getElementById('${tooltipId}').style.display='none'"
+            >${displayVal}</td>`;
+        }
+        html += '</tr>';
+    }
+
+    html += '</table></div>';
+
+    // Gradient color bar legend
+    html += `
+        <div style="margin-top: 16px; padding: 0 8px;">
+            <div style="display: flex; align-items: center; gap: 10px; justify-content: center;">
+                <span style="font-size: 0.6rem; color: #5eead4; font-weight: 600; letter-spacing: 0.05em;">LOW</span>
+                <div style="flex: 0 1 220px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, rgba(45,212,191,0.5), rgba(96,165,250,0.5), rgba(252,211,77,0.5), rgba(251,113,133,0.5), rgba(239,68,68,0.5)); box-shadow: 0 0 12px rgba(96,165,250,0.15);"></div>
+                <span style="font-size: 0.6rem; color: #fda4af; font-weight: 600; letter-spacing: 0.05em;">HIGH</span>
+            </div>
+            <div style="text-align: center; margin-top: 6px;">
+                <span style="font-size: 0.58rem; color: rgba(255,255,255,0.3); letter-spacing: 0.1em; text-transform: uppercase;">Correlation Intensity</span>
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
+}

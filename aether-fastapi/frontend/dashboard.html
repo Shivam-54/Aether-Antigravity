@@ -1645,42 +1645,39 @@
                                     Feature</span>
                             </div>
                             <div class="ai-lab-tab-grid">
-                                <button class="ai-lab-tab active" data-tab="prediction"
-                                    onclick="switchAILabTab('prediction')">
+                                <button class="ai-lab-tab active" data-tab="predictions-risk"
+                                    onclick="switchAILabTab('predictions-risk')">
                                     <div class="tab-icon-wrap">📈</div>
                                     <div class="tab-content">
-                                        <span class="tab-title">Price Prediction</span>
-                                        <span class="tab-desc">ML forecasting</span>
+                                        <span class="tab-title">Predictions & Risk</span>
+                                        <span class="tab-desc">ML forecasting + Portfolio VaR</span>
                                     </div>
                                 </button>
-                                <button class="ai-lab-tab" data-tab="risk" onclick="switchAILabTab('risk')">
-                                    <div class="tab-icon-wrap">⚡</div>
-                                    <div class="tab-content">
-                                        <span class="tab-title">Risk Analysis</span>
-                                        <span class="tab-desc">Portfolio VaR</span>
-                                    </div>
-                                </button>
-                                <button class="ai-lab-tab" data-tab="insights" onclick="switchAILabTab('insights')">
+                                <button class="ai-lab-tab" data-tab="insights-sentiment"
+                                    onclick="switchAILabTab('insights-sentiment')">
                                     <div class="tab-icon-wrap">✨</div>
                                     <div class="tab-content">
-                                        <span class="tab-title">AI Insights</span>
-                                        <span class="tab-desc">Gemini powered</span>
+                                        <span class="tab-title">Insights & Sentiment</span>
+                                        <span class="tab-desc">AI analysis + News signals</span>
                                     </div>
                                     <span class="tab-badge"
                                         style="background: rgba(118,75,162,0.3); color: #c4b5fd;">AI</span>
                                 </button>
-                                <button class="ai-lab-tab" data-tab="sentiment" onclick="switchAILabTab('sentiment')">
-                                    <div class="tab-icon-wrap">📰</div>
+                                <button class="ai-lab-tab" data-tab="anomaly-correlation"
+                                    onclick="switchAILabTab('anomaly-correlation')">
+                                    <div class="tab-icon-wrap">🔍</div>
                                     <div class="tab-content">
-                                        <span class="tab-title">Sentiment</span>
-                                        <span class="tab-desc">News analysis</span>
+                                        <span class="tab-title">Anomaly & Correlation</span>
+                                        <span class="tab-desc">Outlier detection + Diversification</span>
                                     </div>
+                                    <span class="tab-badge"
+                                        style="background: rgba(45,212,191,0.3); color: #5eead4;">ML</span>
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Tab Panel: Price Prediction -->
-                        <div class="ai-lab-panel active" id="ai-lab-panel-prediction">
+                        <!-- Tab Panel: Predictions & Risk -->
+                        <div class="ai-lab-panel active" id="ai-lab-panel-predictions-risk">
                             <!-- Controls Row -->
                             <div class="glass-card mb-4 p-3">
                                 <div class="row g-3 align-items-center">
@@ -1777,10 +1774,14 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Tab Panel: Risk Analysis -->
-                        <div class="ai-lab-panel" id="ai-lab-panel-risk" style="display: none;">
+                            <!-- ═══ Section Divider: Risk Analysis ═══ -->
+                            <div class="ai-lab-section-divider">
+                                <div class="divider-line"></div>
+                                <span class="divider-label">⚡ Risk Analysis</span>
+                                <div class="divider-line"></div>
+                            </div>
+
                             <!-- Risk Metrics Row -->
                             <div class="row g-3 mb-4">
                                 <div class="col-md-3">
@@ -1853,8 +1854,8 @@
                             </div>
                         </div>
 
-                        <!-- Tab Panel: AI Insights -->
-                        <div class="ai-lab-panel" id="ai-lab-panel-insights" style="display: none;">
+                        <!-- Tab Panel: Insights & Sentiment -->
+                        <div class="ai-lab-panel" id="ai-lab-panel-insights-sentiment" style="display: none;">
                             <div class="glass-card p-4">
                                 <div class="d-flex align-items-center justify-content-between mb-3">
                                     <h3 class="h5 fw-light text-white mb-0">
@@ -1902,10 +1903,13 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Tab Panel: Sentiment (Coming Soon) -->
-                        <div class="ai-lab-panel" id="ai-lab-panel-sentiment" style="display: none;">
+                            <!-- ═══ Section Divider: Sentiment Analysis ═══ -->
+                            <div class="ai-lab-section-divider">
+                                <div class="divider-line"></div>
+                                <span class="divider-label">📰 Sentiment Analysis</span>
+                                <div class="divider-line"></div>
+                            </div>
 
                             <!-- Header -->
                             <div class="d-flex align-items-center justify-content-between mb-4">
@@ -2063,527 +2067,678 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Tab Panel: Anomaly & Correlation -->
+                    <div class="ai-lab-panel" id="ai-lab-panel-anomaly-correlation" style="display: none;">
+
+                        <!-- Correlation Analysis Section -->
+                        <div class="glass-card p-4 mb-4">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h3 class="h5 fw-light text-white mb-0">
+                                    <span
+                                        style="background: linear-gradient(135deg, #a78bfa, #6366f1); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Correlation
+                                        Analysis</span>
+                                </h3>
+                                <button class="btn btn-sm btn-outline-light" onclick="loadCorrelationAnalysis()"
+                                    style="font-size: 0.75rem;">🔄 Refresh</button>
+                            </div>
+                            <p class="text-white-50 small mb-3">Pearson correlation matrix shows how your holdings move
+                                together — lower correlation = better diversification</p>
+
+                            <!-- Diversification Score + Heatmap -->
+                            <div class="row g-3 mb-4">
+                                <!-- Diversification Gauge -->
+                                <div class="col-md-4">
+                                    <div class="glass-card p-4 text-center h-100">
+                                        <div class="text-white-50 small mb-2">Diversification Score</div>
+                                        <div id="diversification-score"
+                                            style="font-size: 3rem; font-weight: 200; line-height: 1;">--</div>
+                                        <div id="diversification-label" class="text-white-50 small mt-1">out of 100
+                                        </div>
+                                        <div class="mt-3">
+                                            <div
+                                                style="background: rgba(255,255,255,0.1); border-radius: 10px; height: 8px; overflow: hidden;">
+                                                <div id="diversification-bar"
+                                                    style="height: 100%; border-radius: 10px; width: 0%; transition: width 1s ease;">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="diversification-avg" class="text-white-50 small mt-2">Avg correlation:
+                                            --</div>
+                                    </div>
+                                </div>
+                                <!-- Heatmap -->
+                                <div class="col-md-8">
+                                    <div class="glass-card p-4 h-100">
+                                        <h4 class="h6 fw-light text-white mb-3">Correlation Heatmap</h4>
+                                        <div id="correlation-heatmap" style="min-height: 200px;">
+                                            <div class="text-center py-4">
+                                                <div class="spinner-border spinner-border-sm text-primary"
+                                                    role="status"></div>
+                                                <div class="text-white-50 small mt-2">Computing correlations...</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Insights & Warnings -->
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="glass-card p-4 h-100">
+                                        <h4 class="h6 fw-light text-white mb-3">⚡ Warnings</h4>
+                                        <div id="correlation-warnings">
+                                            <div class="text-white-50 small">No warnings yet</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="glass-card p-4 h-100">
+                                        <h4 class="h6 fw-light text-white mb-3">◈ Insights</h4>
+                                        <div id="correlation-insights">
+                                            <div class="text-white-50 small">No insights yet</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- How Correlation Analysis Works -->
+                        <div class="glass-card p-4 mb-4">
+                            <h4 class="h6 fw-light mb-3 text-white">How Correlation Analysis Works</h4>
+                            <div class="text-white-50 small">
+                                📊 Computes Pearson correlation coefficients on 3 months of daily returns.
+                                Diversification score = (1 - avg correlation) × 100. Lower correlation between
+                                holdings = better risk diversification.
+                            </div>
+                        </div>
+
+                        <!-- Anomaly Detection Section -->
+                        <div class="glass-card p-4 mb-4">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h3 class="h5 fw-light text-white mb-0">
+                                    <span
+                                        style="background: linear-gradient(135deg, #2dd4bf, #06b6d4); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Anomaly
+                                        Detection</span>
+                                </h3>
+                                <button class="btn btn-sm btn-outline-light" onclick="loadAnomalyDetection()"
+                                    style="font-size: 0.75rem;">🔄 Refresh</button>
+                            </div>
+                            <p class="text-white-50 small mb-3">Isolation Forest ML model scans your holdings for
+                                unusual price movements and volume spikes</p>
+
+                            <!-- Summary Stats -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-3 col-6">
+                                    <div class="glass-card p-3 text-center">
+                                        <div class="text-white-50 small mb-1">Total Anomalies</div>
+                                        <div id="anomaly-total"
+                                            style="font-size: 2rem; font-weight: 300; color: #60a5fa;">--</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="glass-card p-3 text-center">
+                                        <div class="text-white-50 small mb-1">High Severity</div>
+                                        <div id="anomaly-high"
+                                            style="font-size: 2rem; font-weight: 300; color: #fb7185;">--</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="glass-card p-3 text-center">
+                                        <div class="text-white-50 small mb-1">Medium Severity</div>
+                                        <div id="anomaly-medium"
+                                            style="font-size: 2rem; font-weight: 300; color: #fcd34d;">--</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="glass-card p-3 text-center">
+                                        <div class="text-white-50 small mb-1">Tickers Analyzed</div>
+                                        <div id="anomaly-tickers"
+                                            style="font-size: 2rem; font-weight: 300; color: #94a3b8;">--</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Anomaly Timeline -->
+                            <div id="anomaly-timeline">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                    <div class="text-white-50 small mt-2">Running Isolation Forest analysis...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- How Anomaly Detection Works -->
+                        <div class="glass-card p-4">
+                            <h4 class="h6 fw-light mb-3 text-white">How Anomaly Detection Works</h4>
+                            <div class="text-white-50 small">
+                                🔍 Uses scikit-learn's Isolation Forest on 6 months of price returns, volume
+                                changes, and price gaps. Anomalies are events that deviate significantly from
+                                learned patterns.
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
+            </div>
 
-                <div class="module-content" id="module-bonds">
-                    <!-- 1. Overview Section -->
-                    <div id="bonds-section-overview" class="bonds-section active">
-                        <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2">Portfolio Overview</h2>
-                            <p class="text-white-50 fw-light">Capital stability and fixed income
-                                performance</p>
-                        </div>
-
-                        <!-- Main Chart Container -->
-                        <div class="glass-panel p-4 mb-4" style="min-height: 400px;">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <div>
-                                    <h3 class="h5 fw-light mb-1">Fixed Income Trend</h3>
-                                    <p class="text-white-50 small mb-0">Projected monthly coupon
-                                        payments</p>
-                                </div>
-                                <button class="btn btn-sm btn-icon-glass text-white-50">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                    </svg>
-                                </button>
-                            </div>
-                            <!-- Reserved for Chart -->
-                            <div id="bonds-trend-chart" style="height: 300px; width: 100%;"></div>
-                        </div>
-
-                        <!-- Bond Allocation Charts -->
-                        <div class="row g-4 mb-4">
-                            <!-- Bond Type Allocation (Left) -->
-                            <div class="col-lg-6">
-                                <div class="glass-panel p-4 h-100">
-                                    <h3 class="h5 fw-light mb-4">Bond Allocation by Type</h3>
-                                    <div style="height: 250px; width: 100%;">
-                                        <canvas id="bondsTypeChart"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Top Bond Holdings (Right) -->
-                            <div class="col-lg-6">
-                                <div class="glass-panel p-4 h-100">
-                                    <h3 class="h5 fw-light mb-4">Top Bond Holdings</h3>
-                                    <div style="height: 250px; width: 100%;">
-                                        <canvas id="bondsTopHoldingsChart"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Metrics Row -->
-                        <div class="row g-4">
-                            <!-- Metric 1 -->
-                            <div class="col-md-3 col-lg-2dot4">
-                                <div class="glass-card p-4 h-100">
-                                    <div class="d-flex align-items-center gap-2 mb-3">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round" class="text-white-50">
-                                            <rect width="20" height="14" x="2" y="5" rx="2" />
-                                            <line x1="2" x2="22" y1="10" y2="10" />
-                                        </svg>
-                                        <span class="text-white-50 small text-uppercase spacing-1">Total
-                                            Bond
-                                            Value</span>
-                                    </div>
-                                    <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-total-value">--</h3>
-                                    <p class="small text-white-50">Current Market Value</p>
-                                </div>
-                            </div>
-                            <!-- Metric 2 -->
-                            <div class="col-md-3 col-lg-2dot4">
-                                <div class="glass-card p-4 h-100">
-                                    <div class="d-flex align-items-center gap-2 mb-3">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round" class="text-white-50">
-                                            <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-                                            <line x1="16" x2="16" y1="2" y2="6" />
-                                            <line x1="8" x2="8" y1="2" y2="6" />
-                                            <line x1="3" x2="21" y1="10" y2="10" />
-                                        </svg>
-                                        <span class="text-white-50 small text-uppercase spacing-1">Annual
-                                            Fixed
-                                            Income</span>
-                                    </div>
-                                    <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-annual-income">--</h3>
-                                    <p class="small text-white-50">Projected Interest</p>
-                                </div>
-                            </div>
-                            <!-- Metric 3 -->
-                            <div class="col-md-3 col-lg-2dot4">
-                                <div class="glass-card p-4 h-100">
-                                    <div class="d-flex align-items-center gap-2 mb-3">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round" class="text-white-50">
-                                            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-                                            <polyline points="16 7 22 7 22 13" />
-                                        </svg>
-                                        <span class="text-white-50 small text-uppercase spacing-1">Average
-                                            Yield</span>
-                                    </div>
-                                    <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-avg-yield">--</h3>
-                                    <p class="small text-white-50">Yield to Maturity</p>
-                                </div>
-                            </div>
-                            <!-- Metric 4 -->
-                            <div class="col-md-3 col-lg-2dot4">
-                                <div class="glass-card p-4 h-100">
-                                    <div class="d-flex align-items-center gap-2 mb-3">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round" class="text-white-50">
-                                            <circle cx="12" cy="12" r="10" />
-                                            <polyline points="12 6 12 12 16 14" />
-                                        </svg>
-                                        <span class="text-white-50 small text-uppercase spacing-1">Next
-                                            Maturity</span>
-                                    </div>
-                                    <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-next-maturity">--</h3>
-                                    <p class="small text-white-50" id="bonds-overview-next-maturity-date">Upcoming Date
-                                    </p>
-                                </div>
-                            </div>
-                            <!-- Metric 5 -->
-                            <div class="col-md-3 col-lg-2dot4">
-                                <div class="glass-card p-4 h-100">
-                                    <div class="d-flex align-items-center gap-2 mb-3">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round" class="text-white-50">
-                                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                                            <circle cx="9" cy="7" r="4" />
-                                            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                                        </svg>
-                                        <span class="text-white-50 small text-uppercase spacing-1">Active
-                                            Bonds</span>
-                                    </div>
-                                    <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-total-count">0</h3>
-                                    <p class="small text-white-50">Currently Active Instruments</p>
-                                </div>
-                            </div>
-                        </div>
+            <div class="module-content" id="module-bonds">
+                <!-- 1. Overview Section -->
+                <div id="bonds-section-overview" class="bonds-section active">
+                    <div class="glass-header mb-4">
+                        <h2 class="h3 fw-light mb-2">Portfolio Overview</h2>
+                        <p class="text-white-50 fw-light">Capital stability and fixed income
+                            performance</p>
                     </div>
 
-                    <!-- 2. Holdings Section -->
-                    <div id="bonds-section-holdings" class="bonds-section" style="display: none;">
-                        <div class="glass-header mb-4 d-flex justify-content-between align-items-end">
+                    <!-- Main Chart Container -->
+                    <div class="glass-panel p-4 mb-4" style="min-height: 400px;">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
                             <div>
-                                <h2 class="h3 fw-light mb-2">Holdings</h2>
-                                <p class="text-white-50 fw-light">Breakdown of recurring capital
-                                    inflows</p>
+                                <h3 class="h5 fw-light mb-1">Fixed Income Trend</h3>
+                                <p class="text-white-50 small mb-0">Projected monthly coupon
+                                    payments</p>
                             </div>
-                            <button class="glass-button px-4 py-2 rounded-pill small" onclick="openAddBondModal()">
-                                <span>+</span> Add Bond
+                            <button class="btn btn-sm btn-icon-glass text-white-50">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
                             </button>
                         </div>
-                        <div class="row g-4">
-                            <!-- Income by Type Chart -->
-                            <div class="col-lg-6">
-                                <div class="glass-card p-4 h-100">
-                                    <h3 class="h5 fw-light text-white-90 mb-4">Income by Bond Type
-                                    </h3>
-                                    <div style="height: 300px; position: relative;">
-                                        <canvas id="bondsIncomeChart"></canvas>
-                                    </div>
+                        <!-- Reserved for Chart -->
+                        <div id="bonds-trend-chart" style="height: 300px; width: 100%;"></div>
+                    </div>
+
+                    <!-- Bond Allocation Charts -->
+                    <div class="row g-4 mb-4">
+                        <!-- Bond Type Allocation (Left) -->
+                        <div class="col-lg-6">
+                            <div class="glass-panel p-4 h-100">
+                                <h3 class="h5 fw-light mb-4">Bond Allocation by Type</h3>
+                                <div style="height: 250px; width: 100%;">
+                                    <canvas id="bondsTypeChart"></canvas>
                                 </div>
                             </div>
-                            <!-- Top Payers List -->
-                            <div class="col-lg-6">
-                                <div class="glass-card p-4 h-100">
-                                    <h3 class="h5 fw-light text-white-90 mb-4">Top Income Generators
-                                    </h3>
-                                    <div id="bonds-top-payers-list" class="d-flex flex-column gap-3 custom-scrollbar"
-                                        style="max-height: 320px; overflow-y: auto; padding-right: 8px;">
-                                        <!-- Injected via JS -->
-                                    </div>
+                        </div>
+                        <!-- Top Bond Holdings (Right) -->
+                        <div class="col-lg-6">
+                            <div class="glass-panel p-4 h-100">
+                                <h3 class="h5 fw-light mb-4">Top Bond Holdings</h3>
+                                <div style="height: 250px; width: 100%;">
+                                    <canvas id="bondsTopHoldingsChart"></canvas>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 3. Maturity Schedule Section -->
-                    <div id="bonds-section-maturity" class="bonds-section" style="display: none;">
-                        <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2">Maturity Schedule</h2>
-                            <p class="text-white-50 fw-light">Timeline of capital returns and corpus
-                                liquidity</p>
+                    <!-- Metrics Row -->
+                    <div class="row g-4">
+                        <!-- Metric 1 -->
+                        <div class="col-md-3 col-lg-2dot4">
+                            <div class="glass-card p-4 h-100">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" class="text-white-50">
+                                        <rect width="20" height="14" x="2" y="5" rx="2" />
+                                        <line x1="2" x2="22" y1="10" y2="10" />
+                                    </svg>
+                                    <span class="text-white-50 small text-uppercase spacing-1">Total
+                                        Bond
+                                        Value</span>
+                                </div>
+                                <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-total-value">--</h3>
+                                <p class="small text-white-50">Current Market Value</p>
+                            </div>
                         </div>
-                        <div id="bonds-maturity-list" class="d-flex flex-column gap-3">
-                            <!-- Injected via JS -->
+                        <!-- Metric 2 -->
+                        <div class="col-md-3 col-lg-2dot4">
+                            <div class="glass-card p-4 h-100">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" class="text-white-50">
+                                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+                                        <line x1="16" x2="16" y1="2" y2="6" />
+                                        <line x1="8" x2="8" y1="2" y2="6" />
+                                        <line x1="3" x2="21" y1="10" y2="10" />
+                                    </svg>
+                                    <span class="text-white-50 small text-uppercase spacing-1">Annual
+                                        Fixed
+                                        Income</span>
+                                </div>
+                                <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-annual-income">--</h3>
+                                <p class="small text-white-50">Projected Interest</p>
+                            </div>
+                        </div>
+                        <!-- Metric 3 -->
+                        <div class="col-md-3 col-lg-2dot4">
+                            <div class="glass-card p-4 h-100">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" class="text-white-50">
+                                        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+                                        <polyline points="16 7 22 7 22 13" />
+                                    </svg>
+                                    <span class="text-white-50 small text-uppercase spacing-1">Average
+                                        Yield</span>
+                                </div>
+                                <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-avg-yield">--</h3>
+                                <p class="small text-white-50">Yield to Maturity</p>
+                            </div>
+                        </div>
+                        <!-- Metric 4 -->
+                        <div class="col-md-3 col-lg-2dot4">
+                            <div class="glass-card p-4 h-100">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" class="text-white-50">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <polyline points="12 6 12 12 16 14" />
+                                    </svg>
+                                    <span class="text-white-50 small text-uppercase spacing-1">Next
+                                        Maturity</span>
+                                </div>
+                                <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-next-maturity">--</h3>
+                                <p class="small text-white-50" id="bonds-overview-next-maturity-date">Upcoming Date
+                                </p>
+                            </div>
+                        </div>
+                        <!-- Metric 5 -->
+                        <div class="col-md-3 col-lg-2dot4">
+                            <div class="glass-card p-4 h-100">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" class="text-white-50">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                        <circle cx="9" cy="7" r="4" />
+                                        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                    </svg>
+                                    <span class="text-white-50 small text-uppercase spacing-1">Active
+                                        Bonds</span>
+                                </div>
+                                <h3 class="h4 fw-light mb-1 text-white" id="bonds-overview-total-count">0</h3>
+                                <p class="small text-white-50">Currently Active Instruments</p>
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- 4. Bond Allocation Section -->
-                    <div id="bonds-section-bond-allocation" class="bonds-section" style="display: none;">
-                        <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2">Asset Allocation</h2>
-                            <p class="text-white-50 fw-light">Exposure by issuer category</p>
+                <!-- 2. Holdings Section -->
+                <div id="bonds-section-holdings" class="bonds-section" style="display: none;">
+                    <div class="glass-header mb-4 d-flex justify-content-between align-items-end">
+                        <div>
+                            <h2 class="h3 fw-light mb-2">Holdings</h2>
+                            <p class="text-white-50 fw-light">Breakdown of recurring capital
+                                inflows</p>
                         </div>
-                        <div class="row g-4 align-items-center" style="min-height: 500px;">
-                            <!-- Chart Ring -->
-                            <div class="col-lg-6">
-                                <div style="height: 350px; position: relative;">
-                                    <canvas id="bondsAllocationChart"></canvas>
-                                    <div class="position-absolute top-50 start-50 translate-middle text-center"
-                                        style="pointer-events: none;">
-                                        <p class="text-white-50 small text-uppercase spacing-1 mb-2">
-                                            Total Corpus</p>
-                                        <p class="h3 fw-light text-white-90" id="bonds-total-corpus">--</p>
-                                    </div>
+                        <button class="glass-button px-4 py-2 rounded-pill small" onclick="openAddBondModal()">
+                            <span>+</span> Add Bond
+                        </button>
+                    </div>
+                    <div class="row g-4">
+                        <!-- Income by Type Chart -->
+                        <div class="col-lg-6">
+                            <div class="glass-card p-4 h-100">
+                                <h3 class="h5 fw-light text-white-90 mb-4">Income by Bond Type
+                                </h3>
+                                <div style="height: 300px; position: relative;">
+                                    <canvas id="bondsIncomeChart"></canvas>
                                 </div>
                             </div>
-                            <!-- Legend -->
-                            <div class="col-lg-6">
-                                <div id="bonds-allocation-legend" class="glass-card p-4 d-flex flex-column gap-3"
-                                    style="background: rgba(255,255,255,0.02);">
+                        </div>
+                        <!-- Top Payers List -->
+                        <div class="col-lg-6">
+                            <div class="glass-card p-4 h-100">
+                                <h3 class="h5 fw-light text-white-90 mb-4">Top Income Generators
+                                </h3>
+                                <div id="bonds-top-payers-list" class="d-flex flex-column gap-3 custom-scrollbar"
+                                    style="max-height: 320px; overflow-y: auto; padding-right: 8px;">
                                     <!-- Injected via JS -->
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- 5. Yield Analysis Section -->
-                    <div id="bonds-section-yield-analysis" class="bonds-section" style="display: none;">
-                        <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2">Yield Analysis</h2>
-                            <p class="text-white-50 fw-light">Performance efficiency across bond
-                                categories</p>
-                        </div>
-
-                        <!-- Yield Cards Container -->
-                        <div id="bonds-yield-grid" class="row g-4">
-                            <!-- Injected via JS -->
-                        </div>
+                <!-- 3. Maturity Schedule Section -->
+                <div id="bonds-section-maturity" class="bonds-section" style="display: none;">
+                    <div class="glass-header mb-4">
+                        <h2 class="h3 fw-light mb-2">Maturity Schedule</h2>
+                        <p class="text-white-50 fw-light">Timeline of capital returns and corpus
+                            liquidity</p>
                     </div>
+                    <div id="bonds-maturity-list" class="d-flex flex-column gap-3">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
 
-                    <!-- 6. AI Insights Section -->
-
-                    <div id="bonds-section-ai-insights" class="bonds-section" style="display: none;">
-                        <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2">AI Insights</h2>
-                            <p class="text-white-50 fw-light">Strategic intelligence for fixed
-                                income optimization</p>
-                        </div>
-
-                        <!-- Insights Cards Container -->
-                        <div id="bonds-ai-insights-list" class="d-flex flex-column gap-3 mb-5">
-                            <!-- Injected via JS -->
-                        </div>
-
-                        <!-- Chat Interface -->
-                        <div class="glass-card p-4">
-                            <div class="d-flex align-items-center gap-3 mb-4">
-                                <span class="text-white-60">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <path
-                                            d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-                                    </svg>
-                                </span>
-                                <h3 class="h5 fw-light text-white-90 mb-0">Bond Assistant</h3>
+                <!-- 4. Bond Allocation Section -->
+                <div id="bonds-section-bond-allocation" class="bonds-section" style="display: none;">
+                    <div class="glass-header mb-4">
+                        <h2 class="h3 fw-light mb-2">Asset Allocation</h2>
+                        <p class="text-white-50 fw-light">Exposure by issuer category</p>
+                    </div>
+                    <div class="row g-4 align-items-center" style="min-height: 500px;">
+                        <!-- Chart Ring -->
+                        <div class="col-lg-6">
+                            <div style="height: 350px; position: relative;">
+                                <canvas id="bondsAllocationChart"></canvas>
+                                <div class="position-absolute top-50 start-50 translate-middle text-center"
+                                    style="pointer-events: none;">
+                                    <p class="text-white-50 small text-uppercase spacing-1 mb-2">
+                                        Total Corpus</p>
+                                    <p class="h3 fw-light text-white-90" id="bonds-total-corpus">--</p>
+                                </div>
                             </div>
-
-                            <!-- Chat History -->
-                            <div id="bonds-chat-history" class="d-flex flex-column gap-3 mb-4"
-                                style="max-height: 300px; overflow-y: auto;">
+                        </div>
+                        <!-- Legend -->
+                        <div class="col-lg-6">
+                            <div id="bonds-allocation-legend" class="glass-card p-4 d-flex flex-column gap-3"
+                                style="background: rgba(255,255,255,0.02);">
                                 <!-- Injected via JS -->
-                            </div>
-
-                            <!-- Input Area -->
-                            <div class="d-flex gap-3">
-                                <input type="text" id="bonds-chat-input"
-                                    class="form-control glass-input text-white fw-light"
-                                    placeholder="Ask about interest rates, yields, or maturity..."
-                                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;"
-                                    onkeypress="if(event.key === 'Enter') handleBondChat()">
-                                <button onclick="handleBondChat()"
-                                    class="btn glass-button px-4 d-flex align-items-center justify-content-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <line x1="22" y1="2" x2="11" y2="13"></line>
-                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                                    </svg>
-                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="module-content" id="module-business">
 
-                    <!-- 1. Business Dashboard Section -->
-                    <div id="business-section-dashboard" class="business-section">
-                        <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2">Business Dashboard</h2>
-                            <p class="text-white-50 fw-light">Portfolio-wide operational
-                                intelligence</p>
-                        </div>
-
-                        <!-- 0. Performance Chart -->
-                        <!-- 0. Performance Chart -->
-                        <div class="glass-card p-4 p-md-5 mb-4 position-relative overflow-hidden">
-                            <!-- Decorative Glow -->
-                            <div class="position-absolute top-0 end-0 w-50 h-50 rounded-circle"
-                                style="background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%); filter: blur(50px); pointer-events: none;">
-                            </div>
-
-                            <div class="d-flex align-items-center justify-content-between mb-4 position-relative">
-                                <div>
-                                    <h3 class="small fw-medium text-white-70 text-uppercase tracking-wider mb-1">
-                                        Performance</h3>
-                                    <h2 class="h3 fw-light text-white mb-0">Revenue & Profit</h2>
-                                </div>
-                                <div class="d-flex gap-2">
-                                    <button
-                                        class="px-3 py-1 rounded-pill small transition-colors text-white-70 hover-white"
-                                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Yearly</button>
-                                </div>
-                            </div>
-                            <div style="height: 350px; position: relative;">
-                                <canvas id="businessRevenueChart"></canvas>
-                            </div>
-                        </div>
-
-                        <!-- Summary Cards Grid -->
-                        <div id="business-summary-cards" class="row g-4 mb-4">
-                            <!-- Injected via JS -->
-                        </div>
-
-                        <!-- Health Indicator -->
-                        <div id="business-health-indicator" class="glass-card p-4 mb-4">
-                            <!-- Injected via JS -->
-                        </div>
-
-                        <!-- Business Grid Overview -->
-                        <div class="glass-card p-4">
-                            <h3 class="h5 fw-light text-white mb-4">Business Portfolio</h3>
-                            <div id="business-dashboard-grid" class="row g-4">
-                                <!-- Injected via JS -->
-                            </div>
-                        </div>
+                <!-- 5. Yield Analysis Section -->
+                <div id="bonds-section-yield-analysis" class="bonds-section" style="display: none;">
+                    <div class="glass-header mb-4">
+                        <h2 class="h3 fw-light mb-2">Yield Analysis</h2>
+                        <p class="text-white-50 fw-light">Performance efficiency across bond
+                            categories</p>
                     </div>
 
-                    <!-- 2. Ventures Section -->
-                    <div id="business-section-ventures" class="business-section" style="display: none;">
-                        <div class="glass-header mb-4 d-flex justify-content-between align-items-start">
-                            <div>
-                                <h2 class="h3 fw-light mb-2">Ventures</h2>
-                                <p class="text-white-50 fw-light mb-0">Your business portfolio and
-                                    ownership stakes</p>
-                            </div>
-                            <button onclick="openAddBusinessModal()"
-                                class="btn glass-button px-4 py-2 d-flex align-items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    <!-- Yield Cards Container -->
+                    <div id="bonds-yield-grid" class="row g-4">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- 6. AI Insights Section -->
+
+                <div id="bonds-section-ai-insights" class="bonds-section" style="display: none;">
+                    <div class="glass-header mb-4">
+                        <h2 class="h3 fw-light mb-2">AI Insights</h2>
+                        <p class="text-white-50 fw-light">Strategic intelligence for fixed
+                            income optimization</p>
+                    </div>
+
+                    <!-- Insights Cards Container -->
+                    <div id="bonds-ai-insights-list" class="d-flex flex-column gap-3 mb-5">
+                        <!-- Injected via JS -->
+                    </div>
+
+                    <!-- Chat Interface -->
+                    <div class="glass-card p-4">
+                        <div class="d-flex align-items-center gap-3 mb-4">
+                            <span class="text-white-60">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
                                     stroke-linejoin="round">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                                <span>Add Business</span>
-                            </button>
-                        </div>
-                        <div id="business-ventures-grid" class="row g-4">
-                            <!-- Injected via JS -->
-                        </div>
-                    </div>
-
-                    <!-- 3. Cash Flow Section -->
-                    <div id="business-section-cash-flow" class="business-section" style="display: none;">
-                        <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2">Cash Flow</h2>
-                            <p class="text-white-50 fw-light">Track money movement across your
-                                businesses</p>
-                        </div>
-
-                        <!-- Filters -->
-                        <div class="d-flex gap-3 mb-4 flex-wrap align-items-center justify-content-between">
-                            <div class="d-flex gap-3">
-                                <select id="business-cf-filter-business" class="form-select glass-input"
-                                    style="max-width: 200px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
-                                    <option value="all">All Businesses</option>
-                                </select>
-                                <select id="business-cf-filter-type" class="form-select glass-input"
-                                    style="max-width: 150px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
-                                    <option value="all">All Types</option>
-                                    <option value="Income">Income</option>
-                                    <option value="Expense">Expense</option>
-                                    <option value="Investment">Investment</option>
-                                    <option value="Transfer">Transfer</option>
-                                </select>
-                            </div>
-                            <button onclick="openAddTransactionModal()"
-                                class="btn glass-button px-4 py-2 d-flex align-items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                                <span>New Entry</span>
-                            </button>
-                        </div>
-
-                        <!-- Transactions List -->
-                        <div id="business-cf-transactions">
-                            <!-- Injected via JS -->
-                        </div>
-                    </div>
-
-                    <!-- 4. Statements Section -->
-                    <div id="business-section-statements" class="business-section" style="display: none;">
-                        <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2">Statements</h2>
-                            <p class="text-white-50 fw-light">Financial clarity without complexity
-                            </p>
-                        </div>
-
-                        <!-- P&L Section -->
-                        <div class="glass-card p-4 mb-4">
-                            <h3 class="h5 fw-light text-white mb-4">Profit & Loss Statement</h3>
-                            <div id="business-pl-statements">
-                                <!-- Injected via JS -->
-                            </div>
-                        </div>
-
-                        <!-- Balance Sheet Section -->
-                        <div class="glass-card p-4 mb-4">
-                            <h3 class="h5 fw-light text-white mb-4">Balance Sheet (Simplified)</h3>
-                            <div id="business-balance-sheets">
-                                <!-- Injected via JS -->
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <!-- 4.1 Documentation Section (New) -->
-                    <!-- 4.1 Documentation Section (New) -->
-                    <div id="business-section-documentation" class="business-section" style="display: none;">
-                        <div class="glass-header mb-4 d-flex justify-content-between align-items-end">
-                            <div>
-                                <h2 class="h3 fw-light mb-2">Documents</h2>
-                                <p class="text-white-50 fw-light">All your business legal, financial
-                                    and property
-                                    records</p>
-                            </div>
-                            <button onclick="openAddDocumentModal()"
-                                class="glass-button px-4 py-2 rounded-pill small d-flex align-items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                                <span>Add Document</span>
-                            </button>
-                        </div>
-
-                        <!-- Documents List (Grouped) -->
-                        <div id="business-documents-grouped">
-                            <!-- Injected via JS - grouped by business -->
-                        </div>
-                    </div>
-
-                    <!-- 5. AI Insights Section -->
-                    <div id="business-section-ai-insights" class="business-section" style="display: none;">
-                        <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2">AI Insights</h2>
-                            <p class="text-white-50 fw-light">Decision intelligence powered by your
-                                business data</p>
-                        </div>
-
-                        <!-- Insight Feed -->
-                        <div id="business-insights-feed" class="d-flex flex-column gap-4 mb-5">
-                            <!-- Injected via JS -->
-                        </div>
-
-                        <!-- AI Assistant -->
-                        <div class="glass-card p-4">
-                            <h3 class="h5 fw-light text-white mb-4">AI Business Assistant</h3>
-                            <div class="glass-card p-4 mb-4 d-flex flex-column align-items-center justify-content-center"
-                                style="min-height: 250px; background: rgba(255,255,255,0.02);">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"
-                                    stroke-linejoin="round" class="text-white-20 mb-3">
                                     <path
                                         d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
                                 </svg>
-                                <p class="text-white-40 text-center small mb-4">Ask me about your
-                                    business performance,
-                                    trends, or projections.</p>
-                                <div class="row g-2 w-100" style="max-width: 600px;">
-                                    <div class="col-6"><button
-                                            class="btn glass-button w-100 small text-white-60 text-start" disabled>Which
-                                            business is most profitable?</button></div>
-                                    <div class="col-6"><button
-                                            class="btn glass-button w-100 small text-white-60 text-start" disabled>Why
-                                            did profits drop last quarter?</button></div>
-                                    <div class="col-6"><button
-                                            class="btn glass-button w-100 small text-white-60 text-start" disabled>What
-                                            if expenses increase 10%?</button></div>
-                                    <div class="col-6"><button
-                                            class="btn glass-button w-100 small text-white-60 text-start" disabled>Show
-                                            me cash flow trends</button></div>
-                                </div>
+                            </span>
+                            <h3 class="h5 fw-light text-white-90 mb-0">Bond Assistant</h3>
+                        </div>
+
+                        <!-- Chat History -->
+                        <div id="bonds-chat-history" class="d-flex flex-column gap-3 mb-4"
+                            style="max-height: 300px; overflow-y: auto;">
+                            <!-- Injected via JS -->
+                        </div>
+
+                        <!-- Input Area -->
+                        <div class="d-flex gap-3">
+                            <input type="text" id="bonds-chat-input"
+                                class="form-control glass-input text-white fw-light"
+                                placeholder="Ask about interest rates, yields, or maturity..."
+                                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;"
+                                onkeypress="if(event.key === 'Enter') handleBondChat()">
+                            <button onclick="handleBondChat()"
+                                class="btn glass-button px-4 d-flex align-items-center justify-content-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="module-content" id="module-business">
+
+                <!-- 1. Business Dashboard Section -->
+                <div id="business-section-dashboard" class="business-section">
+                    <div class="glass-header mb-4">
+                        <h2 class="h3 fw-light mb-2">Business Dashboard</h2>
+                        <p class="text-white-50 fw-light">Portfolio-wide operational
+                            intelligence</p>
+                    </div>
+
+                    <!-- 0. Performance Chart -->
+                    <!-- 0. Performance Chart -->
+                    <div class="glass-card p-4 p-md-5 mb-4 position-relative overflow-hidden">
+                        <!-- Decorative Glow -->
+                        <div class="position-absolute top-0 end-0 w-50 h-50 rounded-circle"
+                            style="background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%); filter: blur(50px); pointer-events: none;">
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between mb-4 position-relative">
+                            <div>
+                                <h3 class="small fw-medium text-white-70 text-uppercase tracking-wider mb-1">
+                                    Performance</h3>
+                                <h2 class="h3 fw-light text-white mb-0">Revenue & Profit</h2>
                             </div>
-                            <p class="text-white-30 small text-center">AI chat functionality coming
-                                soon...</p>
+                            <div class="d-flex gap-2">
+                                <button class="px-3 py-1 rounded-pill small transition-colors text-white-70 hover-white"
+                                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Yearly</button>
+                            </div>
+                        </div>
+                        <div style="height: 350px; position: relative;">
+                            <canvas id="businessRevenueChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Summary Cards Grid -->
+                    <div id="business-summary-cards" class="row g-4 mb-4">
+                        <!-- Injected via JS -->
+                    </div>
+
+                    <!-- Health Indicator -->
+                    <div id="business-health-indicator" class="glass-card p-4 mb-4">
+                        <!-- Injected via JS -->
+                    </div>
+
+                    <!-- Business Grid Overview -->
+                    <div class="glass-card p-4">
+                        <h3 class="h5 fw-light text-white mb-4">Business Portfolio</h3>
+                        <div id="business-dashboard-grid" class="row g-4">
+                            <!-- Injected via JS -->
                         </div>
                     </div>
                 </div>
 
+                <!-- 2. Ventures Section -->
+                <div id="business-section-ventures" class="business-section" style="display: none;">
+                    <div class="glass-header mb-4 d-flex justify-content-between align-items-start">
+                        <div>
+                            <h2 class="h3 fw-light mb-2">Ventures</h2>
+                            <p class="text-white-50 fw-light mb-0">Your business portfolio and
+                                ownership stakes</p>
+                        </div>
+                        <button onclick="openAddBusinessModal()"
+                            class="btn glass-button px-4 py-2 d-flex align-items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            <span>Add Business</span>
+                        </button>
+                    </div>
+                    <div id="business-ventures-grid" class="row g-4">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- 3. Cash Flow Section -->
+                <div id="business-section-cash-flow" class="business-section" style="display: none;">
+                    <div class="glass-header mb-4">
+                        <h2 class="h3 fw-light mb-2">Cash Flow</h2>
+                        <p class="text-white-50 fw-light">Track money movement across your
+                            businesses</p>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="d-flex gap-3 mb-4 flex-wrap align-items-center justify-content-between">
+                        <div class="d-flex gap-3">
+                            <select id="business-cf-filter-business" class="form-select glass-input"
+                                style="max-width: 200px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                                <option value="all">All Businesses</option>
+                            </select>
+                            <select id="business-cf-filter-type" class="form-select glass-input"
+                                style="max-width: 150px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                                <option value="all">All Types</option>
+                                <option value="Income">Income</option>
+                                <option value="Expense">Expense</option>
+                                <option value="Investment">Investment</option>
+                                <option value="Transfer">Transfer</option>
+                            </select>
+                        </div>
+                        <button onclick="openAddTransactionModal()"
+                            class="btn glass-button px-4 py-2 d-flex align-items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            <span>New Entry</span>
+                        </button>
+                    </div>
+
+                    <!-- Transactions List -->
+                    <div id="business-cf-transactions">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- 4. Statements Section -->
+                <div id="business-section-statements" class="business-section" style="display: none;">
+                    <div class="glass-header mb-4">
+                        <h2 class="h3 fw-light mb-2">Statements</h2>
+                        <p class="text-white-50 fw-light">Financial clarity without complexity
+                        </p>
+                    </div>
+
+                    <!-- P&L Section -->
+                    <div class="glass-card p-4 mb-4">
+                        <h3 class="h5 fw-light text-white mb-4">Profit & Loss Statement</h3>
+                        <div id="business-pl-statements">
+                            <!-- Injected via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Balance Sheet Section -->
+                    <div class="glass-card p-4 mb-4">
+                        <h3 class="h5 fw-light text-white mb-4">Balance Sheet (Simplified)</h3>
+                        <div id="business-balance-sheets">
+                            <!-- Injected via JS -->
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- 4.1 Documentation Section (New) -->
+                <!-- 4.1 Documentation Section (New) -->
+                <div id="business-section-documentation" class="business-section" style="display: none;">
+                    <div class="glass-header mb-4 d-flex justify-content-between align-items-end">
+                        <div>
+                            <h2 class="h3 fw-light mb-2">Documents</h2>
+                            <p class="text-white-50 fw-light">All your business legal, financial
+                                and property
+                                records</p>
+                        </div>
+                        <button onclick="openAddDocumentModal()"
+                            class="glass-button px-4 py-2 rounded-pill small d-flex align-items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            <span>Add Document</span>
+                        </button>
+                    </div>
+
+                    <!-- Documents List (Grouped) -->
+                    <div id="business-documents-grouped">
+                        <!-- Injected via JS - grouped by business -->
+                    </div>
+                </div>
+
+                <!-- 5. AI Insights Section -->
+                <div id="business-section-ai-insights" class="business-section" style="display: none;">
+                    <div class="glass-header mb-4">
+                        <h2 class="h3 fw-light mb-2">AI Insights</h2>
+                        <p class="text-white-50 fw-light">Decision intelligence powered by your
+                            business data</p>
+                    </div>
+
+                    <!-- Insight Feed -->
+                    <div id="business-insights-feed" class="d-flex flex-column gap-4 mb-5">
+                        <!-- Injected via JS -->
+                    </div>
+
+                    <!-- AI Assistant -->
+                    <div class="glass-card p-4">
+                        <h3 class="h5 fw-light text-white mb-4">AI Business Assistant</h3>
+                        <div class="glass-card p-4 mb-4 d-flex flex-column align-items-center justify-content-center"
+                            style="min-height: 250px; background: rgba(255,255,255,0.02);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"
+                                stroke-linejoin="round" class="text-white-20 mb-3">
+                                <path
+                                    d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                            </svg>
+                            <p class="text-white-40 text-center small mb-4">Ask me about your
+                                business performance,
+                                trends, or projections.</p>
+                            <div class="row g-2 w-100" style="max-width: 600px;">
+                                <div class="col-6"><button class="btn glass-button w-100 small text-white-60 text-start"
+                                        disabled>Which
+                                        business is most profitable?</button></div>
+                                <div class="col-6"><button class="btn glass-button w-100 small text-white-60 text-start"
+                                        disabled>Why
+                                        did profits drop last quarter?</button></div>
+                                <div class="col-6"><button class="btn glass-button w-100 small text-white-60 text-start"
+                                        disabled>What
+                                        if expenses increase 10%?</button></div>
+                                <div class="col-6"><button class="btn glass-button w-100 small text-white-60 text-start"
+                                        disabled>Show
+                                        me cash flow trends</button></div>
+                            </div>
+                        </div>
+                        <p class="text-white-30 small text-center">AI chat functionality coming
+                            soon...</p>
+                    </div>
+                </div>
             </div>
+
         </div>
+    </div>
     </div>
 
     <!-- Property Modal -->
@@ -2623,7 +2778,7 @@
     <script src="js/analytics-utils.js"></script> <!-- NEW: Analytics Logic -->
     <script src="js/shares-module.js?v=12"></script>
     <script src="js/shares-performance.js?v=1"></script>
-    <script src="js/shares-ai.js?v=1"></script> <!-- NEW: AI Lab price predictions -->
+    <script src="js/shares-ai.js?v=9"></script> <!-- NEW: AI Lab price predictions -->
 
 
     <!-- Add Property Modal -->

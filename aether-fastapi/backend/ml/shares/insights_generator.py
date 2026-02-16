@@ -89,7 +89,7 @@ class InsightsGenerator:
                     'title': 'No Data Available',
                     'content': 'Unable to fetch stock data for analysis.',
                     'severity': 'low',
-                    'icon': '⚠️'
+                    'icon': '⚡'
                 }],
                 'generated_at': datetime.now().isoformat()
             }
@@ -130,7 +130,7 @@ Generate exactly 5-6 insights in the following JSON format. Each insight must be
     "title": "Short title (max 60 chars)",
     "content": "Detailed explanation (2-3 sentences max)",
     "severity": "low|medium|high",
-    "icon": "emoji icon",
+    "icon": "single minimal icon character (use: ◈ ✦ ⚡ ◎ ◇ — avoid childish emojis)",
     "ticker": "TICKER or null if portfolio-wide"
   }}
 ]
@@ -143,7 +143,8 @@ RULES:
 4. Be specific with numbers and percentages from the data
 5. Keep language professional but accessible
 6. Each "content" should be actionable and concise
-7. Return ONLY the JSON array, no other text"""
+7. Return ONLY the JSON array, no other text
+8. For icons, use minimal professional symbols like ◈ ✦ ⚡ ◎ ◇ ▣. Do NOT use childish emojis like 🚀 ⚠️ 📊."""
 
         return prompt
     
@@ -169,7 +170,7 @@ RULES:
                     'title': insight.get('title', 'Insight'),
                     'content': insight.get('content', ''),
                     'severity': insight.get('severity', 'medium'),
-                    'icon': insight.get('icon', '📊'),
+                    'icon': insight.get('icon', '◈'),
                     'ticker': insight.get('ticker', None)
                 })
             
@@ -182,7 +183,7 @@ RULES:
                 'title': 'Analysis Complete',
                 'content': response_text[:200],
                 'severity': 'medium',
-                'icon': '📊',
+                'icon': '◈',
                 'ticker': None
             }]
     
@@ -198,7 +199,7 @@ RULES:
             'title': f'Portfolio Analysis: {len(tickers)} Stocks',
             'content': f'Your portfolio of {", ".join(tickers)} has an average monthly change of {avg_change:+.1f}%.',
             'severity': 'medium',
-            'icon': '📊',
+            'icon': '◈',
             'ticker': None
         })
         
@@ -210,7 +211,7 @@ RULES:
                     'title': f'{ticker}: High Volatility Alert',
                     'content': f'{ticker} has {data["volatility_annual_pct"]:.1f}% annualized volatility. Consider position sizing.',
                     'severity': 'high',
-                    'icon': '⚠️',
+                    'icon': '⚡',
                     'ticker': ticker
                 })
         
@@ -222,7 +223,7 @@ RULES:
                     'title': f'{ticker}: Positive Momentum',
                     'content': f'{ticker} is trading above both 20 & 50 day averages with {data["month_change_pct"]:+.1f}% monthly gain.',
                     'severity': 'low',
-                    'icon': '🚀',
+                    'icon': '↗',
                     'ticker': ticker
                 })
         
@@ -234,7 +235,7 @@ RULES:
                     'title': f'{ticker}: Below Key Support',
                     'content': f'{ticker} at ${data["current_price"]} is below its 50-day SMA of ${data["sma_50"]}.',
                     'severity': 'medium',
-                    'icon': '📉',
+                    'icon': '↘',
                     'ticker': ticker
                 })
         
