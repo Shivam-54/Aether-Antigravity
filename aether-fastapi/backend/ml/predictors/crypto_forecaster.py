@@ -11,11 +11,7 @@ from typing import Dict, List, Optional, Tuple
 import logging
 import asyncio
 
-from services.coingecko_service import (
-    fetch_historical_prices,
-    calculate_technical_indicators,
-    get_coin_id
-)
+from ml.data.data_collector import data_collector
 
 logger = logging.getLogger(__name__)
 
@@ -70,8 +66,8 @@ class CryptoPriceForecaster:
         Returns:
             True if training successful, False otherwise
         """
-        # Fetch historical data
-        df = await fetch_historical_prices(symbol, days=days)
+        # Fetch historical data (data_collector has fallback on API rate limits)
+        df = await data_collector.fetch_historical_data(symbol, days=days)
         if df is None or len(df) < 30:
             logger.warning(f"Insufficient data for {symbol}: {len(df) if df is not None else 0} days")
             return False
@@ -79,18 +75,20 @@ class CryptoPriceForecaster:
         # Prepare data for Prophet
         prophet_df = self._prepare_prophet_data(df)
         
-        # Initialize Prophet with conservative settings for stable predictions
+        # Initialize Prophet with tuned settings for realistic crypto predictions
         model = Prophet(
-            yearly_seasonality=True,
-            weekly_seasonality=False,  # Disabled for short-term stability
-            daily_seasonality=False,
-            changepoint_prior_scale=0.03,  # Lower = more stable (reduced from 0.1)
-            seasonality_prior_scale=1.0,   # Conservative (reduced from 10.0)
-            interval_width=0.95,           # 95% confidence interval (increased from 80%)
-            mcmc_samples=0  # Faster, less accurate (use >0 for production)
+            yearly_seasonality=False,  # Crypto doesn't follow yearly patterns
+            weekly_seasonality=True,   # Crypto has weekly trading patterns
+            daily_seasonality=False,   # Too noisy for daily
+            changepoint_prior_scale=0.15,  # More responsive to recent trend changes (was 0.03)
+            seasonality_prior_scale=5.0,   # Allow moderate seasonality influence
+            interval_width=0.95,           # 95% confidence interval
+            changepoint_range=0.9,         # Allow changepoints in more recent data
+            mcmc_samples=0  # Faster inference
         )
         
-        # Note: Removed aggressive monthly seasonality for more stable predictions
+        # Add custom monthly seasonality for crypto market cycles
+        model.add_seasonality(name='monthly', period=30.5, fourier_order=3)
         
         try:
             # Train the model (suppress Prophet's verbose output)
@@ -153,7 +151,7 @@ class CryptoPriceForecaster:
         
         try:
             # Fetch recent historical data for current price
-            df = await fetch_historical_prices(symbol, days=7)
+            df = await data_collector.fetch_historical_data(symbol, days=7)
             if df is None or len(df) == 0:
                 return None
             actual_current_price = float(df['price'].iloc[-1])
@@ -169,14 +167,37 @@ class CryptoPriceForecaster:
             confidence_lower = float(predicted_row["yhat_lower"])
             confidence_upper = float(predicted_row["yhat_upper"])
             
+            # Mean-reversion blending: prevent extreme extrapolation for longer horizons
+            # Short-term: trust model more; Long-term: blend toward current price
+            if days_ahead <= 3:
+                model_weight = 0.85
+            elif days_ahead <= 7:
+                model_weight = 0.70
+            elif days_ahead <= 14:
+                model_weight = 0.60
+            else:
+                model_weight = 0.50  # 30-day predictions blend 50/50 with current price
+            
+            # Blend prediction with current price for stability
+            blended_price = (model_weight * predicted_price) + ((1 - model_weight) * actual_current_price)
+            
+            # Also blend confidence bounds
+            blended_lower = (model_weight * confidence_lower) + ((1 - model_weight) * actual_current_price)
+            blended_upper = (model_weight * confidence_upper) + ((1 - model_weight) * actual_current_price)
+            
+            predicted_price = blended_price
+            confidence_lower = blended_lower
+            confidence_upper = blended_upper
+            
             # Calculate metrics using actual current price
             absolute_change = predicted_price - actual_current_price
             percent_change = (absolute_change / actual_current_price) * 100 if actual_current_price > 0 else 0
             
-            # Add validation: cap extreme predictions  
-            if abs(percent_change) > 50:
-                logger.warning(f"Extreme prediction detected for {symbol}: {percent_change}%, capping to ±50%")
-                percent_change = np.clip(percent_change, -50, 50)
+            # Validation: cap extreme predictions (±30% max per horizon)
+            max_change = min(30, days_ahead * 2)  # Scale cap with horizon
+            if abs(percent_change) > max_change:
+                logger.warning(f"Extreme prediction detected for {symbol}: {percent_change:.1f}%, capping to ±{max_change}%")
+                percent_change = np.clip(percent_change, -max_change, max_change)
                 predicted_price = actual_current_price * (1 + percent_change/100)
                 # Recalculate confidence bounds
                 range_width = confidence_upper - confidence_lower

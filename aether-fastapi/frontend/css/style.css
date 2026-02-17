@@ -1099,7 +1099,7 @@ tr:hover .row-action {
 /* Grid layout for tab cards — 1x4 horizontal row */
 .ai-lab-tab-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 10px;
 }
 

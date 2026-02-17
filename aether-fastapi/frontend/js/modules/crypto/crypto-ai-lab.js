@@ -3,7 +3,7 @@
 
 class CryptoAILab {
     constructor() {
-        this.currentTab = 'predictions';
+        this.currentTab = 'predictions-risk';
         this.charts = {};
         this.apiBaseUrl = 'http://localhost:8000/api/ml';
     }
@@ -29,21 +29,37 @@ class CryptoAILab {
                 flexColumn.appendChild(header); // Re-add header
             }
 
-            // Add tabs
+            // Add tabs - grouped like Shares AI Lab
             const tabsHtml = `
-                <div class="d-flex gap-2 mb-3">
-                    <button class="ai-lab-tab active" data-tab="predictions" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 0.75rem 1.5rem; border-radius: 12px; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;">
-                        📈 Price Forecasts
-                    </button>
-                    <button class="ai-lab-tab" data-tab="risk" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); padding: 0.75rem 1.5rem; border-radius: 12px; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;">
-                        ⚠️ Risk Analysis
-                    </button>
-                    <button class="ai-lab-tab" data-tab="sentiment" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); padding: 0.75rem 1.5rem; border-radius: 12px; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;">
-                        💬 Sentiment Analysis
-                    </button>
-                    <button class="ai-lab-tab" data-tab="performance" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); padding: 0.75rem 1.5rem; border-radius: 12px; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;">
-                        🏆 Model Performance
-                    </button>
+                <div class="glass-card mb-4 p-3">
+                    <div class="d-flex align-items-center justify-content-between mb-3 px-1">
+                        <span class="text-white-50 small fw-medium" style="letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.65rem;">Select Feature</span>
+                    </div>
+                    <div class="ai-lab-tab-grid">
+                        <button class="ai-lab-tab active" data-tab="predictions-risk">
+                            <div class="tab-icon-wrap">📈</div>
+                            <div class="tab-content">
+                                <span class="tab-title">Forecasts & Risk</span>
+                                <span class="tab-desc">Price predictions + Risk analysis</span>
+                            </div>
+                        </button>
+                        <button class="ai-lab-tab" data-tab="insights-sentiment">
+                            <div class="tab-icon-wrap">✨</div>
+                            <div class="tab-content">
+                                <span class="tab-title">Insights & Sentiment</span>
+                                <span class="tab-desc">AI analysis + News signals</span>
+                            </div>
+                            <span class="tab-badge" style="background: rgba(118,75,162,0.3); color: #c4b5fd;">AI</span>
+                        </button>
+                        <button class="ai-lab-tab" data-tab="performance">
+                            <div class="tab-icon-wrap">🏆</div>
+                            <div class="tab-content">
+                                <span class="tab-title">Model Performance</span>
+                                <span class="tab-desc">Accuracy & metrics</span>
+                            </div>
+                            <span class="tab-badge" style="background: rgba(45,212,191,0.3); color: #5eead4;">ML</span>
+                        </button>
+                    </div>
                 </div>
                 <div id="ai-lab-content"></div>
             `;
@@ -56,46 +72,42 @@ class CryptoAILab {
     }
 
     setupTabSwitching() {
-        const tabs = document.querySelectorAll('.ai-lab-tab');
-        tabs.forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                const tabName = e.target.dataset.tab;
-                this.switchTab(tabName);
+        const sectionContainer = document.getElementById('crypto-section-ai-lab');
+        if (!sectionContainer) return;
+        const tabContainer = sectionContainer.querySelector('.ai-lab-tab-grid');
+        if (tabContainer) {
+            tabContainer.addEventListener('click', (e) => {
+                const tab = e.target.closest('.ai-lab-tab');
+                if (tab) {
+                    const tabName = tab.dataset.tab;
+                    this.switchTab(tabName);
+                }
             });
-        });
+        }
     }
 
     switchTab(tabName) {
-        // Update active tab visually with inline styles
-        document.querySelectorAll('.ai-lab-tab').forEach(tab => {
+        // Update active tab visually using CSS classes
+        const sectionContainer = document.getElementById('crypto-section-ai-lab');
+        if (!sectionContainer) return;
+        sectionContainer.querySelectorAll('.ai-lab-tab').forEach(tab => {
             tab.classList.remove('active');
-            // Inactive style
-            tab.style.background = 'rgba(255,255,255,0.02)';
-            tab.style.border = '1px solid rgba(255,255,255,0.08)';
-            tab.style.color = 'rgba(255,255,255,0.5)';
         });
 
-        const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
+        const activeTab = sectionContainer.querySelector(`[data-tab="${tabName}"]`);
         if (activeTab) {
             activeTab.classList.add('active');
-            // Active style
-            activeTab.style.background = 'rgba(255,255,255,0.05)';
-            activeTab.style.border = '1px solid rgba(255,255,255,0.1)';
-            activeTab.style.color = 'white';
         }
 
         this.currentTab = tabName;
 
         // Render appropriate content
         switch (tabName) {
-            case 'predictions':
-                this.renderPredictionsTab();
+            case 'predictions-risk':
+                this.renderPredictionsRiskTab();
                 break;
-            case 'risk':
-                this.renderRiskTab();
-                break;
-            case 'sentiment':
-                this.renderSentimentTab();
+            case 'insights-sentiment':
+                this.renderInsightsSentimentTab();
                 break;
             case 'performance':
                 this.renderPerformanceTab();
@@ -104,10 +116,10 @@ class CryptoAILab {
     }
 
     async loadDefaultView() {
-        await this.renderPredictionsTab();
+        await this.renderPredictionsRiskTab();
     }
 
-    async renderPredictionsTab() {
+    async renderPredictionsRiskTab() {
         const container = document.getElementById('ai-lab-content');
         if (!container) return;
 
@@ -127,7 +139,7 @@ class CryptoAILab {
                             <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             <path d="M9 12l2 2 4-4"/>
                         </svg>
-                        Run Prediction
+                        Run Analysis
                     </button>
                 </div>
 
@@ -141,6 +153,22 @@ class CryptoAILab {
 
                 <!-- Predictions Content -->
                 <div id="aiLabPredictions"></div>
+
+                <!-- Risk Analysis Section Divider -->
+                <div class="d-flex align-items-center gap-3 mt-2">
+                    <div style="flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(245,158,11,0.3), transparent);"></div>
+                    <span class="text-white-50 small fw-medium" style="letter-spacing: 0.05em;">⚠️ RISK ANALYSIS</span>
+                    <div style="flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(245,158,11,0.3), transparent);"></div>
+                </div>
+
+                <!-- Risk Loading -->
+                <div id="riskLoading" class="text-center py-4" style="display: none;">
+                    <div class="spinner-border spinner-border-sm text-warning" role="status"></div>
+                    <p class="text-white-50 mt-2 small">Calculating risk features and classification...</p>
+                </div>
+
+                <!-- Risk Analysis Content -->
+                <div id="riskAnalysisContent"></div>
             </div>
         `;
 
@@ -148,10 +176,12 @@ class CryptoAILab {
         document.getElementById('runPredictionBtn')?.addEventListener('click', () => {
             const symbol = document.getElementById('aiLabSymbolSelector').value;
             this.fetchAndDisplayPredictions(symbol);
+            this.fetchAndDisplayRiskAnalysis(symbol);
         });
 
-        // Auto-load BTC predictions
+        // Auto-load BTC
         this.fetchAndDisplayPredictions('BTC');
+        this.fetchAndDisplayRiskAnalysis('BTC');
     }
 
     async fetchAndDisplayPredictions(symbol) {
@@ -716,13 +746,63 @@ class CryptoAILab {
         `;
     }
 
-    async renderSentimentTab() {
+    async renderInsightsSentimentTab() {
         const container = document.getElementById('ai-lab-content');
         if (!container) return;
 
         container.innerHTML = `
             <div class="d-flex flex-column gap-4">
-                <!-- Asset Selector -->
+                <!-- ═══ Section 1: AI-Generated Insights ═══ -->
+                <div class="glass-card p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h3 class="h5 fw-light text-white mb-0">
+                            <span style="background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">AI-Generated Insights</span>
+                        </h3>
+                        <button class="btn btn-sm btn-outline-light" id="refreshInsightsBtn" style="font-size: 0.75rem;">🔄 Refresh</button>
+                    </div>
+                    <div id="cryptoInsightsFeed">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-light" role="status" style="width: 2rem; height: 2rem;">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="text-white-50 mt-2 small">Generating AI insights...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- How It Works Card -->
+                <div class="glass-card p-4">
+                    <h4 class="h6 fw-light mb-3 text-white">How AI Insights Work</h4>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="text-white-50 small">
+                                <strong class="text-white">📊 Data Collection:</strong><br>
+                                Analyzes 90-day price data, SMAs, RSI, volume trends, and volatility for each crypto asset.
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-white-50 small">
+                                <strong class="text-white">🤖 AI Analysis:</strong><br>
+                                Google Gemini processes the data to identify patterns, risks, and market opportunities.
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-white-50 small">
+                                <strong class="text-white">💡 Actionable Output:</strong><br>
+                                Categorized insights with severity levels help you make informed crypto decisions.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ Section Divider: News Sentiment ═══ -->
+                <div class="d-flex align-items-center gap-3 mt-2">
+                    <div style="flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(118,75,162,0.4), transparent);"></div>
+                    <span class="text-white-50 small fw-medium" style="letter-spacing: 0.05em;">📰 NEWS SENTIMENT</span>
+                    <div style="flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(118,75,162,0.4), transparent);"></div>
+                </div>
+
+                <!-- ═══ Section 2: News Sentiment ═══ -->
                 <div class="d-flex gap-3 align-items-center">
                     <label class="text-white-50 small">Select Asset:</label>
                     <select id="sentimentSymbolSelector" class="form-select form-select-sm" style="width: 150px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
@@ -742,7 +822,7 @@ class CryptoAILab {
                     </button>
                 </div>
 
-                <!-- Loading State -->
+                <!-- Sentiment Loading State -->
                 <div id="sentimentLoading" class="text-center py-5" style="display: none;">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
@@ -761,9 +841,124 @@ class CryptoAILab {
             this.fetchAndDisplaySentiment(symbol);
         });
 
-        // Auto-load BTC sentiment
+        document.getElementById('refreshInsightsBtn')?.addEventListener('click', () => {
+            this.loadCryptoInsights();
+        });
+
+        // Auto-load both sections
+        this.loadCryptoInsights();
         this.fetchAndDisplaySentiment('BTC');
     }
+
+    async loadCryptoInsights() {
+        const container = document.getElementById('cryptoInsightsFeed');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-light" role="status" style="width: 2rem; height: 2rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-white-50 mt-2 small">Generating AI insights...</p>
+            </div>
+        `;
+
+        try {
+            // Get user's crypto holdings to determine symbols
+            let symbols = 'BTC,ETH';
+            let portfolioValue = null;
+
+            try {
+                const holdingsResponse = await fetch('/api/crypto/holdings', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+                });
+                if (holdingsResponse.ok) {
+                    const holdings = await holdingsResponse.json();
+                    if (holdings && holdings.length > 0) {
+                        symbols = [...new Set(holdings.map(h => h.symbol))].join(',');
+                        portfolioValue = holdings.reduce((sum, h) => sum + (h.quantity * (h.avg_buy_price || 0)), 0);
+                    }
+                }
+            } catch (e) {
+                console.log('Using default symbols for insights');
+            }
+
+            const response = await fetch(
+                `${this.apiBaseUrl}/crypto/insights?symbols=${symbols}${portfolioValue ? `&portfolio_value=${portfolioValue}` : ''}`
+            );
+
+            if (!response.ok) throw new Error('Insights generation failed');
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                this.displayCryptoInsights(result.data, container);
+            } else {
+                throw new Error('Invalid response');
+            }
+
+        } catch (error) {
+            console.error('Error loading crypto insights:', error);
+            container.innerHTML = `
+                <div class="text-center py-4">
+                    <p class="text-danger small">Error: ${error.message}</p>
+                    <button class="btn btn-sm btn-outline-light mt-2" id="retryInsightsBtn">Retry</button>
+                </div>
+            `;
+            document.getElementById('retryInsightsBtn')?.addEventListener('click', () => {
+                this.loadCryptoInsights();
+            });
+        }
+    }
+
+    displayCryptoInsights(data, container) {
+        if (!data.insights || data.insights.length === 0) {
+            container.innerHTML = '<p class="text-white-50 text-center py-3">No insights available</p>';
+            return;
+        }
+
+        const severityColors = {
+            'high': 'border-left: 3px solid #fb7185;',
+            'medium': 'border-left: 3px solid #fcd34d;',
+            'low': 'border-left: 3px solid #2dd4bf;'
+        };
+
+        const categoryBadges = {
+            'overview': '<span class="badge" style="background: rgba(99,102,241,0.15); color: #a5b4fc;">Overview</span>',
+            'asset': '<span class="badge" style="background: rgba(96,165,250,0.15); color: #93c5fd;">Asset</span>',
+            'risk': '<span class="badge" style="background: rgba(251,113,133,0.15); color: #fda4af;">Risk</span>',
+            'opportunity': '<span class="badge" style="background: rgba(45,212,191,0.15); color: #5eead4;">Opportunity</span>',
+            'action': '<span class="badge" style="background: rgba(252,211,77,0.15); color: #fde68a;">Action</span>'
+        };
+
+        let html = '';
+
+        for (const insight of data.insights) {
+            const borderStyle = severityColors[insight.severity] || severityColors['medium'];
+            const badge = categoryBadges[insight.category] || categoryBadges['overview'];
+            const tickerTag = insight.ticker ? `<span class="badge bg-dark ms-1">${insight.ticker}</span>` : '';
+
+            html += `
+                <div class="insight-card p-3 mb-3" style="${borderStyle} background: rgba(255,255,255,0.03); border-radius: 8px;">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="me-2" style="font-size: 1.1rem; color: #a78bfa; font-weight: 600;">${insight.icon}</span>
+                        <strong class="text-white small">${insight.title}</strong>
+                        <div class="ms-auto">${badge}${tickerTag}</div>
+                    </div>
+                    <p class="text-white-50 small mb-0">${insight.content}</p>
+                </div>
+            `;
+        }
+
+        // Add timestamp
+        const genTime = data.generated_at ? new Date(data.generated_at).toLocaleTimeString() : 'now';
+        html += `<div class="text-end mt-2">
+            <span class="text-white-50" style="font-size: 0.7rem;">Generated at ${genTime}</span>
+        </div>`;
+
+        container.innerHTML = html;
+    }
+
 
     async fetchAndDisplaySentiment(symbol) {
         const loadingEl = document.getElementById('sentimentLoading');

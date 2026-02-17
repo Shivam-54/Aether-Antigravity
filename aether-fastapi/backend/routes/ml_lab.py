@@ -22,6 +22,7 @@ from ml.data.data_collector import data_collector
 from ml.data.risk_features import RiskFeatureEngineer
 from ml.predictors.risk_classifier import CryptoRiskClassifier
 from ml.nlp.sentiment_aggregator import sentiment_aggregator
+from ml.predictors.crypto_insights_generator import crypto_insights_generator
 
 # Initialize risk classifier
 risk_feature_engineer = RiskFeatureEngineer()
@@ -483,3 +484,52 @@ async def compare_models(symbol: str):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Model comparison error: {str(e)}")
+
+
+# ═══════════════════════════════════════════════════════
+#  CRYPTO AI INSIGHTS
+# ═══════════════════════════════════════════════════════
+
+@router.get("/crypto/insights")
+async def get_crypto_insights(
+    symbols: str = "BTC,ETH",
+    portfolio_value: Optional[float] = None
+):
+    """
+    AI-generated crypto portfolio insights using Google Gemini.
+    
+    Args:
+        symbols: Comma-separated crypto symbols (e.g., "BTC,ETH,SOL")
+        portfolio_value: Optional total portfolio value for context
+    
+    Returns:
+        Structured insights with categories, severity, and actionable content
+    """
+    try:
+        symbol_list = [s.strip().upper() for s in symbols.split(',') if s.strip()]
+        
+        if not symbol_list:
+            raise HTTPException(status_code=400, detail="No symbols provided")
+        
+        results = await crypto_insights_generator.generate_insights(
+            symbols=symbol_list,
+            portfolio_value=portfolio_value
+        )
+        
+        return {
+            "status": "success",
+            "data": results
+        }
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid input: {str(e)}"
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Insights generation error: {str(e)}"
+        )
