@@ -270,6 +270,82 @@ async def delete_property(
 
 
 # ═══════════════════════════════════════════════════
+# Portfolio Performance Endpoint (Real Data)
+# ═══════════════════════════════════════════════════
+
+@router.get("/performance")
+async def get_portfolio_performance(
+    months: int = 24,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Month-by-month portfolio value for the last N months.
+    Uses real PropertyValuation records; falls back to purchase_price
+    for months with no recorded valuation.
+    """
+    from models import PropertyValuation
+    from calendar import month_abbr
+    from dateutil.relativedelta import relativedelta
+
+    today = date.today()
+
+    properties = db.query(Property).filter(
+        Property.user_id == current_user.id,
+        Property.status != "Sold"
+    ).all()
+
+    if not properties:
+        return {"months": [], "values": [], "property_count": 0}
+
+    prop_ids = [p.id for p in properties]
+    all_valuations = db.query(PropertyValuation).filter(
+        PropertyValuation.property_id.in_(prop_ids)
+    ).order_by(PropertyValuation.valuation_date.asc()).all()
+
+    # Group valuations by property for fast lookup
+    val_by_prop: dict = {}
+    for v in all_valuations:
+        pid = str(v.property_id)
+        val_by_prop.setdefault(pid, []).append(v)
+
+    start_month = today - relativedelta(months=months - 1)
+    month_labels, month_values = [], []
+
+    for i in range(months):
+        target = start_month + relativedelta(months=i)
+        # Snapshot = last day of the month
+        if target.month == 12:
+            snapshot = date(target.year, 12, 31)
+        else:
+            snapshot = date(target.year, target.month + 1, 1) - relativedelta(days=1)
+
+        total = 0.0
+        for p in properties:
+            # Skip properties not yet acquired at this point in time
+            if p.acquisition_date and p.acquisition_date > snapshot:
+                continue
+
+            pid = str(p.id)
+            best = None
+            for v in val_by_prop.get(pid, []):
+                if v.valuation_date <= snapshot:
+                    if best is None or v.valuation_date > best.valuation_date:
+                        best = v
+
+            total += float(best.value if best else (p.purchase_price or 0))
+
+        month_labels.append(f"{month_abbr[target.month]} {str(target.year)[2:]}")
+        month_values.append(round(total, 2))
+
+    return {
+        "months": month_labels,
+        "values": month_values,
+        "property_count": len(properties),
+    }
+
+
+# ═══════════════════════════════════════════════════
 # AI Lab Endpoints
 # ═══════════════════════════════════════════════════
 

@@ -1520,9 +1520,26 @@ function renderRealEstateDashboard() {
         // Initialize Asset Allocation Charts
         loadAssetAllocationCharts(REAL_ESTATE_DATA.properties);
 
-        // Initialize Chart
-        const ctx = document.getElementById('realEstateChart');
-        if (ctx && typeof Chart !== 'undefined') {
+        // Initialize Chart with real performance data (async IIFE since parent fn is sync)
+        (async () => {
+            const ctx = document.getElementById('realEstateChart');
+            if (!ctx || typeof Chart === 'undefined') return;
+
+            // Fetch real performance data from backend
+            try {
+                const perfRes = await fetch(`${API_BASE_URL}/realestate/performance?months=24`, {
+                    headers: getAuthHeaders()
+                });
+                if (perfRes.ok) {
+                    const perfData = await perfRes.json();
+                    REAL_ESTATE_DATA.performance = perfData.months.map((m, i) => ({ month: m, value: perfData.values[i] }));
+                }
+            } catch (e) {
+                console.warn('Could not fetch portfolio performance:', e);
+            }
+
+            if (!REAL_ESTATE_DATA.performance || REAL_ESTATE_DATA.performance.length === 0) return;
+
             new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -1581,10 +1598,7 @@ function renderRealEstateDashboard() {
                     interaction: { intersect: false, mode: 'index' }
                 }
             });
-        }
-
-        // Initialize Asset Allocation Charts
-        loadAssetAllocationCharts(REAL_ESTATE_DATA.properties);
+        })();
     }
 }
 // --- Filtering Utilities ---
@@ -3646,10 +3660,12 @@ function renderValuationHistoryInModal(propertyId) {
     if (!tbody) return;
 
     const property = REAL_ESTATE_DATA.properties.find(p => p.id === propertyId);
-    const history = property.valuation_history || [
-        { date: '2025-01-01', value: property.current_value, id: 'mock-1' },
-        { date: '2024-01-01', value: property.purchase_price, id: 'mock-2' }
-    ];
+    const history = property && property.valuation_history ? [...property.valuation_history] : [];
+
+    if (history.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-white-30 small">No valuation history recorded. Add entries using the Valuation tab.</td></tr>';
+        return;
+    }
 
     history.sort((a, b) => new Date(b.date) - new Date(a.date));
 

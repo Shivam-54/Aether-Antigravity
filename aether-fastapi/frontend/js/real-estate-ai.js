@@ -986,6 +986,13 @@ window.fetchAndRenderAIInsights = fetchAndRenderAIInsights;
 
 // ==================== SCENARIO SIMULATOR ====================
 
+// Helper: get real portfolio total from REAL_ESTATE_DATA (shared global)
+function getRealPortfolioTotal() {
+    const props = (window.REAL_ESTATE_DATA && window.REAL_ESTATE_DATA.properties) || [];
+    return props.filter(p => p.status !== 'Sold')
+        .reduce((sum, p) => sum + (p.current_value || p.purchase_price || 0), 0);
+}
+
 // Global function to update scenario as slider moves
 window.updateScenario = function () {
     const slider = document.getElementById('marketGrowthSlider');
@@ -996,43 +1003,132 @@ window.updateScenario = function () {
     if (!slider || !growthValueEl || !scenarioValueEl || !scenarioChangeEl) return;
 
     const growthPercent = parseInt(slider.value);
-    const baseValue = 5.0; // Base portfolio value in Cr
+    const baseValue = getRealPortfolioTotal(); // real data — no hardcoding!
 
     // Calculate new value
     const newValue = baseValue * (1 + growthPercent / 100);
     const absoluteChange = newValue - baseValue;
-    const percentChange = ((newValue - baseValue) / baseValue) * 100;
+    const percentChange = growthPercent; // same as slider
+
+    // Display helpers
+    const Cr = 10_000_000;
+    const fmt = v => v >= Cr
+        ? `₹${(v / Cr).toFixed(2)} Cr`
+        : `₹${(v / 100_000).toFixed(1)} L`;
 
     // Update display
     growthValueEl.textContent = `${growthPercent >= 0 ? '+' : ''}${growthPercent}%`;
     growthValueEl.style.background = growthPercent >= 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)';
     growthValueEl.style.color = growthPercent >= 0 ? '#10b981' : '#ef4444';
 
-    scenarioValueEl.textContent = `₹${newValue.toFixed(1)} Cr`;
+    scenarioValueEl.textContent = fmt(newValue);
     scenarioChangeEl.innerHTML = `
         <span class="${percentChange >= 0 ? 'text-success' : 'text-danger'}">
             ${percentChange >= 0 ? '+' : ''}${percentChange.toFixed(1)}% ${percentChange >= 0 ? '📈' : '📉'}
         </span>
         <span class="text-white-50 ms-2" style="font-size: 0.75rem;">
-            (${absoluteChange >= 0 ? '+' : ''}₹${Math.abs(absoluteChange).toFixed(2)} Cr)
+            (${absoluteChange >= 0 ? '+' : ''}${fmt(Math.abs(absoluteChange))})
         </span>
     `;
 };
 
 // Global function to run detailed scenario analysis
-window.runDetailedScenario = async function () {
+window.runDetailedScenario = function () {
     const slider = document.getElementById('marketGrowthSlider');
     if (!slider) return;
 
     const growthPercent = parseInt(slider.value);
+    const props = (window.REAL_ESTATE_DATA && window.REAL_ESTATE_DATA.properties) || [];
+    const activeProps = props.filter(p => p.status !== 'Sold');
 
-    // Show modal with detailed analysis
-    alert(`Detailed Scenario Analysis:\n\nMarket Growth: ${growthPercent}%\n\nThis feature will show:\n• Property-by-property impact\n• Risk exposure changes\n• Recommended actions\n• Timeline projections\n\nComing soon!`);
+    if (activeProps.length === 0) {
+        alert('No active properties found in your portfolio.');
+        return;
+    }
 
-    // TODO: Implement detailed modal with:
-    // - Property breakdown
-    // - Risk analysis
-    // - Recommended actions
-    // - Timeline visualization
+    const Cr = 10_000_000;
+    const fmt = v => v >= Cr
+        ? `₹${(v / Cr).toFixed(2)} Cr`
+        : `₹${(v / 100_000).toFixed(1)} L`;
+
+    const rows = activeProps.map(p => {
+        const base = p.current_value || p.purchase_price || 0;
+        const projected = base * (1 + growthPercent / 100);
+        const diff = projected - base;
+        const isPos = diff >= 0;
+        return `
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td class="py-2 ps-3 text-white-80" style="font-size:0.82rem;">${p.name}</td>
+                <td class="py-2 text-white-60" style="font-size:0.75rem;">${p.type || '—'} · ${p.location || '—'}</td>
+                <td class="py-2 text-white-80 font-monospace" style="font-size:0.82rem;">${fmt(base)}</td>
+                <td class="py-2 font-monospace" style="font-size:0.82rem; color: ${isPos ? '#10b981' : '#ef4444'};">${fmt(projected)}</td>
+                <td class="py-2 pe-3 font-monospace" style="font-size:0.82rem; color: ${isPos ? '#10b981' : '#ef4444'};">
+                    ${isPos ? '+' : ''}${fmt(Math.abs(diff))}
+                </td>
+            </tr>`;
+    }).join('');
+
+    const totalBase = activeProps.reduce((s, p) => s + (p.current_value || p.purchase_price || 0), 0);
+    const totalProjected = totalBase * (1 + growthPercent / 100);
+    const totalDiff = totalProjected - totalBase;
+
+    // Show in a floating overlay
+    let overlay = document.getElementById('scenario-detail-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'scenario-detail-overlay';
+        overlay.style.cssText = `
+            position: fixed; inset: 0; z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+        `;
+        document.body.appendChild(overlay);
+    }
+
+    overlay.innerHTML = `
+        <div style="background: #0d0d14; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+                    padding: 28px; max-width: 680px; width: 90%; max-height: 80vh; overflow-y: auto;
+                    box-shadow: 0 24px 64px rgba(0,0,0,0.6);">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h5 class="text-white mb-1" style="font-weight:400;">Scenario Analysis</h5>
+                    <span class="text-white-50 small">Market Growth: 
+                        <strong style="color: ${growthPercent >= 0 ? '#10b981' : '#ef4444'}">
+                            ${growthPercent >= 0 ? '+' : ''}${growthPercent}%
+                        </strong>
+                    </span>
+                </div>
+                <button onclick="document.getElementById('scenario-detail-overlay').remove()"
+                        style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+                               color: rgba(255,255,255,0.6); border-radius: 8px; padding: 6px 12px; cursor: pointer;">
+                    ✕ Close
+                </button>
+            </div>
+
+            <table class="table table-borderless mb-0" style="--bs-table-bg: transparent;">
+                <thead>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                        <th class="ps-3 pb-2 text-white-40" style="font-size:0.65rem; letter-spacing:0.8px; text-transform:uppercase; font-weight:600;">Property</th>
+                        <th class="pb-2 text-white-40" style="font-size:0.65rem; letter-spacing:0.8px; text-transform:uppercase; font-weight:600;">Type · Location</th>
+                        <th class="pb-2 text-white-40" style="font-size:0.65rem; letter-spacing:0.8px; text-transform:uppercase; font-weight:600;">Current Value</th>
+                        <th class="pb-2 text-white-40" style="font-size:0.65rem; letter-spacing:0.8px; text-transform:uppercase; font-weight:600;">Projected</th>
+                        <th class="pe-3 pb-2 text-white-40" style="font-size:0.65rem; letter-spacing:0.8px; text-transform:uppercase; font-weight:600;">Change</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+                <tfoot>
+                    <tr style="border-top: 1px solid rgba(255,255,255,0.1);">
+                        <td class="pt-3 ps-3 text-white fw-semibold" colspan="2" style="font-size:0.82rem;">Portfolio Total</td>
+                        <td class="pt-3 text-white font-monospace" style="font-size:0.82rem;">${fmt(totalBase)}</td>
+                        <td class="pt-3 font-monospace fw-semibold" style="font-size:0.82rem; color: ${totalDiff >= 0 ? '#10b981' : '#ef4444'};">${fmt(totalProjected)}</td>
+                        <td class="pt-3 pe-3 font-monospace fw-semibold" style="font-size:0.82rem; color: ${totalDiff >= 0 ? '#10b981' : '#ef4444'};">
+                            ${totalDiff >= 0 ? '+' : ''}${fmt(Math.abs(totalDiff))}
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    `;
+    overlay.style.display = 'flex';
 };
 
