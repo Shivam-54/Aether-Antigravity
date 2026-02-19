@@ -9,6 +9,7 @@ from typing import Optional
 from uuid import UUID
 from datetime import datetime
 import asyncio
+import time
 
 from database import get_db
 from models.real_estate import Property
@@ -21,8 +22,32 @@ router = APIRouter(
     tags=["ML Predictions"]
 )
 
-# Initialize forecaster (singleton pattern)
-forecaster = PropertyPriceForecaster()
+# ---------------------------------------------------------------------------
+# Simple in-process TTL cache — avoids re-running Prophet on every page load
+# Cache key: (user_id, days_ahead)  |  TTL: 5 minutes
+# ---------------------------------------------------------------------------
+_predict_cache: dict = {}
+_CACHE_TTL_SECONDS = 300  # 5 minutes
+
+
+def _cache_get(key):
+    entry = _predict_cache.get(key)
+    if entry and (time.monotonic() - entry["ts"]) < _CACHE_TTL_SECONDS:
+        return entry["data"]
+    return None
+
+
+def _cache_set(key, data):
+    _predict_cache[key] = {"ts": time.monotonic(), "data": data}
+
+
+# ---------------------------------------------------------------------------
+# Helper — run one property prediction in a thread (uses its own forecaster
+# instance so parallel calls don't share mutable model state)
+# ---------------------------------------------------------------------------
+async def _predict_one(property_data: dict, days_ahead: int) -> dict:
+    forecaster = PropertyPriceForecaster()
+    return await asyncio.to_thread(forecaster.predict, property_data, days_ahead)
 
 
 @router.get("/predict-price/{property_id}")
@@ -69,13 +94,9 @@ async def predict_property_price(
     }
     
     try:
-        # Generate prediction
-        prediction = await asyncio.to_thread(forecaster.predict, property_data, days_ahead)
-        
-        # Add property context
+        prediction = await _predict_one(property_data, days_ahead)
         prediction["property_id"] = str(property_id)
         prediction["property_name"] = property.name
-        
         return prediction
     
     except Exception as e:
@@ -120,6 +141,7 @@ async def predict_property_price_multi_horizon(
     }
     
     try:
+        forecaster = PropertyPriceForecaster()
         predictions = await asyncio.to_thread(forecaster.predict_multi_horizon, property_data)
         
         return {
@@ -142,54 +164,65 @@ async def predict_all_properties(
     db: Session = Depends(get_db)
 ):
     """
-    Get price predictions for all user's properties
-    
-    Returns:
-        List of predictions for all properties
+    Get price predictions for all user's properties — runs in parallel
+    with a 5-minute TTL cache to avoid re-running Prophet on every load.
     """
+    # --- Check cache first ---
+    cache_key = (str(current_user.id), days_ahead)
+    cached = _cache_get(cache_key)
+    if cached:
+        return cached
+
     properties = db.query(Property).filter(
         Property.user_id == current_user.id
     ).all()
     
     if not properties:
         return {"predictions": [], "message": "No properties found"}
-    
-    predictions = []
-    
-    for property in properties:
-        # Skip properties without required data
-        if not property.purchase_price or not property.current_value:
+
+    # Build list of (property, property_data) for those with enough data
+    eligible = []
+    for prop in properties:
+        if not prop.purchase_price or not prop.current_value:
             continue
-        
-        date_to_use = property.acquisition_date if property.acquisition_date else property.created_at
+        date_to_use = prop.acquisition_date if prop.acquisition_date else prop.created_at
         property_data = {
             "purchase_date": date_to_use.isoformat() if hasattr(date_to_use, 'isoformat') else str(date_to_use),
-            "purchase_price": float(property.purchase_price),
-            "current_value": float(property.current_value)
+            "purchase_price": float(prop.purchase_price),
+            "current_value": float(prop.current_value)
         }
-        
+        eligible.append((prop, property_data))
+
+    # --- Run all predictions IN PARALLEL ---
+    async def _safe_predict(prop, pdata):
         try:
-            prediction = await asyncio.to_thread(forecaster.predict, property_data, days_ahead)
-            prediction["property_id"] = str(property.id)
-            prediction["property_name"] = property.name
-            prediction["location"] = property.location
-            
-            predictions.append(prediction)
-        
+            result = await _predict_one(pdata, days_ahead)
+            result["property_id"] = str(prop.id)
+            result["property_name"] = prop.name
+            result["location"] = prop.location
+            return result
         except Exception as e:
-            # Skip this property if prediction fails
-            print(f"Failed to predict for {property.name}: {str(e)}")
-            continue
-    
+            print(f"Failed to predict for {prop.name}: {str(e)}")
+            return None
+
+    results = await asyncio.gather(*[_safe_predict(p, d) for p, d in eligible])
+    predictions = [r for r in results if r is not None]
+
     # Sort by predicted percent change (best performers first)
-    predictions.sort(key=lambda x: x.get('percent_change', 0), reverse=True)
-    
-    return {
+    predictions.sort(key=lambda x: x.get("percent_change", 0), reverse=True)
+
+    response = {
         "predictions": predictions,
         "total_properties": len(properties),
         "predicted_count": len(predictions),
         "forecast_horizon_days": days_ahead
     }
+
+    # --- Store in cache ---
+    _cache_set(cache_key, response)
+
+    return response
+
 
 
 @router.get("/portfolio-forecast")
@@ -199,51 +232,57 @@ async def get_portfolio_forecast(
     db: Session = Depends(get_db)
 ):
     """
-    Get aggregated portfolio value forecast
-    
-    Returns:
-        Portfolio-level prediction with total current and predicted values
+    Get aggregated portfolio value forecast — runs in parallel.
     """
     properties = db.query(Property).filter(
         Property.user_id == current_user.id
     ).all()
-    
+
     if not properties:
         return {"message": "No properties found"}
-    
-    total_current_value = 0
-    total_predicted_value = 0
-    property_predictions = []
-    
-    for property in properties:
-        if not property.purchase_price or not property.current_value:
-            # For properties without prediction data, use current value
-            total_current_value += float(property.current_value or 0)
-            total_predicted_value += float(property.current_value or 0)
+
+    # Split into predictable vs non-predictable
+    eligible = []
+    no_data_value = 0.0
+    for prop in properties:
+        if not prop.purchase_price or not prop.current_value:
+            no_data_value += float(prop.current_value or 0)
             continue
-        
-        date_to_use = property.acquisition_date if property.acquisition_date else property.created_at
+        date_to_use = prop.acquisition_date if prop.acquisition_date else prop.created_at
         property_data = {
             "purchase_date": date_to_use.isoformat() if hasattr(date_to_use, 'isoformat') else str(date_to_use),
-            "purchase_price": float(property.purchase_price),
-            "current_value": float(property.current_value)
+            "purchase_price": float(prop.purchase_price),
+            "current_value": float(prop.current_value),
         }
-        
+        eligible.append((prop, property_data))
+
+    async def _safe_portfolio_predict(prop, pdata):
         try:
-            prediction = await asyncio.to_thread(forecaster.predict, property_data, days_ahead)
-            total_current_value += prediction["current_value"]
-            total_predicted_value += prediction["predicted_value"]
+            return await _predict_one(pdata, days_ahead), prop
+        except Exception:
+            return None, prop
+
+    results = await asyncio.gather(*[_safe_portfolio_predict(p, d) for p, d in eligible])
+
+    total_current_value = no_data_value
+    total_predicted_value = no_data_value
+    property_predictions = []
+
+    for pred, prop in results:
+        if pred is None:
+            total_current_value += float(prop.current_value)
+            total_predicted_value += float(prop.current_value)
+        else:
+            total_current_value += pred["current_value"]
+            total_predicted_value += pred["predicted_value"]
             property_predictions.append({
-                "name": property.name,
-                "percent_change": prediction["percent_change"]
+                "name": prop.name,
+                "percent_change": pred["percent_change"]
             })
-        except:
-            total_current_value += float(property.current_value)
-            total_predicted_value += float(property.current_value)
-    
+
     portfolio_change = total_predicted_value - total_current_value
     portfolio_percent_change = (portfolio_change / total_current_value * 100) if total_current_value > 0 else 0
-    
+
     return {
         "current_portfolio_value": round(total_current_value, 2),
         "predicted_portfolio_value": round(total_predicted_value, 2),

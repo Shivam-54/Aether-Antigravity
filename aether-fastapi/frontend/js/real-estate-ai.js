@@ -34,10 +34,10 @@ window.switchREAILabTab = function (tabName) {
     } else if (tabName === 're-insights-sentiment') {
         fetchAndRenderPortfolioSummary();
         fetchAndRenderDiversificationScore();
+    } else if (tabName === 're-anomaly-correlation') {
         fetchAndRenderRebalancingAdvisor();
         fetchAndRenderRentalYield();
     }
-    // re-anomaly-correlation: Coming Soon — no fetch needed yet
 };
 
 // Also wire up via event delegation (belt-and-suspenders — works even when onclick="" is blocked)
@@ -796,94 +796,129 @@ async function fetchAndRenderPricePredictions() {
             return;
         }
 
-        // Show top 3 predictions with minimal dark glass design
+        // Show top 3 predictions — sleek horizontal design matching site aesthetic
         container.innerHTML = data.predictions.slice(0, 3).map((pred, idx) => {
             const isPositive = pred.percent_change >= 0;
             const trendColor = isPositive ? '#10b981' : '#ef4444';
-            const trendIcon = isPositive ? '📈' : '📉';
-            const formatCurrency = (val) => `₹${(val / 100000).toFixed(2)}L`;
+            const trendColorDim = isPositive ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)';
+            const trendColorMid = isPositive ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)';
+            const formatV = (val) => {
+                if (val >= 10_000_000) return `₹${(val / 10_000_000).toFixed(2)} Cr`;
+                return `₹${(val / 100_000).toFixed(2)} L`;
+            };
+            const rankIcons = ['', '', ''];
+            const rankIcon = rankIcons[idx] || '';
 
-            // Rank badges
-            const rankEmoji = idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
+            // Progress: what % of the way from current → predicted
+            const minV = Math.min(pred.current_value, pred.confidence_lower || pred.current_value);
+            const maxV = Math.max(pred.predicted_value, pred.confidence_upper || pred.predicted_value);
+            const range = maxV - minV || 1;
+            const currentPct = ((pred.current_value - minV) / range) * 100;
+            const predictedPct = ((pred.predicted_value - minV) / range) * 100;
+
+            const lowLimit = pred.confidence_lower ? formatV(pred.confidence_lower) : '—';
+            const highLimit = pred.confidence_upper ? formatV(pred.confidence_upper) : '—';
+
+            const modelLabel = getModelBadge();
+            const forecastLabel = getDaysBadge();
 
             return `
-                <div class="col-lg-4 col-md-6 mb-3">
-                    <div class="glass-card h-100" 
-                         style="
-                             background: rgba(0, 0, 0, 0.4);
-                             backdrop-filter: blur(10px);
-                             border: 1px solid rgba(255, 255, 255, 0.08);
-                             border-left: 3px solid ${trendColor};
-                             border-radius: 12px;
-                             padding: 1.5rem;
-                             transition: all 0.3s ease;
-                         "
-                         onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='${trendColor}40';"
-                         onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(255, 255, 255, 0.08)';">
-                        
-                        <!-- Header with Rank -->
-                        <div class="d-flex align-items-start justify-content-between mb-3">
-                            <div class="d-flex align-items-center gap-2">
-                                <span style="font-size: 1.5rem;">${trendIcon}</span>
+                <div class="col-12 mb-2">
+                    <div style="
+                        background: rgba(255,255,255,0.02);
+                        border: 1px solid rgba(255,255,255,0.06);
+                        border-left: 2px solid ${trendColor};
+                        border-radius: 10px;
+                        padding: 18px 20px;
+                        transition: background 0.2s ease, transform 0.2s ease;
+                        cursor: default;
+                    "
+                    onmouseover="this.style.background='rgba(255,255,255,0.04)'; this.style.transform='translateY(-1px)';"
+                    onmouseout="this.style.background='rgba(255,255,255,0.02)'; this.style.transform='translateY(0)';">
+
+                        <!-- Row 1: Property name + Change % -->
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <!-- Rank + Property Name -->
                                 <div>
-                                    <h6 class="text-white mb-0" style="font-size: 0.95rem; font-weight: 600;" title="${pred.property_name}">
-                                        ${pred.property_name.length > 20 ? pred.property_name.substring(0, 20) + '...' : pred.property_name}
-                                    </h6>
-                                    <div class="d-flex align-items-center gap-2 mt-1">
-                                        <span class="badge" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; font-size: 0.65rem;">
-                                            ${getModelBadge()}
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span style="font-size: 0.9rem; line-height:1;">${rankIcon}</span>
+                                        <span style="font-size: 0.95rem; font-weight: 500; color: rgba(255,255,255,0.9); letter-spacing: -0.01em;">
+                                            ${pred.property_name.length > 24 ? pred.property_name.substring(0, 24) + '…' : pred.property_name}
                                         </span>
-                                        <span class="text-white-50" style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                                            ${getDaysBadge()} Forecast
-                                        </span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span style="
+                                            background: rgba(99,102,241,0.15);
+                                            color: #a5b4fc;
+                                            font-size: 0.6rem;
+                                            letter-spacing: 0.06em;
+                                            text-transform: uppercase;
+                                            padding: 2px 7px;
+                                            border-radius: 4px;
+                                            font-weight: 600;
+                                        ">${modelLabel}</span>
+                                        <span style="color: rgba(255,255,255,0.3); font-size: 0.65rem; letter-spacing: 0.05em; text-transform: uppercase;">${forecastLabel} Forecast</span>
+                                        ${pred.confidence_lower !== undefined ? `<span style="color: rgba(255,193,7,0.6); font-size: 0.6rem;" title="Low data confidence">⚠ low data</span>` : ''}
                                     </div>
                                 </div>
                             </div>
-                            <span style="font-size: 1.3rem;">${rankEmoji}</span>
-                        </div>
 
-                        <!-- Limited Data Warning -->
-                        <div class="mb-2 px-2 py-1" style="background: rgba(255, 193, 7, 0.1); border-left: 2px solid #FFC107; border-radius: 4px;">
-                            <small class="text-warning" style="font-size: 0.65rem;">
-                                ⚠️ Estimate based on 2 data points
-                            </small>
-                        </div>
-
-                        <!-- Values -->
-                        <div class="row g-2 mb-3">
-                            <div class="col-6">
-                                <div class="text-white-50 mb-1" style="font-size: 0.65rem; text-transform: uppercase;">Current</div>
-                                <div class="text-white" style="font-size: 1rem; font-weight: 600;">${formatCurrency(pred.current_value)}</div>
-                            </div>
-                            <div class="col-6">
-                                <div class="text-white-50 mb-1" style="font-size: 0.65rem; text-transform: uppercase;">Predicted</div>
-                                <div style="font-size: 1rem; font-weight: 700; color: ${trendColor};">
-                                    ${formatCurrency(pred.predicted_value)}
+                            <!-- Change % — the hero number -->
+                            <div class="text-end">
+                                <div style="font-size: 1.65rem; font-weight: 700; color: ${trendColor}; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -0.02em;">
+                                    ${isPositive ? '+' : ''}${pred.percent_change.toFixed(1)}%
+                                </div>
+                                <div style="font-size: 0.65rem; color: rgba(255,255,255,0.35); letter-spacing: 0.04em; text-transform: uppercase; margin-top: 3px;">
+                                    Expected Change
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Expected Change -->
-                        <div class="text-center py-2 mb-3" style="background: rgba(0, 0, 0, 0.3); border-radius: 8px;">
-                            <div class="text-white-50 mb-1" style="font-size: 0.65rem; text-transform: uppercase;">Expected Change</div>
-                            <div style="font-size: 1.8rem; font-weight: 800; color: ${trendColor};">
-                                ${isPositive ? '+' : ''}${pred.percent_change.toFixed(2)}%
-                            </div>
-                            <div class="text-white-50" style="font-size: 0.7rem;">
-                                ${formatCurrency(Math.abs(pred.predicted_value - pred.current_value))}
+                        <!-- Row 2: Value progression bar -->
+                        <div class="mb-3">
+                            <div style="position: relative; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden;">
+                                <!-- Progress fill from current to predicted -->
+                                <div style="
+                                    position: absolute;
+                                    left: ${Math.min(currentPct, predictedPct).toFixed(1)}%;
+                                    width: ${Math.abs(predictedPct - currentPct).toFixed(1)}%;
+                                    height: 100%;
+                                    background: linear-gradient(90deg, ${trendColorMid}, ${trendColor});
+                                    border-radius: 2px;
+                                "></div>
+                                <!-- Current value marker -->
+                                <div style="
+                                    position: absolute;
+                                    left: ${currentPct.toFixed(1)}%;
+                                    top: -2px;
+                                    width: 2px;
+                                    height: 8px;
+                                    background: rgba(255,255,255,0.5);
+                                    border-radius: 1px;
+                                    transform: translateX(-50%);
+                                "></div>
                             </div>
                         </div>
 
-                        <!-- Confidence Range -->
-                        <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 0.75rem;">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="text-white-50" style="font-size: 0.65rem;">Confidence Range</span>
-                                <span class="text-white-50" style="font-size: 0.65rem;">80%</span>
+                        <!-- Row 3: Current | Predicted | Confidence -->
+                        <div class="d-flex align-items-end justify-content-between">
+                            <div class="d-flex gap-4">
+                                <div>
+                                    <div style="font-size: 0.6rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px;">Current</div>
+                                    <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); font-variant-numeric: tabular-nums; font-weight: 500;">${formatV(pred.current_value)}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.6rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px;">Predicted</div>
+                                    <div style="font-size: 0.9rem; color: ${trendColor}; font-variant-numeric: tabular-nums; font-weight: 600;">${formatV(pred.predicted_value)}</div>
+                                </div>
                             </div>
-                            <div style="font-size: 0.7rem; color: rgba(255, 255, 255, 0.5);">
-                                ${pred.confidence_lower ? formatCurrency(pred.confidence_lower) : '—'} 
-                                <span style="color: ${trendColor};">→</span> 
-                                ${pred.confidence_upper ? formatCurrency(pred.confidence_upper) : '—'}
+                            <!-- Confidence range -->
+                            <div class="text-end">
+                                <div style="font-size: 0.6rem; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px;">80% Confidence</div>
+                                <div style="font-size: 0.72rem; color: rgba(255,255,255,0.4); font-variant-numeric: tabular-nums;">
+                                    ${lowLimit} <span style="color: ${trendColor}; opacity: 0.6;">→</span> ${highLimit}
+                                </div>
                             </div>
                         </div>
 
@@ -891,6 +926,7 @@ async function fetchAndRenderPricePredictions() {
                 </div>
             `;
         }).join('');
+
 
     } catch (e) {
         console.error('Price prediction error:', e);
