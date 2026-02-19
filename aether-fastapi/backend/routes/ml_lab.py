@@ -8,6 +8,7 @@ from typing import Optional, List
 import numpy as np
 from datetime import datetime
 import sys
+import asyncio
 import os
 
 # Add parent directory to path
@@ -53,7 +54,7 @@ async def predict_lstm_price(
         horizon_list = [int(h.strip()) for h in horizons.split(',')]
         
         # Try to load existing model
-        model_loaded = lstm_predictor.load_model(symbol) if not retrain else False
+        model_loaded = (await asyncio.to_thread(lstm_predictor.load_model, symbol)) if not retrain else False
         
         if not model_loaded or retrain:
             # Fetch historical data
@@ -63,10 +64,10 @@ async def predict_lstm_price(
                 raise HTTPException(status_code=400, detail="Insufficient historical data")
             
             # Add features
-            df = feature_engineer.add_technical_indicators(df)
+            df = await asyncio.to_thread(feature_engineer.add_technical_indicators, df)
             
             # Prepare sequences
-            seq_data = feature_engineer.prepare_lstm_sequences(df, sequence_length=60)
+            seq_data = await asyncio.to_thread(feature_engineer.prepare_lstm_sequences, df, 60)
             
             X = seq_data['X']
             y = seq_data['y']
@@ -78,19 +79,20 @@ async def predict_lstm_price(
             
             # Train model
             print(f"Training LSTM for {symbol}...")
-            history = lstm_predictor.train(
+            history = await asyncio.to_thread(
+                lstm_predictor.train,
                 X_train, y_train,
                 X_val, y_val,
-                epochs=50,
-                batch_size=32,
-                early_stopping_patience=10
+                50,  # epochs
+                32,  # batch_size
+                10   # early_stopping_patience
             )
             
             # Save model and scaler
             lstm_predictor.scaler = seq_data['scaler']
             lstm_predictor.feature_columns = seq_data['feature_columns']
             lstm_predictor.sequence_length = seq_data['sequence_length']
-            lstm_predictor.save_model(symbol)
+            await asyncio.to_thread(lstm_predictor.save_model, symbol)
             
             # Calculate training metrics
             train_rmse = np.sqrt(history['train_loss'][-1])
@@ -98,8 +100,8 @@ async def predict_lstm_price(
         else:
             # Load recent data for prediction
             df = await data_collector.fetch_historical_data(symbol, days=90)
-            df = feature_engineer.add_technical_indicators(df)
-            seq_data = feature_engineer.prepare_lstm_sequences(df, sequence_length=60)
+            df = await asyncio.to_thread(feature_engineer.add_technical_indicators, df)
+            seq_data = await asyncio.to_thread(feature_engineer.prepare_lstm_sequences, df, 60)
             
             train_rmse = None  # Model already trained
             val_rmse = None
@@ -108,7 +110,7 @@ async def predict_lstm_price(
         last_sequence = seq_data['X'][-1]  # Shape: (60, num_features)
         
         # Make multi-horizon predictions
-        predictions = lstm_predictor.predict_multi_horizon(last_sequence, horizons=horizon_list)
+        predictions = await asyncio.to_thread(lstm_predictor.predict_multi_horizon, last_sequence, horizon_list)
         
         # Inverse transform predictions to original scale
         scaler = lstm_predictor.scaler
@@ -259,13 +261,13 @@ async def classify_risk(symbol: str):
                 pass  # If BTC data unavailable, correlation features will use defaults
         
         # Calculate risk features
-        risk_features = risk_feature_engineer.engineer_features(df, btc_df)
+        risk_features = await asyncio.to_thread(risk_feature_engineer.engineer_features, df, btc_df)
         
         # Classify risk
-        risk_prediction = risk_classifier.predict(risk_features)
+        risk_prediction = await asyncio.to_thread(risk_classifier.predict, risk_features)
         
         # Get top risk factors
-        top_factors = risk_classifier.get_top_risk_factors(risk_features, top_n=5)
+        top_factors = await asyncio.to_thread(risk_classifier.get_top_risk_factors, risk_features, 5)
         
         # Calculate volatility forecast (simple rolling forecast)
         current_volatility = risk_features.get('historical_volatility', 0)
@@ -332,7 +334,7 @@ async def analyze_sentiment(symbol: str):
             current_price = None
         
         # Aggregate sentiment from all sources
-        sentiment_data = sentiment_aggregator.aggregate_sentiment(symbol, current_price)
+        sentiment_data = await asyncio.to_thread(sentiment_aggregator.aggregate_sentiment, symbol, current_price)
         
         # Format response
         result = {
@@ -385,7 +387,7 @@ async def get_sentiment_history(symbol: str, days: int = 30):
         symbol = symbol.upper()
         
         # Get sentiment history
-        history = sentiment_aggregator.get_sentiment_history(symbol, days)
+        history = await asyncio.to_thread(sentiment_aggregator.get_sentiment_history, symbol, days)
         
         return {
             "symbol": symbol,
@@ -421,10 +423,10 @@ async def compare_models(symbol: str):
         lstm_result = await predict_lstm_price(symbol, retrain=False)
         
         # Get Prophet predictions
-        prophet_result = prophet_predictor.predict(df, symbol=symbol, horizons=[1, 7, 30])
+        prophet_result = await asyncio.to_thread(prophet_predictor.predict, df, symbol, [1, 7, 30])
         
         # Get Ensemble predictions
-        ensemble_result = ensemble_predictor.predict(lstm_result, prophet_result)
+        ensemble_result = await asyncio.to_thread(ensemble_predictor.predict, lstm_result, prophet_result)
         
         # Mock historical accuracy (in production, calculate from stored predictions)
         # For demo purposes, using reasonable estimates

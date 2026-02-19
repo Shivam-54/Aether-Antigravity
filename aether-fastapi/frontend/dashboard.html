@@ -1081,22 +1081,69 @@
                     </div>
 
 
-                    <!-- 5. AI Insights -->
+                    <!-- 5. AI Lab -->
                     <div id="realestate-section-ai-lab" class="realestate-section">
-                        <!-- Full Width Analytics -->
-                        <div class="d-flex flex-column gap-4">
-                            <div class="d-flex align-items-center justify-content-between mb-3">
-                                <h2 class="h4 fw-light text-white mb-0">AI-Powered Portfolio Analysis</h2>
-                                <button onclick="window.renderRealEstateAIInsights()"
-                                    class="glass-button btn-sm px-3 py-2">
-                                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
-                                        </path>
-                                    </svg>
-                                    <span class="small">Refresh</span>
+
+                        <!-- AI Lab Header -->
+                        <div class="glass-header mb-4">
+                            <div class="d-flex align-items-center gap-3 mb-2">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" class="text-primary">
+                                    <path
+                                        d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2" />
+                                    <path d="M8.5 2h7" />
+                                    <path d="M7 16h10" />
+                                </svg>
+                                <h2 class="h3 fw-light mb-0">AI Lab</h2>
+                                <span class="badge bg-primary bg-opacity-10 text-primary">Experimental</span>
+                            </div>
+                            <p class="text-white-50 fw-light mb-0">AI-powered property analysis, risk assessment, and
+                                portfolio insights</p>
+                        </div>
+
+                        <!-- Sub-Tab Navigation -->
+                        <div class="glass-card mb-4 p-3" id="re-ai-lab-tabs">
+                            <div class="d-flex align-items-center justify-content-between mb-3 px-1">
+                                <span class="text-white-50 small fw-medium"
+                                    style="letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.65rem;">Select
+                                    Feature</span>
+                            </div>
+                            <div class="ai-lab-tab-grid">
+                                <button type="button" class="ai-lab-tab active" data-tab="re-predictions-risk"
+                                    onclick="switchREAILabTab('re-predictions-risk')">
+                                    <div class="tab-icon-wrap">📈</div>
+                                    <div class="tab-content">
+                                        <span class="tab-title">Predictions & Risk</span>
+                                        <span class="tab-desc">ML forecasting + Portfolio health</span>
+                                    </div>
+                                </button>
+                                <button type="button" class="ai-lab-tab" data-tab="re-insights-sentiment"
+                                    onclick="switchREAILabTab('re-insights-sentiment')">
+                                    <div class="tab-icon-wrap">✨</div>
+                                    <div class="tab-content">
+                                        <span class="tab-title">Insights & Diversification</span>
+                                        <span class="tab-desc">AI summary + Portfolio spread</span>
+                                    </div>
+                                    <span class="tab-badge"
+                                        style="background: rgba(118,75,162,0.3); color: #c4b5fd;">AI</span>
+                                </button>
+                                <button type="button" class="ai-lab-tab" data-tab="re-anomaly-correlation"
+                                    onclick="switchREAILabTab('re-anomaly-correlation')">
+                                    <div class="tab-icon-wrap">🔍</div>
+                                    <div class="tab-content">
+                                        <span class="tab-title">Anomaly & Correlation</span>
+                                        <span class="tab-desc">Outlier detection + Diversification</span>
+                                    </div>
+                                    <span class="tab-badge"
+                                        style="background: rgba(45,212,191,0.3); color: #5eead4;">ML</span>
                                 </button>
                             </div>
+                        </div>
+
+                        <!-- ═══════════════════════════════════ -->
+                        <!-- Tab 1: Predictions & Risk          -->
+                        <!-- ═══════════════════════════════════ -->
+                        <div class="ai-lab-panel active" id="re-ai-lab-panel-predictions-risk">
 
                             <!-- Model Controls -->
                             <div class="glass-card p-3 mb-4">
@@ -1136,7 +1183,7 @@
                                 </div>
                             </div>
 
-                            <!-- Historical Prediction Accuracy Chart -->
+                            <!-- Prediction Accuracy Chart -->
                             <div class="glass-card p-4 mb-4">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div>
@@ -1163,18 +1210,61 @@
                                 </div>
                             </div>
 
-                            <!-- AI-Generated Insights Feed -->
+                            <!-- Portfolio Health Score -->
+                            <div id="ai-health-score-container" class="glass-card p-4 mb-4">
+                                <div class="text-center text-white-50 py-4">
+                                    <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+                                    <div>Calculating Portfolio Health...</div>
+                                </div>
+                            </div>
+
+                            <!-- ═══ Divider ═══ -->
+                            <div class="ai-lab-section-divider">
+                                <div class="divider-line"></div>
+                                <span class="divider-label">⚡ Risk & Forecasts</span>
+                                <div class="divider-line"></div>
+                            </div>
+
+                            <!-- Risk Alerts -->
+                            <div id="ai-risk-section" class="mb-4" style="display: none;">
+                                <h3 class="h6 text-white-50 text-uppercase fw-light mb-3" style="letter-spacing: 1px;">
+                                    Risk Detection</h3>
+                                <div id="ai-risk-container" class="d-flex flex-column gap-3">
+                                    <!-- Dynamic Content -->
+                                </div>
+                            </div>
+
+                            <!-- Price Forecasts -->
+                            <div class="mb-4">
+                                <h3 class="h6 text-white-50 text-uppercase fw-light mb-3" style="letter-spacing: 1px;">
+                                    💰 Price Forecasts</h3>
+                                <div id="ai-price-predictions" class="row g-3">
+                                    <!-- Dynamic prediction cards -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ═══════════════════════════════════ -->
+                        <!-- Tab 2: Insights & Diversification  -->
+                        <!-- ═══════════════════════════════════ -->
+                        <div class="ai-lab-panel" id="re-ai-lab-panel-insights-sentiment" style="display: none;">
+
+                            <!-- ── Section A: Gemini AI Portfolio Summary ── -->
                             <div class="glass-card p-4 mb-4">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div>
-                                        <h4 class="h6 text-white-90 mb-1">🧠 AI Insights</h4>
-                                        <p class="text-white-50 small mb-0">Natural language recommendations</p>
+                                        <h3 class="h5 fw-light text-white mb-1">
+                                            <span
+                                                style="background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">✨
+                                                AI Portfolio Summary</span>
+                                        </h3>
+                                        <p class="text-white-50 small mb-0">Gemini-powered insights based on your
+                                            property portfolio</p>
                                     </div>
                                     <div class="d-flex align-items-center gap-2">
-                                        <span class="text-white-50 small" id="insightsLastUpdate">Last updated: Just
-                                            now</span>
-                                        <button onclick="fetchAndRenderAIInsights()"
-                                            class="glass-button btn-sm px-2 py-1">
+                                        <span class="text-white-50 small" id="re-ai-summary-timestamp"></span>
+                                        <button type="button" onclick="fetchAndRenderPortfolioSummary()"
+                                            class="glass-button btn-sm px-2 py-1" title="Refresh">
                                             <svg width="12" height="12" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -1184,98 +1274,139 @@
                                         </button>
                                     </div>
                                 </div>
-                                <div id="aiInsightsFeed" class="d-flex flex-column gap-2">
-                                    <!-- Dynamic insights -->
-                                    <div class="text-center text-white-50 py-3 small">
+                                <!-- Portfolio snapshot bar -->
+                                <div id="re-ai-portfolio-snapshot" class="d-flex gap-3 flex-wrap mb-3"
+                                    style="display:none;"></div>
+                                <!-- Insight cards -->
+                                <div id="re-ai-insights-feed" class="d-flex flex-column gap-2">
+                                    <div class="text-center text-white-50 py-4 small">
                                         <div class="spinner-border spinner-border-sm text-primary mb-2" role="status">
                                         </div>
-                                        <div>Generating AI insights...</div>
+                                        <div>Loading AI insights...</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Scenario Simulator (What-If Analysis) -->
-                            <div class="glass-card p-4 mb-4">
-                                <div class="mb-3">
-                                    <h4 class="h6 text-white-90 mb-1">What-If Analysis</h4>
-                                    <p class="text-white-50 small mb-0">Simulate market scenarios</p>
-                                </div>
+                            <!-- ── Divider ── -->
+                            <div class="ai-lab-section-divider">
+                                <div class="divider-line"></div>
+                                <span class="divider-label">📊 Portfolio Diversification</span>
+                                <div class="divider-line"></div>
+                            </div>
 
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="modal-label mb-2">Market Growth Scenario:</label>
-                                        <input type="range" id="marketGrowthSlider" class="form-range" min="-20"
-                                            max="30" step="1" value="10" oninput="updateScenario()"
-                                            style="width: 100%;">
-                                        <div class="d-flex justify-content-between align-items-center mt-2">
-                                            <span class="text-white-50 small">-20%</span>
-                                            <span id="growthValue" class="badge"
-                                                style="background: rgba(99, 102, 241, 0.2); color: #818cf8; font-size: 0.9rem; padding: 0.5rem 1rem;">
-                                                +10%
-                                            </span>
-                                            <span class="text-white-50 small">+30%</span>
-                                        </div>
+                            <!-- ── Section B: Diversification Score ── -->
+                            <div class="glass-card p-4">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <div>
+                                        <h3 class="h5 fw-light text-white mb-1">🎯 Diversification Score</h3>
+                                        <p class="text-white-50 small mb-0">City, type & value concentration analysis
+                                        </p>
                                     </div>
-
-                                    <div class="col-md-6">
-                                        <label class="modal-label mb-2">Projected Impact:</label>
-                                        <div class="p-3 rounded"
-                                            style="background: rgba(255,255,255,0.05); height: 100px; display: flex; flex-direction: column; justify-content: center;">
-                                            <div class="text-center">
-                                                <div class="text-white-50 small mb-1">Portfolio Value</div>
-                                                <div class="h4 text-white mb-1" id="scenarioValue">₹5.8 Cr</div>
-                                                <div id="scenarioChange" class="small">
-                                                    <span class="text-success">+15.3% 📈</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="mt-3">
-                                    <button type="button" onclick="runDetailedScenario()" class="glass-button w-100">
-                                        📊 Run Detailed Analysis
+                                    <button type="button" onclick="fetchAndRenderDiversificationScore()"
+                                        class="glass-button btn-sm px-2 py-1" title="Refresh">
+                                        <svg width="12" height="12" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                            </path>
+                                        </svg>
                                     </button>
                                 </div>
-                            </div>
 
-                            <!-- 1. Health Score Board -->
-                            <div id="ai-health-score-container" class="glass-card p-4">
-                                <!-- Dynamic Content -->
-                                <div class="text-center text-white-50 py-4">
-                                    <div class="spinner-border spinner-border-sm text-primary mb-2" role="status">
+                                <div id="re-diversification-content">
+                                    <div class="text-center text-white-50 py-4 small">
+                                        <div class="spinner-border spinner-border-sm text-primary mb-2" role="status">
+                                        </div>
+                                        <div>Analysing portfolio concentration...</div>
                                     </div>
-                                    <div>Calculating Portfolio Health...</div>
                                 </div>
                             </div>
 
-                            <!-- 2. Performance Podium -->
-                            <div>
-                                <h3 class="h6 text-white-50 text-uppercase fw-light mb-3" style="letter-spacing: 1px;">
-                                    Top Performers</h3>
-                                <div id="ai-performance-ranking" class="row g-3">
-                                    <!-- Dynamic Content -->
+                            <!-- ── Divider ── -->
+                            <div class="ai-lab-section-divider mt-4">
+                                <div class="divider-line"></div>
+                                <span class="divider-label">⚖️ Portfolio Rebalancing</span>
+                                <div class="divider-line"></div>
+                            </div>
+
+                            <!-- ── Section C: Rebalancing Advisor ── -->
+                            <div class="glass-card p-4 mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <h3 class="h5 fw-light text-white mb-1">⚖️ Rebalancing Advisor</h3>
+                                        <p class="text-white-50 small mb-0">What to buy next to improve portfolio
+                                            balance</p>
+                                    </div>
+                                    <button type="button" onclick="fetchAndRenderRebalancingAdvisor()"
+                                        class="glass-button btn-sm px-2 py-1" title="Refresh">
+                                        <svg width="12" height="12" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                            </path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div id="re-rebalancing-content">
+                                    <div class="text-center text-white-50 py-4 small">
+                                        <div class="spinner-border spinner-border-sm text-primary mb-2" role="status">
+                                        </div>
+                                        <div>Analysing portfolio gaps...</div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- 3. Risk Alerts -->
-                            <div id="ai-risk-section" style="display: none;">
-                                <h3 class="h6 text-white-50 text-uppercase fw-light mb-3" style="letter-spacing: 1px;">
-                                    Risk Detection</h3>
-                                <div id="ai-risk-container" class="d-flex flex-column gap-3">
-                                    <!-- Dynamic Content -->
+                            <!-- ── Divider ── -->
+                            <div class="ai-lab-section-divider">
+                                <div class="divider-line"></div>
+                                <span class="divider-label">🏷️ Rental Yield</span>
+                                <div class="divider-line"></div>
+                            </div>
+
+                            <!-- ── Section D: Rental Yield Optimizer ── -->
+                            <div class="glass-card p-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <h3 class="h5 fw-light text-white mb-1">🏷️ Rental Yield Optimizer</h3>
+                                        <p class="text-white-50 small mb-0">Actual vs market-rate rent per property</p>
+                                    </div>
+                                    <button type="button" onclick="fetchAndRenderRentalYield()"
+                                        class="glass-button btn-sm px-2 py-1" title="Refresh">
+                                        <svg width="12" height="12" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                            </path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div id="re-rental-yield-content">
+                                    <div class="text-center text-white-50 py-4 small">
+                                        <div class="spinner-border spinner-border-sm text-primary mb-2" role="status">
+                                        </div>
+                                        <div>Fetching rental market benchmarks...</div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- 4. Price Predictions -->
-                            <div>
-                                <h3 class="h6 text-white-50 text-uppercase fw-light mb-3" style="letter-spacing: 1px;">
-                                    💰 Price Forecasts</h3>
-                                <div id="ai-price-predictions" class="row g-3">
-                                    <!-- Dynamic prediction cards -->
-                                </div>
+                        </div>
+
+                        <!-- ═══════════════════════════════════ -->
+
+                        <!-- Tab 3: Anomaly & Correlation       -->
+                        <!-- ═══════════════════════════════════ -->
+                        <div class="ai-lab-panel" id="re-ai-lab-panel-anomaly-correlation" style="display: none;">
+                            <div class="glass-card p-5 text-center">
+                                <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
+                                <h3 class="h5 fw-light text-white mb-2">Anomaly & Correlation</h3>
+                                <p class="text-white-50 mb-4">Detect unusual price movements in your properties and
+                                    measure diversification across your portfolio.</p>
+                                <span class="badge px-3 py-2"
+                                    style="background: rgba(45,212,191,0.15); color: #5eead4; font-size: 0.8rem;">Coming
+                                    Soon</span>
                             </div>
                         </div>
+
                     </div>
                 </div>
 
@@ -2113,7 +2244,8 @@
                                         <div id="correlation-heatmap" style="min-height: 200px;">
                                             <div class="text-center py-4">
                                                 <div class="spinner-border spinner-border-sm text-primary"
-                                                    role="status"></div>
+                                                    role="status">
+                                                </div>
                                                 <div class="text-white-50 small mt-2">Computing correlations...</div>
                                             </div>
                                         </div>
@@ -2172,21 +2304,24 @@
                                     <div class="glass-card p-3 text-center">
                                         <div class="text-white-50 small mb-1">Total Anomalies</div>
                                         <div id="anomaly-total"
-                                            style="font-size: 2rem; font-weight: 300; color: #60a5fa;">--</div>
+                                            style="font-size: 2rem; font-weight: 300; color: #60a5fa;">
+                                            --</div>
                                     </div>
                                 </div>
                                 <div class="col-md-3 col-6">
                                     <div class="glass-card p-3 text-center">
                                         <div class="text-white-50 small mb-1">High Severity</div>
                                         <div id="anomaly-high"
-                                            style="font-size: 2rem; font-weight: 300; color: #fb7185;">--</div>
+                                            style="font-size: 2rem; font-weight: 300; color: #fb7185;">--
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-3 col-6">
                                     <div class="glass-card p-3 text-center">
                                         <div class="text-white-50 small mb-1">Medium Severity</div>
                                         <div id="anomaly-medium"
-                                            style="font-size: 2rem; font-weight: 300; color: #fcd34d;">--</div>
+                                            style="font-size: 2rem; font-weight: 300; color: #fcd34d;">
+                                            --</div>
                                     </div>
                                 </div>
                                 <div class="col-md-3 col-6">
@@ -2771,7 +2906,7 @@
     <script src="js/modules/crypto/crypto-insights.js"></script>
 
     <!-- Main Dashboard Logic -->
-    <script src="js/real-estate-ai.js?v=4"></script>
+    <script src="js/real-estate-ai.js?v=8"></script>
     <script src="js/dashboard.js?v=161"></script>
     <script src="js/share-transactions.js?v=1"></script>
     <script src="js/modules/crypto/crypto-wallets.js"></script>

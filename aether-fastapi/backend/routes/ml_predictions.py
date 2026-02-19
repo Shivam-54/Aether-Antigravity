@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from uuid import UUID
 from datetime import datetime
+import asyncio
 
 from database import get_db
 from models.real_estate import Property
@@ -69,7 +70,7 @@ async def predict_property_price(
     
     try:
         # Generate prediction
-        prediction = forecaster.predict(property_data, days_ahead=days_ahead)
+        prediction = await asyncio.to_thread(forecaster.predict, property_data, days_ahead)
         
         # Add property context
         prediction["property_id"] = str(property_id)
@@ -119,7 +120,7 @@ async def predict_property_price_multi_horizon(
     }
     
     try:
-        predictions = forecaster.predict_multi_horizon(property_data)
+        predictions = await asyncio.to_thread(forecaster.predict_multi_horizon, property_data)
         
         return {
             "property_id": str(property_id),
@@ -168,7 +169,7 @@ async def predict_all_properties(
         }
         
         try:
-            prediction = forecaster.predict(property_data, days_ahead=days_ahead)
+            prediction = await asyncio.to_thread(forecaster.predict, property_data, days_ahead)
             prediction["property_id"] = str(property.id)
             prediction["property_name"] = property.name
             prediction["location"] = property.location
@@ -229,7 +230,7 @@ async def get_portfolio_forecast(
         }
         
         try:
-            prediction = forecaster.predict(property_data, days_ahead=days_ahead)
+            prediction = await asyncio.to_thread(forecaster.predict, property_data, days_ahead)
             total_current_value += prediction["current_value"]
             total_predicted_value += prediction["predicted_value"]
             property_predictions.append({

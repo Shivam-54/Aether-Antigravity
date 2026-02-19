@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 import random
+import asyncio
 
 from database import get_db
 from models.real_estate import Property
@@ -209,7 +210,7 @@ async def get_ai_insights(
                         "purchase_price": float(prop.purchase_price),
                         "current_value": float(prop.current_value)
                     }
-                    prediction = forecaster.predict(property_data, days_ahead=90)
+                    prediction = await asyncio.to_thread(forecaster.predict, property_data, 90)
                     predicted_growth = prediction.get('percent_change', 0)
                     
                     insights.append({
@@ -272,7 +273,7 @@ async def get_ai_insights(
                 "purchase_price": float(prop.purchase_price),
                 "current_value": float(prop.current_value)
             }
-            prediction = forecaster.predict(property_data, days_ahead=90)
+            prediction = await asyncio.to_thread(forecaster.predict, property_data, 90)
             
             # If growth is slowing or negative, suggest exit
             if prediction.get('percent_change', 0) < 2:

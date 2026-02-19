@@ -7,14 +7,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional, List
 from uuid import UUID
+from datetime import datetime
+import asyncio
 
 from database import get_db
 from models.crypto import CryptoHolding
 from models.user import User
 from routes.auth import get_current_user
 from ml.predictors.crypto_forecaster import crypto_forecaster
-from ml.predictors.crypto_forecaster import crypto_forecaster
-from ml.predictors.insight_generator import generate_all_insights
+from ml.predictors.insight_generator import generate_all_insights, calculate_portfolio_health_score
 from ml.predictors.scenario_engine import scenario_simulator
 from pydantic import BaseModel
 
@@ -200,7 +201,7 @@ async def get_ai_insights(
             days_ahead=days_ahead
         )
         
-        health_score = calculate_portfolio_health_score(holdings_data, predictions) # Calculate health score
+        health_score = await asyncio.to_thread(calculate_portfolio_health_score, holdings_data, predictions)
         
         return {
             "insights": insights,

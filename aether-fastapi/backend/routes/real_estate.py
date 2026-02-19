@@ -9,6 +9,11 @@ from database import get_db
 from models.real_estate import Property
 from models.user import User
 from routes.auth import get_current_user
+from ml.realestate.re_insights_generator import REInsightsGenerator
+from ml.realestate.re_diversification_analyzer import REDiversificationAnalyzer
+from ml.realestate.re_rebalancing_advisor import RERebalancingAdvisor
+from ml.realestate.re_rental_yield_optimizer import RERentalYieldOptimizer
+
 
 router = APIRouter(prefix="/api/realestate", tags=["Real Estate"])
 
@@ -262,3 +267,92 @@ async def delete_property(
     db.delete(property)
     db.commit()
     return None
+
+
+# ═══════════════════════════════════════════════════
+# AI Lab Endpoints
+# ═══════════════════════════════════════════════════
+
+@router.get("/ai/summary")
+async def get_ai_portfolio_summary(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Generate Gemini AI-powered insights for the user's real estate portfolio.
+    """
+    properties = db.query(Property).filter(
+        Property.user_id == current_user.id,
+        Property.status != "Sold"
+    ).all()
+
+    try:
+        generator = REInsightsGenerator()
+        result = generator.generate_summary(properties)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI summary generation failed: {str(e)}")
+
+
+@router.get("/ai/diversification")
+async def get_diversification_score(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Calculate portfolio diversification score based on city, type, and value concentration.
+    """
+    properties = db.query(Property).filter(
+        Property.user_id == current_user.id,
+        Property.status != "Sold"
+    ).all()
+
+    try:
+        analyzer = REDiversificationAnalyzer()
+        result = analyzer.analyze(properties)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Diversification analysis failed: {str(e)}")
+
+
+@router.get("/ai/rebalancing")
+async def get_rebalancing_advice(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Portfolio rebalancing advisor — gaps in city/type spread + Gemini suggestions.
+    """
+    properties = db.query(Property).filter(
+        Property.user_id == current_user.id,
+        Property.status != "Sold"
+    ).all()
+
+    try:
+        advisor = RERebalancingAdvisor()
+        result = advisor.analyze(properties)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Rebalancing analysis failed: {str(e)}")
+
+
+@router.get("/ai/rental-yield")
+async def get_rental_yield_analysis(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Rental yield optimizer — actual vs market-rate rent per property.
+    """
+    properties = db.query(Property).filter(
+        Property.user_id == current_user.id,
+        Property.status != "Sold"
+    ).all()
+
+    try:
+        optimizer = RERentalYieldOptimizer()
+        result = optimizer.analyze(properties)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Rental yield analysis failed: {str(e)}")
+

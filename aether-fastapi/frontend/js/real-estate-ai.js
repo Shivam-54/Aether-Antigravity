@@ -3,10 +3,405 @@
  * Handles fetching and rendering of analytics data.
  */
 
+// ==================== TAB SWITCHING ====================
+
+/**
+ * Switch between Real Estate AI Lab sub-tabs.
+ * Tab IDs: re-predictions-risk | re-insights-sentiment | re-anomaly-correlation
+ */
+window.switchREAILabTab = function (tabName) {
+    // Update tab buttons
+    document.querySelectorAll('#re-ai-lab-tabs .ai-lab-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabName);
+    });
+
+    // Panel IDs use the name without the 're-' prefix, e.g. "re-ai-lab-panel-predictions-risk"
+    const panelName = tabName.replace(/^re-/, '');
+
+    // Update panels
+    document.querySelectorAll('.ai-lab-panel[id^="re-ai-lab-panel-"]').forEach(panel => {
+        const isActive = panel.id === `re-ai-lab-panel-${panelName}`;
+        panel.style.display = isActive ? 'block' : 'none';
+        panel.classList.toggle('active', isActive);
+    });
+
+    // Lazy-load content for the activated tab
+    if (tabName === 're-predictions-risk') {
+        fetchAndRenderAccuracyChart();
+        fetchAndRenderHealthScore();
+        fetchAndRenderRisks();
+        fetchAndRenderPricePredictions();
+    } else if (tabName === 're-insights-sentiment') {
+        fetchAndRenderPortfolioSummary();
+        fetchAndRenderDiversificationScore();
+        fetchAndRenderRebalancingAdvisor();
+        fetchAndRenderRentalYield();
+    }
+    // re-anomaly-correlation: Coming Soon — no fetch needed yet
+};
+
+// Also wire up via event delegation (belt-and-suspenders — works even when onclick="" is blocked)
+document.addEventListener('DOMContentLoaded', function () {
+    const tabGrid = document.getElementById('re-ai-lab-tabs');
+    if (tabGrid) {
+        tabGrid.addEventListener('click', function (e) {
+            const btn = e.target.closest('button[data-tab]');
+            if (btn) {
+                e.preventDefault();
+                switchREAILabTab(btn.dataset.tab);
+            }
+        });
+    }
+});
+
+
+// ==================== INSIGHTS & DIVERSIFICATION TAB ====================
+
+/**
+ * Fetch Gemini AI portfolio summary and render insight cards
+ */
+async function fetchAndRenderPortfolioSummary() {
+    const feed = document.getElementById('re-ai-insights-feed');
+    const snapshot = document.getElementById('re-ai-portfolio-snapshot');
+    const timestamp = document.getElementById('re-ai-summary-timestamp');
+    if (!feed) return;
+
+    // Show loading
+    feed.innerHTML = `
+        <div class="text-center text-white-50 py-4 small">
+            <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+            <div>Gemini is analysing your portfolio...</div>
+        </div>`;
+
+    try {
+        const token = localStorage.getItem('access_token');
+        const res = await fetch('/api/realestate/ai/summary', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        // Portfolio snapshot bar
+        if (data.portfolio_snapshot && snapshot) {
+            const s = data.portfolio_snapshot;
+            const roi = s.portfolio_roi_pct >= 0
+                ? `<span class="text-success">+${s.portfolio_roi_pct.toFixed(1)}%</span>`
+                : `<span class="text-danger">${s.portfolio_roi_pct.toFixed(1)}%</span>`;
+            snapshot.innerHTML = `
+                <div class="glass-card p-2 px-3 flex-fill text-center" style="min-width:100px">
+                    <div class="text-white-50 small" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:.05em">Properties</div>
+                    <div class="text-white fw-semibold">${s.total_properties}</div>
+                </div>
+                <div class="glass-card p-2 px-3 flex-fill text-center" style="min-width:100px">
+                    <div class="text-white-50 small" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:.05em">Total Value</div>
+                    <div class="text-white fw-semibold">₹${(s.total_current_value_inr / 1e7).toFixed(2)} Cr</div>
+                </div>
+                <div class="glass-card p-2 px-3 flex-fill text-center" style="min-width:100px">
+                    <div class="text-white-50 small" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:.05em">Portfolio ROI</div>
+                    <div class="fw-semibold">${roi}</div>
+                </div>
+                <div class="glass-card p-2 px-3 flex-fill text-center" style="min-width:100px">
+                    <div class="text-white-50 small" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:.05em">Rented</div>
+                    <div class="text-white fw-semibold">${s.rented_count} / ${s.total_properties}</div>
+                </div>`;
+            snapshot.style.display = '';
+        }
+
+        // Insight cards
+        if (!data.insights || data.insights.length === 0) {
+            feed.innerHTML = `<div class="text-white-50 text-center py-3 small">No insights available.</div>`;
+            return;
+        }
+
+        const severityBorder = { high: 'rgba(239,68,68,0.3)', medium: 'rgba(99,102,241,0.25)', low: 'rgba(34,197,94,0.2)' };
+        const severityBg = { high: 'rgba(239,68,68,0.05)', medium: 'rgba(99,102,241,0.05)', low: 'rgba(34,197,94,0.04)' };
+        const categoryColor = { risk: '#fca5a5', opportunity: '#86efac', action: '#fde68a', overview: '#c4b5fd', property: '#93c5fd' };
+
+        feed.innerHTML = data.insights.map(ins => {
+            const border = severityBorder[ins.severity] || severityBorder.medium;
+            const bg = severityBg[ins.severity] || severityBg.medium;
+            const color = categoryColor[ins.category] || '#fff';
+            return `
+            <div class="insight-card p-3 rounded-3" style="background:${bg}; border:1px solid ${border};">
+                <div class="d-flex align-items-start gap-3">
+                    <div style="font-size:1.1rem;line-height:1;padding-top:2px;color:${color};">${ins.icon || '◈'}</div>
+                    <div>
+                        <div class="fw-medium text-white small mb-1">${ins.title}</div>
+                        <div class="text-white-50" style="font-size:0.78rem;line-height:1.4;">${ins.content}</div>
+                        <span class="badge mt-2" style="font-size:0.6rem;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);">${ins.category.toUpperCase()}</span>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        if (timestamp) timestamp.textContent = 'Updated ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+    } catch (err) {
+        feed.innerHTML = `<div class="text-danger small text-center py-3">Failed to load AI summary. ${err.message}</div>`;
+    }
+}
+window.fetchAndRenderPortfolioSummary = fetchAndRenderPortfolioSummary;
+
+
+/**
+ * Fetch diversification score and render gauge + breakdown bars
+ */
+async function fetchAndRenderDiversificationScore() {
+    const container = document.getElementById('re-diversification-content');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="text-center text-white-50 py-4 small">
+            <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+            <div>Analysing portfolio concentration...</div>
+        </div>`;
+
+    try {
+        const token = localStorage.getItem('access_token');
+        const res = await fetch('/api/realestate/ai/diversification', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        const gradeColor = { A: '#22c55e', B: '#86efac', C: '#fde68a', D: '#f87171', 'N/A': '#6b7280' };
+        const color = gradeColor[data.grade] || '#fff';
+
+        // Build breakdown bars
+        const breakdownHTML = (data.breakdown || []).map(dim => {
+            const conc = Math.min(dim.concentration_pct, 100);
+            const barColor = conc > 70 ? '#f87171' : conc > 40 ? '#fde68a' : '#86efac';
+            const entriesHTML = (dim.entries || []).slice(0, 4).map(e =>
+                `<div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-white-50" style="font-size:0.72rem;">${e.label}</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <div style="width:80px;height:4px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;">
+                            <div style="width:${e.value_pct}%;height:100%;background:${barColor};border-radius:4px;"></div>
+                        </div>
+                        <span class="text-white-50" style="font-size:0.68rem;width:34px;text-align:right;">${e.value_pct}%</span>
+                    </div>
+                </div>`
+            ).join('');
+
+            return `
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-white small">${dim.icon || ''} ${dim.dimension}</span>
+                    <span class="small" style="color:${barColor};">${dim.concentration_pct.toFixed(0)}% concentration</span>
+                </div>
+                ${entriesHTML}
+            </div>`;
+        }).join('');
+
+        // Recommendations
+        const recsHTML = (data.recommendations || []).map(r =>
+            `<div class="d-flex align-items-start gap-2 mb-2">
+                <span style="color:#fde68a;font-size:.85rem;">◇</span>
+                <span class="text-white-50" style="font-size:0.78rem;">${r}</span>
+            </div>`
+        ).join('');
+
+        container.innerHTML = `
+            <div class="row g-4 align-items-start">
+                <!-- Score gauge -->
+                <div class="col-md-3 text-center">
+                    <div style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
+                                width:120px;height:120px;border-radius:50%;
+                                border:3px solid ${color};
+                                box-shadow:0 0 30px ${color}22;
+                                background:rgba(255,255,255,0.03);">
+                        <div style="font-size:2rem;font-weight:300;color:${color};line-height:1;">${data.score}</div>
+                        <div style="font-size:0.65rem;color:rgba(255,255,255,0.4);letter-spacing:0.1em;text-transform:uppercase;">/ 100</div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="fw-semibold" style="color:${color};font-size:1.3rem;">Grade ${data.grade}</div>
+                        <div class="text-white-50 small">Diversification</div>
+                    </div>
+                </div>
+                <!-- Breakdown -->
+                <div class="col-md-9">
+                    ${breakdownHTML}
+                    ${recsHTML ? `<div class="mt-3 pt-3" style="border-top:1px solid rgba(255,255,255,0.07);">
+                        <div class="text-white-50 mb-2" style="font-size:0.7rem;text-transform:uppercase;letter-spacing:.06em;">Recommendations</div>
+                        ${recsHTML}
+                    </div>` : ''}
+                </div>
+            </div>`;
+
+    } catch (err) {
+        container.innerHTML = `<div class="text-danger small text-center py-3">Failed to load diversification score. ${err.message}</div>`;
+    }
+}
+window.fetchAndRenderDiversificationScore = fetchAndRenderDiversificationScore;
+
+
+// ==================== REBALANCING ADVISOR ====================
+
+async function fetchAndRenderRebalancingAdvisor() {
+    const container = document.getElementById('re-rebalancing-content');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="text-center text-white-50 py-4 small">
+            <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+            <div>Gemini is analysing portfolio gaps...</div>
+        </div>`;
+
+    try {
+        const token = localStorage.getItem('access_token');
+        const res = await fetch('/api/realestate/ai/rebalancing', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        const priorityColor = { high: '#f87171', medium: '#fde68a', low: '#86efac' };
+        const priorityBorder = { high: 'rgba(239,68,68,0.25)', medium: 'rgba(250,204,21,0.2)', low: 'rgba(34,197,94,0.15)' };
+        const priorityBg = { high: 'rgba(239,68,68,0.05)', medium: 'rgba(250,204,21,0.04)', low: 'rgba(34,197,94,0.04)' };
+
+        // Gaps row
+        const gapsHTML = (data.gaps || []).length > 0
+            ? `<div class="mb-3">
+                <div class="text-white-50 mb-2" style="font-size:0.7rem;text-transform:uppercase;letter-spacing:.06em;">Identified Gaps</div>
+                <div class="d-flex flex-column gap-2">
+                    ${(data.gaps || []).slice(0, 4).map(g => `
+                        <div class="p-2 px-3 rounded-3 d-flex align-items-center gap-3"
+                             style="background:${priorityBg[g.severity] || priorityBg.medium};border:1px solid ${priorityBorder[g.severity] || priorityBorder.medium};">
+                            <div style="width:6px;height:6px;border-radius:50%;background:${priorityColor[g.severity] || priorityColor.medium};flex-shrink:0;"></div>
+                            <div>
+                                <div class="text-white small fw-medium">${g.label}</div>
+                                <div class="text-white-50" style="font-size:0.73rem;">${g.detail}</div>
+                            </div>
+                        </div>`).join('')}
+                </div>
+               </div>` : '';
+
+        // Gemini suggestions
+        const suggestionsHTML = (data.suggestions || []).map(s => {
+            const c = priorityColor[s.priority] || '#c4b5fd';
+            const bg = priorityBg[s.priority] || 'rgba(99,102,241,0.05)';
+            const border = priorityBorder[s.priority] || 'rgba(99,102,241,0.2)';
+            return `
+            <div class="p-3 rounded-3" style="background:${bg};border:1px solid ${border};">
+                <div class="d-flex align-items-start gap-3">
+                    <div style="color:${c};font-size:1rem;padding-top:2px;">${s.icon || '◈'}</div>
+                    <div>
+                        <div class="fw-medium text-white small mb-1">${s.title}</div>
+                        <div class="text-white-50" style="font-size:0.77rem;line-height:1.45;">${s.detail}</div>
+                        <span class="badge mt-1" style="font-size:0.58rem;background:rgba(255,255,255,0.07);color:${c};">${(s.priority || '').toUpperCase()} PRIORITY</span>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        container.innerHTML = `
+            ${gapsHTML}
+            <div class="text-white-50 mb-2" style="font-size:0.7rem;text-transform:uppercase;letter-spacing:.06em;">AI Suggestions</div>
+            <div class="d-flex flex-column gap-2">${suggestionsHTML || '<div class="text-white-50 small">Portfolio is well balanced.</div>'}</div>`;
+
+    } catch (err) {
+        container.innerHTML = `<div class="text-danger small text-center py-3">Failed to load rebalancing advice. ${err.message}</div>`;
+    }
+}
+window.fetchAndRenderRebalancingAdvisor = fetchAndRenderRebalancingAdvisor;
+
+
+// ==================== RENTAL YIELD OPTIMIZER ====================
+
+async function fetchAndRenderRentalYield() {
+    const container = document.getElementById('re-rental-yield-content');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="text-center text-white-50 py-4 small">
+            <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+            <div>Fetching rental market benchmarks...</div>
+        </div>`;
+
+    try {
+        const token = localStorage.getItem('access_token');
+        const res = await fetch('/api/realestate/ai/rental-yield', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        const s = data.summary || {};
+        const statusConfig = {
+            vacant: { color: '#f87171', bg: 'rgba(239,68,68,0.12)', label: 'Vacant' },
+            under_priced: { color: '#fde68a', bg: 'rgba(250,204,21,0.1)', label: 'Under-priced' },
+            at_market: { color: '#86efac', bg: 'rgba(34,197,94,0.1)', label: 'At Market' },
+            above_market: { color: '#5eead4', bg: 'rgba(45,212,191,0.1)', label: 'Above Market' },
+        };
+
+        // Summary bar
+        const incomeGapColor = s.income_gap_monthly > 0 ? '#fde68a' : '#86efac';
+        const summaryHTML = `
+            <div class="d-flex gap-3 flex-wrap mb-4">
+                <div class="glass-card p-2 px-3 flex-fill text-center" style="min-width:110px">
+                    <div class="text-white-50 small" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:.05em">Actual / Mo</div>
+                    <div class="text-white fw-semibold">₹${(s.actual_monthly || 0).toLocaleString('en-IN')}</div>
+                </div>
+                <div class="glass-card p-2 px-3 flex-fill text-center" style="min-width:110px">
+                    <div class="text-white-50 small" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:.05em">Market Rate / Mo</div>
+                    <div class="text-white fw-semibold">₹${(s.potential_monthly || 0).toLocaleString('en-IN')}</div>
+                </div>
+                <div class="glass-card p-2 px-3 flex-fill text-center" style="min-width:110px">
+                    <div class="text-white-50 small" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:.05em">Income Gap / Mo</div>
+                    <div class="fw-semibold" style="color:${incomeGapColor};">₹${(s.income_gap_monthly || 0).toLocaleString('en-IN')}</div>
+                </div>
+                <div class="glass-card p-2 px-3 flex-fill text-center" style="min-width:110px">
+                    <div class="text-white-50 small" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:.05em">Annual Gap</div>
+                    <div class="fw-semibold" style="color:${incomeGapColor};">₹${(s.income_gap_annual || 0).toLocaleString('en-IN')}</div>
+                </div>
+            </div>`;
+
+        // Per-property rows
+        const rowsHTML = (data.properties || []).map(p => {
+            const cfg = statusConfig[p.status] || statusConfig.at_market;
+            const actualDisplay = p.actual_monthly > 0 ? `₹${p.actual_monthly.toLocaleString('en-IN')}/mo` : '—';
+            const yieldDisplay = p.actual_yield_pct > 0 ? `${p.actual_yield_pct}%` : '—';
+            return `
+            <div class="p-3 rounded-3 mb-2" style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <div>
+                        <div class="text-white small fw-medium">${p.name}</div>
+                        <div class="text-white-50" style="font-size:0.7rem;">${p.type} · ${(p.location || '').split(',')[0]}</div>
+                    </div>
+                    <span class="badge px-2 py-1" style="background:${cfg.bg};color:${cfg.color};font-size:0.65rem;">${cfg.label}</span>
+                </div>
+                <div class="d-flex gap-4 mt-2 flex-wrap">
+                    <div>
+                        <div class="text-white-50" style="font-size:0.63rem;text-transform:uppercase;letter-spacing:.05em;">Actual Rent</div>
+                        <div class="text-white small">${actualDisplay}</div>
+                    </div>
+                    <div>
+                        <div class="text-white-50" style="font-size:0.63rem;text-transform:uppercase;letter-spacing:.05em;">Market Range</div>
+                        <div class="text-white small">₹${p.market_monthly_lo.toLocaleString('en-IN')}–₹${p.market_monthly_hi.toLocaleString('en-IN')}/mo</div>
+                    </div>
+                    <div>
+                        <div class="text-white-50" style="font-size:0.63rem;text-transform:uppercase;letter-spacing:.05em;">Yield (actual)</div>
+                        <div class="text-white small">${yieldDisplay} <span class="text-white-50">(mkt: ${p.market_yield_range})</span></div>
+                    </div>
+                </div>
+                <div class="mt-2 text-white-50" style="font-size:0.72rem;line-height:1.4;">◇ ${p.recommendation}</div>
+            </div>`;
+        }).join('');
+
+        container.innerHTML = summaryHTML + rowsHTML;
+
+    } catch (err) {
+        container.innerHTML = `<div class="text-danger small text-center py-3">Failed to load rental yield data. ${err.message}</div>`;
+    }
+}
+window.fetchAndRenderRentalYield = fetchAndRenderRentalYield;
+
+
+
 window.renderRealEstateAIInsights = async function () {
     console.log('Rendering Real Estate AI Insights...');
 
-    // Parallel fetch for speed
+    // Trigger load for the currently active tab only
     try {
         await Promise.all([
             fetchAndRenderAccuracyChart(),
@@ -20,6 +415,7 @@ window.renderRealEstateAIInsights = async function () {
         console.error("Error loading AI insights:", error);
     }
 };
+
 
 // Global function to update predictions when model/timeframe changes
 window.updateAIPredictions = async function () {

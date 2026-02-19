@@ -4,10 +4,12 @@ Generates actionable portfolio insights for cryptocurrency holdings
 """
 
 import google.generativeai as genai
+from google.generativeai.types import RequestOptions
 import pandas as pd
 import numpy as np
 import os
 import json
+import asyncio
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
@@ -145,7 +147,11 @@ class CryptoInsightsGenerator:
         prompt = self._build_prompt(stock_context, portfolio_value)
 
         try:
-            response = self.model.generate_content(prompt)
+            response = await asyncio.to_thread(
+                self.model.generate_content,
+                prompt,
+                request_options=RequestOptions(timeout=10)
+            )
             insights = self._parse_response(response.text)
         except Exception as e:
             logger.warning(f"Gemini AI failed, falling back to rule-based: {e}")
