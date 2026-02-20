@@ -6866,6 +6866,20 @@ function renderBondYieldAnalysis() {
 window.renderBondYieldAnalysis = renderBondYieldAnalysis;
 
 // ===========================================
+// BONDS AI LAB RENDER FUNCTION
+// ===========================================
+
+function renderBondAIInsights() {
+    console.log('Rendering Bond AI Insights...');
+    // Ensure the first tab is visible and Charts are drawn over un-hidden nodes
+    setTimeout(() => {
+        const yieldTabBtn = document.querySelector('#bonds-section-ai-lab .ai-lab-tab[data-tab="bonds-ai-yield-curve"]');
+        switchBondsAILabTab('yield-curve', yieldTabBtn);
+    }, 50);
+}
+window.renderBondAIInsights = renderBondAIInsights;
+
+// ===========================================
 // BUSINESS MODULE RENDER FUNCTIONS
 // ===========================================
 
@@ -8580,3 +8594,266 @@ window.toggleCustomDocName = toggleCustomDocName;
 
 // End of NetworkCorrelationAnimation class
 // End of NetworkCorrelationAnimation class moved to top
+
+// ==========================================
+// BONDS AI LAB LOGIC
+// ==========================================
+
+let yieldCurveChart = null;
+
+function switchBondsAILabTab(tabId, element) {
+    // 1. Update tab styling
+    document.querySelectorAll('#bonds-section-ai-lab .ai-lab-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    if (element) element.classList.add('active');
+
+    // 2. Hide all panes
+    document.querySelectorAll('#bonds-section-ai-lab .bonds-ai-pane').forEach(pane => {
+        pane.style.display = 'none';
+        pane.classList.remove('active');
+    });
+
+    // 3. Show selected pane
+    const selectedPane = document.getElementById(`bonds-ai-${tabId}`);
+    if (selectedPane) {
+        selectedPane.style.display = 'block';
+        setTimeout(() => selectedPane.classList.add('active'), 10);
+    }
+
+    // 4. Initialize charts if necessary
+    if (tabId === 'yield-curve') {
+        updateYieldForecast();
+        // Need a tiny timeout so the canvas is visible before Chart.js tries to render
+        setTimeout(() => updateInflationSimulation(), 50);
+    } else if (tabId === 'insights') {
+        renderBondsInsightsAndSentiment();
+    }
+}
+
+function updateYieldForecast() {
+    const horizonElement = document.getElementById('yieldForecastHorizon');
+    const horizon = horizonElement ? horizonElement.value : '3';
+
+    const ctx = document.getElementById('yieldCurveForecastChart');
+    if (!ctx) return;
+
+    const insightText = document.getElementById('yieldCurveInsight');
+
+    // Simulated AI Data based on Horizon
+    let currentCurve = [5.3, 5.1, 4.8, 4.5, 4.2, 4.0, 4.1];
+    let predictedCurve = [];
+    let labels = ['1M', '3M', '6M', '1Y', '2Y', '5Y', '10Y'];
+
+    if (horizon == '1') {
+        predictedCurve = [5.2, 5.0, 4.7, 4.4, 4.2, 4.1, 4.2];
+        if (insightText) insightText.innerHTML = "<strong>Short-term Outlook:</strong> The AI model predicts a slight flattening of the yield curve with short-term rates dropping by ~10 bps as inflation data cools.";
+    } else if (horizon == '3') {
+        predictedCurve = [4.9, 4.8, 4.5, 4.3, 4.1, 4.2, 4.4];
+        if (insightText) insightText.innerHTML = "<strong>Medium-term Outlook:</strong> Expecting two 25 bps rate cuts from the central bank. Long-term bonds (5Y-10Y) will likely see price appreciation.";
+    } else if (horizon == '6') {
+        predictedCurve = [4.5, 4.3, 4.2, 4.0, 3.9, 4.3, 4.6];
+        if (insightText) insightText.innerHTML = "<strong>Long-term Outlook:</strong> Yield curve normalization is predicted. Short-term rates will fall significantly, while long-term rates rise due to term premium return.";
+    } else if (horizon == '12') {
+        predictedCurve = [4.0, 3.9, 3.8, 3.8, 3.8, 4.5, 4.8];
+        if (insightText) insightText.innerHTML = "<strong>1-Year Outlook:</strong> Full steepening of the curve. Consider locking in long-term yields now before short-term rates plummet.";
+    }
+
+    if (yieldCurveChart) {
+        yieldCurveChart.destroy();
+    }
+
+    yieldCurveChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Current Market Yield Curve',
+                    data: currentCurve,
+                    borderColor: 'rgba(255, 255, 255, 0.4)',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointRadius: 4,
+                    pointBackgroundColor: '#1f2937',
+                    tension: 0.4
+                },
+                {
+                    label: `AI Predicted Curve (${horizon}M)`,
+                    data: predictedCurve,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 3,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#3b82f6',
+                    pointBorderColor: '#1f2937',
+                    pointBorderWidth: 2,
+                    fill: 'start',
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { color: 'rgba(255, 255, 255, 0.7)' }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleColor: 'rgba(255, 255, 255, 0.9)',
+                    bodyColor: 'rgba(255, 255, 255, 0.7)',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function (context) {
+                            return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}%`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.5)',
+                        callback: function (value) { return value.toFixed(1) + '%'; }
+                    },
+                    suggestedMin: 3.5,
+                    suggestedMax: 5.5
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: 'rgba(255, 255, 255, 0.5)' }
+                }
+            }
+        }
+    });
+}
+window.switchBondsAILabTab = switchBondsAILabTab;
+window.updateYieldForecast = updateYieldForecast;
+
+let inflationChart = null;
+
+function updateInflationSimulation() {
+    const slider = document.getElementById('inflationSlider');
+    const display = document.getElementById('inflationRateDisplay');
+    const ctx = document.getElementById('inflationSimulatorChart');
+    const insightText = document.getElementById('inflationInsight');
+
+    if (!slider || !ctx || !display) return;
+
+    const inflationRate = parseFloat(slider.value);
+    display.textContent = inflationRate.toFixed(1) + '%';
+
+    // Base mock portfolio nominal yield (fixed at 6.5% for simulation purposes)
+    const nominalYield = 6.5;
+
+    // Calculate Real Yields over 10 periods
+    const labels = ['Y1', 'Y2', 'Y3', 'Y4', 'Y5', 'Y6', 'Y7', 'Y8', 'Y9', 'Y10'];
+    const nominalData = [];
+    const realData = [];
+
+    // Simple compounding erosion calculation for visual effect
+    let currentRealYield = nominalYield;
+    for (let i = 0; i < 10; i++) {
+        nominalData.push(nominalYield); // Nominal stays constant
+
+        // Real yield approximates Nominal - Inflation, but erodes slightly more over time visually 
+        let exactReal = ((1 + nominalYield / 100) / (1 + inflationRate / 100) - 1) * 100;
+        realData.push(exactReal);
+    }
+
+    // Update Insight Text
+    if (inflationRate > nominalYield) {
+        insightText.innerHTML = `<strong class="text-danger">Critical Erosion:</strong> At ${inflationRate.toFixed(1)}% inflation, your nominal yield of ${nominalYield}% is generating a <strong class="text-danger">negative real return</strong>. You are actively losing purchasing power.`;
+    } else if (inflationRate > nominalYield - 2) {
+        insightText.innerHTML = `<strong class="text-warning">High Risk:</strong> At ${inflationRate.toFixed(1)}% inflation, your real return is squeezed below 2%. Consider rebalancing towards inflation-protected securities (TIPS).`;
+    } else {
+        insightText.innerHTML = `<strong class="text-success">Healthy Margin:</strong> At ${inflationRate.toFixed(1)}% inflation, your nominal yield provides a solid real return buffer, preserving purchasing power.`;
+    }
+
+    if (inflationChart) {
+        inflationChart.destroy();
+    }
+
+    inflationChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Nominal Portfolio Yield',
+                    data: nominalData,
+                    borderColor: 'rgba(255, 255, 255, 0.4)',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    tension: 0
+                },
+                {
+                    label: 'Real Yield (Purchasing Power)',
+                    data: realData,
+                    borderColor: inflationRate > nominalYield ? '#ef4444' : '#f59e0b',
+                    backgroundColor: inflationRate > nominalYield ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointBackgroundColor: inflationRate > nominalYield ? '#ef4444' : '#f59e0b',
+                    pointBorderColor: '#1f2937',
+                    fill: 'start',
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { color: 'rgba(255, 255, 255, 0.7)' }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleColor: 'rgba(255, 255, 255, 0.9)',
+                    bodyColor: 'rgba(255, 255, 255, 0.7)',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function (context) {
+                            return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}%`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.5)',
+                        callback: function (value) { return value.toFixed(1) + '%'; }
+                    },
+                    suggestedMin: -2.0,
+                    suggestedMax: 8.0
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: 'rgba(255, 255, 255, 0.5)' }
+                }
+            }
+        }
+    });
+}
+window.updateInflationSimulation = updateInflationSimulation;

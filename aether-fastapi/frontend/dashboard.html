@@ -2615,54 +2615,234 @@
 
                     <!-- 6. AI Insights Section -->
 
-                    <div id="bonds-section-ai-insights" class="bonds-section" style="display: none;">
+                    <div id="bonds-section-ai-lab" class="bonds-section" style="display: none;">
                         <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2">AI Insights</h2>
-                            <p class="text-white-50 fw-light">Strategic intelligence for fixed
-                                income optimization</p>
+                            <h2 class="h3 fw-light mb-2">AI Lab</h2>
+                            <p class="text-white-50 fw-light">Intelligent fixed income analysis & recommendations</p>
                         </div>
 
-                        <!-- Insights Cards Container -->
-                        <div id="bonds-ai-insights-list" class="d-flex flex-column gap-3 mb-5">
-                            <!-- Injected via JS -->
-                        </div>
-
-                        <!-- Chat Interface -->
-                        <div class="glass-card p-4">
-                            <div class="d-flex align-items-center gap-3 mb-4">
-                                <span class="text-white-60">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <path
-                                            d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-                                    </svg>
-                                </span>
-                                <h3 class="h5 fw-light text-white-90 mb-0">Bond Assistant</h3>
+                        <!-- AI Lab Premium Navigation -->
+                        <div class="glass-card mb-4 p-3" id="bonds-ai-lab-tabs">
+                            <div class="d-flex align-items-center justify-content-between mb-3 px-1">
+                                <span class="text-white-50 small fw-medium"
+                                    style="letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.65rem;">Select
+                                    Feature</span>
                             </div>
-
-                            <!-- Chat History -->
-                            <div id="bonds-chat-history" class="d-flex flex-column gap-3 mb-4"
-                                style="max-height: 300px; overflow-y: auto;">
-                                <!-- Injected via JS -->
-                            </div>
-
-                            <!-- Input Area -->
-                            <div class="d-flex gap-3">
-                                <input type="text" id="bonds-chat-input"
-                                    class="form-control glass-input text-white fw-light"
-                                    placeholder="Ask about interest rates, yields, or maturity..."
-                                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;"
-                                    onkeypress="if(event.key === 'Enter') handleBondChat()">
-                                <button onclick="handleBondChat()"
-                                    class="btn glass-button px-4 d-flex align-items-center justify-content-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <line x1="22" y1="2" x2="11" y2="13"></line>
-                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                                    </svg>
+                            <div class="ai-lab-tab-grid">
+                                <button type="button" class="ai-lab-tab active" data-tab="bonds-ai-yield-curve"
+                                    onclick="switchBondsAILabTab('yield-curve', this)">
+                                    <div class="tab-icon-wrap">📉</div>
+                                    <div class="tab-content">
+                                        <span class="tab-title">Yield Curve Forecaster</span>
+                                        <span class="tab-desc">Time-Series Prediction</span>
+                                    </div>
                                 </button>
+                                <button type="button" class="ai-lab-tab" data-tab="bonds-ai-insights"
+                                    onclick="switchBondsAILabTab('insights', this)">
+                                    <div class="tab-icon-wrap">🧠</div>
+                                    <div class="tab-content">
+                                        <span class="tab-title">Insights & Sentiment</span>
+                                        <span class="tab-desc">Portfolio Intelligence & News</span>
+                                    </div>
+                                    <span class="tab-badge"
+                                        style="background: rgba(239, 68, 68, 0.3); color: #ef4444;">AI</span>
+                                </button>
+                                <button type="button" class="ai-lab-tab" data-tab="bonds-ai-fair-value"
+                                    onclick="switchBondsAILabTab('fair-value', this)">
+                                    <div class="tab-icon-wrap">⚖️</div>
+                                    <div class="tab-content">
+                                        <span class="tab-title">Fair Value Engine</span>
+                                        <span class="tab-desc">Illiquid Bond Pricing</span>
+                                    </div>
+                                    <span class="tab-badge"
+                                        style="background: rgba(168, 85, 247, 0.3); color: #c084fc;">AI</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tab Content Containers -->
+                        <div class="ai-lab-content-area position-relative shadow-container" style="min-height: 400px;">
+
+                            <!-- 1. Yield Curve Forecaster Content -->
+                            <div id="bonds-ai-yield-curve" class="bonds-ai-pane active">
+                                <div class="glass-card p-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-4">
+                                        <div>
+                                            <h3 class="h5 fw-light text-white mb-1">Yield Curve Forecast</h3>
+                                            <p class="text-white-50 small mb-0">Predicting future interest rate shifts
+                                                across maturities</p>
+                                        </div>
+                                        <!-- Model Selection & Controls -->
+                                        <div class="d-flex gap-3 align-items-center">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="small text-white-50">Prediction Window:</span>
+                                                <select id="yieldForecastHorizon"
+                                                    class="form-select form-select-sm bg-dark text-white border-secondary shadow-none"
+                                                    style="width: 120px;" onchange="updateYieldForecast()">
+                                                    <option value="1">1 Month</option>
+                                                    <option value="3" selected>3 Months</option>
+                                                    <option value="6">6 Months</option>
+                                                    <option value="12">1 Year</option>
+                                                </select>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2 px-3 py-1 rounded-pill"
+                                                style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2);">
+                                                <div
+                                                    style="width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;">
+                                                </div>
+                                                <span class="small text-white" style="font-size: 0.75rem;">LSTM
+                                                    Active</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Yield Curve Chart Container -->
+                                    <div style="height: 350px; position: relative;">
+                                        <canvas id="yieldCurveForecastChart"></canvas>
+                                    </div>
+
+                                    <div class="mt-4 p-3 rounded-3"
+                                        style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+                                        <div class="d-flex gap-3">
+                                            <div class="fs-4">🤖</div>
+                                            <div>
+                                                <h4 class="h6 text-white mb-1">AI Insight</h4>
+                                                <p id="yieldCurveInsight" class="text-white-50 small mb-0">
+                                                    Loading AI analysis of the current yield environment...
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- ════ Section Divider: Inflation Simulator ════ -->
+                                    <div class="ai-lab-section-divider mt-5 mb-4 position-relative">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="flex-grow-1"
+                                                style="height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1));">
+                                            </div>
+                                            <span
+                                                class="text-white-50 small text-uppercase tracking-wider fw-medium">Inflation
+                                                Impact Simulator</span>
+                                            <div class="flex-grow-1"
+                                                style="height: 1px; background: linear-gradient(90deg, rgba(255,255,255,0.1), transparent);">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-end mb-4">
+                                        <div>
+                                            <h3 class="h5 fw-light text-white mb-1">Purchasing Power Erosion</h3>
+                                            <p class="text-white-50 small mb-0">Visualize how compounding inflation
+                                                affects real yields over time</p>
+                                        </div>
+                                        <!-- Inflation Slider Control -->
+                                        <div class="text-end" style="width: 200px;">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <label class="text-white-70 small">Expected Inflation:</label>
+                                                <span id="inflationRateDisplay"
+                                                    class="text-warning small fw-bold">4.0%</span>
+                                            </div>
+                                            <input type="range" class="form-range custom-range-warning"
+                                                id="inflationSlider" min="1.0" max="10.0" step="0.5" value="4.0"
+                                                oninput="updateInflationSimulation()">
+                                        </div>
+                                    </div>
+
+                                    <!-- Inflation Chart Container -->
+                                    <div style="height: 350px; position: relative;">
+                                        <canvas id="inflationSimulatorChart"></canvas>
+                                    </div>
+
+                                    <div class="mt-4 p-3 rounded-3"
+                                        style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+                                        <div class="d-flex gap-3">
+                                            <div class="fs-4">🤖</div>
+                                            <div>
+                                                <h4 class="h6 text-white mb-1">Real Yield Analysis</h4>
+                                                <p id="inflationInsight" class="text-white-50 small mb-0">
+                                                    At 4.0% inflation, your nominal yield is losing significant
+                                                    purchasing power over a 10-year horizon.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <!-- 2. Insights & Sentiment Content -->
+                            <div id="bonds-ai-insights" class="bonds-ai-pane" style="display: none;">
+                                <div class="glass-card p-4 h-100 d-flex flex-column gap-5">
+
+                                    <!-- SECTION 1: Portfolio Intelligence -->
+                                    <div>
+                                        <div class="d-flex align-items-center gap-3 mb-4">
+                                            <div class="fs-4">🤖</div>
+                                            <div>
+                                                <h3 class="h5 fw-light text-white mb-1">Portfolio Intelligence</h3>
+                                                <p class="text-white-50 small mb-0">AI-generated analysis based on your
+                                                    current bond holdings</p>
+                                            </div>
+                                        </div>
+
+                                        <!-- AI Insights Container -->
+                                        <div id="bonds-portfolio-insights-container" class="d-flex flex-column gap-3">
+                                            <!-- Dynamically injected via JS -->
+                                            <div class="text-center py-4">
+                                                <div class="spinner-border spinner-border-sm text-white-50"
+                                                    role="status"></div>
+                                                <span class="ms-2 text-white-50 small">Generating insights...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Sleek Divider -->
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="flex-grow-1"
+                                            style="height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1));">
+                                        </div>
+                                        <div class="flex-grow-1"
+                                            style="height: 1px; background: linear-gradient(90deg, rgba(255,255,255,0.1), transparent);">
+                                        </div>
+                                    </div>
+
+                                    <!-- SECTION 2: Market Sentiment -->
+                                    <div>
+                                        <div class="d-flex align-items-center justify-content-between mb-4">
+                                            <div>
+                                                <div class="d-flex align-items-center gap-2 mb-1">
+                                                    <h3 class="h5 fw-light text-white mb-0">Market Sentiment News</h3>
+                                                    <span
+                                                        class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-25"
+                                                        style="font-size: 0.70rem;">Overall: Bullish</span>
+                                                </div>
+                                                <p class="text-white-50 small mb-0">Real-time events affecting your
+                                                    bonds</p>
+                                            </div>
+                                        </div>
+
+                                        <!-- News Grid Container -->
+                                        <div id="bonds-sentiment-news-grid" class="row g-3">
+                                            <!-- Dynamically injected via JS -->
+                                            <div class="col-12 text-center py-4">
+                                                <div class="spinner-border spinner-border-sm text-white-50"
+                                                    role="status"></div>
+                                                <span class="ms-2 text-white-50 small">Fetching market
+                                                    sentiment...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <!-- 3. Fair Value Engine Content -->
+                            <div id="bonds-ai-fair-value" class="bonds-ai-pane" style="display: none;">
+                                <div class="glass-card p-5 text-center d-flex flex-column align-items-center justify-content-center"
+                                    style="min-height: 400px;">
+                                    <h3 class="h4 fw-light text-white mb-2">Fair Value Engine</h3>
+                                    <p class="text-white-50 small mb-0">Feature in development</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2841,49 +3021,28 @@
                     </div>
 
                     <!-- 5. AI Insights Section -->
-                    <div id="business-section-ai-insights" class="business-section" style="display: none;">
+                    <div id="business-section-ai-lab" class="business-section" style="display: none;">
                         <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2">AI Insights</h2>
-                            <p class="text-white-50 fw-light">Decision intelligence powered by your
-                                business data</p>
+                            <h2 class="h3 fw-light mb-2">AI Lab</h2>
+                            <p class="text-white-50 fw-light">Decision intelligence powered by your business data</p>
                         </div>
 
-                        <!-- Insight Feed -->
-                        <div id="business-insights-feed" class="d-flex flex-column gap-4 mb-5">
-                            <!-- Injected via JS -->
-                        </div>
-
-                        <!-- AI Assistant -->
-                        <div class="glass-card p-4">
-                            <h3 class="h5 fw-light text-white mb-4">AI Business Assistant</h3>
-                            <div class="glass-card p-4 mb-4 d-flex flex-column align-items-center justify-content-center"
-                                style="min-height: 250px; background: rgba(255,255,255,0.02);">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+                        <!-- Coming Soon Placeholder -->
+                        <div class="glass-card p-5 text-center"
+                            style="min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            <div class="mb-4" style="opacity: 0.4;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24"
                                     fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"
-                                    stroke-linejoin="round" class="text-white-20 mb-3">
+                                    stroke-linejoin="round">
                                     <path
                                         d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
                                 </svg>
-                                <p class="text-white-40 text-center small mb-4">Ask me about your
-                                    business performance,
-                                    trends, or projections.</p>
-                                <div class="row g-2 w-100" style="max-width: 600px;">
-                                    <div class="col-6"><button
-                                            class="btn glass-button w-100 small text-white-60 text-start" disabled>Which
-                                            business is most profitable?</button></div>
-                                    <div class="col-6"><button
-                                            class="btn glass-button w-100 small text-white-60 text-start" disabled>Why
-                                            did profits drop last quarter?</button></div>
-                                    <div class="col-6"><button
-                                            class="btn glass-button w-100 small text-white-60 text-start" disabled>What
-                                            if expenses increase 10%?</button></div>
-                                    <div class="col-6"><button
-                                            class="btn glass-button w-100 small text-white-60 text-start" disabled>Show
-                                            me cash flow trends</button></div>
-                                </div>
                             </div>
-                            <p class="text-white-30 small text-center">AI chat functionality coming
-                                soon...</p>
+                            <h3 class="h4 fw-light text-white mb-2">Coming Soon</h3>
+                            <p class="text-white-50 small mb-0" style="max-width: 340px;">
+                                AI-powered business analytics, intelligent trend forecasting, and operational
+                                recommendations are coming soon.
+                            </p>
                         </div>
                     </div>
                 </div>
