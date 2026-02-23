@@ -2774,15 +2774,24 @@
                             <div id="bonds-ai-insights" class="bonds-ai-pane" style="display: none;">
                                 <div class="glass-card p-4 h-100 d-flex flex-column gap-5">
 
-                                    <!-- SECTION 1: Portfolio Intelligence -->
+                                    <!-- SECTION 1: AI-Generated Insights -->
                                     <div>
-                                        <div class="d-flex align-items-center gap-3 mb-4">
-                                            <div class="fs-4">🤖</div>
-                                            <div>
-                                                <h3 class="h5 fw-light text-white mb-1">Portfolio Intelligence</h3>
-                                                <p class="text-white-50 small mb-0">AI-generated analysis based on your
-                                                    current bond holdings</p>
-                                            </div>
+                                        <div class="d-flex align-items-center justify-content-between mb-3">
+                                            <h3 class="h5 fw-light text-white mb-0">
+                                                <span
+                                                    style="background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">AI-Generated
+                                                    Insights</span>
+                                            </h3>
+                                            <button class="glass-button btn-sm px-2 py-1"
+                                                onclick="renderBondsPortfolioInsights()" title="Refresh">
+                                                <svg width="12" height="12" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                                    </path>
+                                                </svg>
+                                            </button>
                                         </div>
 
                                         <!-- AI Insights Container -->
@@ -2795,6 +2804,7 @@
                                             </div>
                                         </div>
                                     </div>
+
 
                                     <!-- Sleek Divider -->
                                     <div class="d-flex align-items-center gap-3">
@@ -3083,7 +3093,7 @@
 
     <!-- Main Dashboard Logic -->
     <script src="js/real-estate-ai.js?v=12"></script>
-    <script src="js/dashboard.js?v=162"></script>
+    <script src="js/dashboard.js?v=166"></script>
     <script src="js/share-transactions.js?v=1"></script>
     <script src="js/modules/crypto/crypto-wallets.js"></script>
     <script src="js/analytics-utils.js"></script> <!-- NEW: Analytics Logic -->

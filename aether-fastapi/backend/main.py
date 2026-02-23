@@ -26,7 +26,7 @@ app.add_middleware(
 
 # Import routes
 # Import here to avoid SQLAlchemy loading issues - ensuring config is loaded first
-from routes import auth, real_estate, documents, crypto, shares, bonds, business, analytics, ml_predictions, valuations, crypto_ml, ml_lab, ml_accuracy, shares_ml
+from routes import auth, real_estate, documents, crypto, shares, bonds, business, analytics, ml_predictions, valuations, crypto_ml, ml_lab, ml_accuracy, shares_ml, bonds_ml
 from database import engine, Base
 from models import user, real_estate as re_model, property_valuation, document, crypto as crypto_model, shares as shares_model, bonds as bonds_model, business as business_model # Import models to register them
 
@@ -48,6 +48,7 @@ app.include_router(ml_predictions.router)
 app.include_router(ml_accuracy.router)  # ML accuracy and insights endpoints
 app.include_router(crypto_ml.router)
 app.include_router(ml_lab.router)  # AI Lab ML endpoints
+app.include_router(bonds_ml.router_bonds_ml)  # Bonds AI Lab ML endpoints
 app.include_router(shares_ml.router)  # Shares ML: Price predictions
 
 @app.get("/api")

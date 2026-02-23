@@ -8857,3 +8857,145 @@ function updateInflationSimulation() {
     });
 }
 window.updateInflationSimulation = updateInflationSimulation;
+
+// ==========================================
+// BONDS AI INSIGHTS & SENTIMENT  (Real API)
+// ==========================================
+
+function renderBondsInsightsAndSentiment() {
+    renderBondsPortfolioInsights();
+    renderBondsSentimentNews();
+}
+
+async function renderBondsPortfolioInsights() {
+    const container = document.getElementById('bonds-portfolio-insights-container');
+    if (!container) return;
+
+    // Show loading state
+    container.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border spinner-border-sm text-white-50" role="status"></div>
+            <span class="ms-2 text-white-50 small">Generating AI insights...</span>
+        </div>`;
+
+    try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch('/api/bonds/ml/insights', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+            throw new Error(`API returned ${response.status}`);
+        }
+
+        const json = await response.json();
+        const data = json.data;
+
+        if (!data.insights || data.insights.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-4">
+                    <p class="text-white-50 small">Add bonds to your portfolio to get AI-powered insights</p>
+                </div>`;
+            return;
+        }
+
+        _renderInsightCards(container, data.insights);
+
+    } catch (err) {
+        container.innerHTML = `
+            <div class="text-center py-3">
+                <p class="text-white-50 small">⚠ Could not load insights. Check your connection or try refreshing.</p>
+            </div>`;
+        console.error('Bond insights error:', err);
+    }
+}
+
+function _renderInsightCards(container, insights) {
+    const severityColors = {
+        'high': 'border-left: 3px solid #fb7185;',
+        'medium': 'border-left: 3px solid #fcd34d;',
+        'low': 'border-left: 3px solid #2dd4bf;'
+    };
+    const categoryBadges = {
+        'overview': '<span class="badge" style="background: rgba(99,102,241,0.15); color: #a5b4fc;">Overview</span>',
+        'risk': '<span class="badge" style="background: rgba(251,113,133,0.15); color: #fda4af;">Risk</span>',
+        'opportunity': '<span class="badge" style="background: rgba(45,212,191,0.15); color: #5eead4;">Opportunity</span>',
+        'action': '<span class="badge" style="background: rgba(252,211,77,0.15); color: #fde68a;">Action</span>'
+    };
+
+    let html = '';
+    for (const ins of insights) {
+        const borderStyle = severityColors[ins.severity] || severityColors['medium'];
+        const badge = categoryBadges[ins.category] || categoryBadges['overview'];
+        const tickerTag = ins.ticker ? `<span class="badge bg-dark ms-1">${ins.ticker}</span>` : '';
+        html += `
+            <div class="insight-card p-3 mb-3" style="${borderStyle} background: rgba(255,255,255,0.03); border-radius: 8px;">
+                <div class="d-flex align-items-center mb-2">
+                    <span class="me-2" style="font-size: 1.1rem; color: #a78bfa; font-weight: 600;">${ins.icon || '◈'}</span>
+                    <strong class="text-white small">${ins.title}</strong>
+                    <div class="ms-auto">${badge}${tickerTag}</div>
+                </div>
+                <p class="text-white-50 small mb-0">${ins.content}</p>
+            </div>`;
+    }
+    container.innerHTML = html;
+}
+
+async function renderBondsSentimentNews() {
+    const container = document.getElementById('bonds-sentiment-news-grid');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="col-12 text-center py-3">
+            <div class="spinner-border spinner-border-sm text-white-50" role="status"></div>
+            <span class="ms-2 text-white-50 small">Analyzing bond market sentiment...</span>
+        </div>`;
+
+    try {
+        const response = await fetch('/api/bonds/ml/sentiment');
+        if (!response.ok) throw new Error(`API ${response.status}`);
+
+        const json = await response.json();
+        const data = json.data;
+
+        const sentimentColor = score => {
+            if (score >= 0.3) return '#2dd4bf';
+            if (score >= 0) return '#5eead4';
+            if (score >= -0.3) return '#fb7185';
+            return '#f471b5';
+        };
+
+        let html = '';
+        (data.news || []).forEach(item => {
+            const score = item.sentiment || 0;
+            const color = sentimentColor(score);
+            const emoji = item.positive ? '📈' : '⚡';
+            html += `
+                <div class="col-12">
+                    <div class="d-flex align-items-start gap-3 p-3 mb-2" style="background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                        <span style="font-size: 1.4rem; flex-shrink: 0; margin-top: 2px;">${emoji}</span>
+                        <div style="flex: 1; min-width: 0;">
+                            <div class="text-white small fw-medium mb-1" style="line-height: 1.35;">${item.title}</div>
+                            <div class="d-flex align-items-center gap-2 mt-1">
+                                <span class="text-white-50" style="font-size: 0.65rem;">${item.source}</span>
+                                <span class="text-white-50" style="font-size: 0.65rem;">•</span>
+                                <span class="text-white-50" style="font-size: 0.65rem;">${item.hours_ago}h ago</span>
+                                <span style="font-size: 0.65rem; color: ${color}; margin-left: auto;">${score >= 0 ? '+' : ''}${score.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        });
+
+        container.innerHTML = html || '<div class="col-12 text-center text-white-50 small py-3">No sentiment data available</div>';
+
+    } catch (err) {
+        container.innerHTML = `<div class="col-12 text-center text-white-50 small py-3">⚠ Could not load sentiment data.</div>`;
+        console.error('Bond sentiment error:', err);
+    }
+}
+
+window.renderBondsInsightsAndSentiment = renderBondsInsightsAndSentiment;
+window.renderBondsPortfolioInsights = renderBondsPortfolioInsights;
+
+
