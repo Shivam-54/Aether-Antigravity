@@ -1331,19 +1331,87 @@ Object.assign(ICONS, {
     mapPin: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>'
 });
 
-// Formatting Utilities
-const formatCurrency = (value) => {
-    if (value >= 10000000) return `₹${(value / 10000000).toFixed(2)} Cr`;
-    if (value >= 100000) return `₹${(value / 100000).toFixed(2)} L`;
-    return `₹${value.toLocaleString()}`;
+// ── Multi-Currency + Live Rates ────────────────────────────────
+const CURRENCIES = {
+    INR: { symbol: '\u20B9', name: 'Indian Rupee' },
+    USD: { symbol: '$', name: 'US Dollar' },
+    EUR: { symbol: '\u20AC', name: 'Euro' },
+    GBP: { symbol: '\u00A3', name: 'Pound Sterling' },
+    RUB: { symbol: '\u20BD', name: 'Russian Ruble' },
+    JPY: { symbol: '\u00A5', name: 'Japanese Yen' },
+    AED: { symbol: '\u062F.\u0625', name: 'UAE Dirham' },
+    SGD: { symbol: 'S$', name: 'Singapore Dollar' },
+    CHF: { symbol: 'Fr', name: 'Swiss Franc' },
 };
 
+// Fallback rates: foreign units per 1 INR
+const FX_FALLBACK = { USD: 0.01111, EUR: 0.01022, GBP: 0.00877, RUB: 0.975, JPY: 1.666, AED: 0.0408, SGD: 0.01488, CHF: 0.01002 };
+
+window._fxRates = Object.assign({}, FX_FALLBACK);   // updated by fetchLiveRates
+window._activeCurrency = localStorage.getItem('aether_currency') || 'INR';
+
+async function fetchLiveRates(force = false) {
+    const now = Date.now();
+    const cached = localStorage.getItem('aether_fx_rates');
+    const cachedTs = parseInt(localStorage.getItem('aether_fx_rates_ts') || '0');
+    const dot = document.getElementById('fxStatusDot');
+    const text = document.getElementById('fxStatusText');
+    // Use cache if < 60 min old and not forced
+    if (!force && cached && (now - cachedTs) < 3_600_000) {
+        window._fxRates = JSON.parse(cached);
+        if (dot) dot.style.background = '#4ade80';
+        const mins = Math.round((now - cachedTs) / 60000);
+        if (text) text.textContent = `Live rates \u00B7 updated ${mins < 1 ? 'just now' : mins + ' min ago'}`;
+        return;
+    }
+    if (dot) dot.style.background = '#f59e0b';
+    if (text) text.textContent = 'Fetching live rates\u2026';
+    try {
+        const codes = 'USD,EUR,GBP,RUB,JPY,AED,SGD,CHF';
+        const res = await fetch(`https://api.frankfurter.app/latest?from=INR&to=${codes}`);
+        const data = await res.json();
+        window._fxRates = data.rates;   // { USD: 0.01163, EUR: 0.01077, ... }
+        localStorage.setItem('aether_fx_rates', JSON.stringify(window._fxRates));
+        localStorage.setItem('aether_fx_rates_ts', String(now));
+        if (dot) dot.style.background = '#4ade80';
+        if (text) text.textContent = 'Live rates \u00B7 just updated';
+    } catch (e) {
+        console.warn('FX fetch failed, using fallback:', e);
+        window._fxRates = Object.assign({}, FX_FALLBACK);
+        if (dot) dot.style.background = '#f87171';
+        if (text) text.textContent = 'Offline \u00B7 using approximate rates';
+    }
+}
+window.fetchLiveRates = fetchLiveRates;
+
+function _fmtForeign(valueINR, currency) {
+    if (currency === 'INR' || !currency) {
+        if (valueINR >= 10000000) return `\u20B9${(valueINR / 10000000).toFixed(2)} Cr`;
+        if (valueINR >= 100000) return `\u20B9${(valueINR / 100000).toFixed(2)} L`;
+        return `\u20B9${valueINR.toLocaleString('en-IN')}`;
+    }
+    const info = CURRENCIES[currency] || { symbol: currency };
+    const rate = window._fxRates[currency] || FX_FALLBACK[currency] || 0.01111;
+    const val = valueINR * rate;
+    if (val >= 1e9) return `${info.symbol}${(val / 1e9).toFixed(2)}B`;
+    if (val >= 1e6) return `${info.symbol}${(val / 1e6).toFixed(2)}M`;
+    if (val >= 1e3) return `${info.symbol}${(val / 1e3).toFixed(1)}K`;
+    return `${info.symbol}${val.toFixed(2)}`;
+}
+
+const formatCurrency = (value) => _fmtForeign(value, window._activeCurrency);
+
 const formatBondCurrency = (value) => {
-    if (value >= 10000000) return `₹${(value / 10000000).toFixed(2)} Cr`;
-    if (value >= 100000) return `₹${(value / 100000).toFixed(2)} L`;
-    if (value >= 1000) return `₹${(value / 1000).toFixed(1)}k`;
-    return `₹${value.toLocaleString()}`;
+    if (window._activeCurrency !== 'INR') return _fmtForeign(value, window._activeCurrency);
+    if (value >= 10000000) return `\u20B9${(value / 10000000).toFixed(2)} Cr`;
+    if (value >= 100000) return `\u20B9${(value / 100000).toFixed(2)} L`;
+    if (value >= 1000) return `\u20B9${(value / 1000).toFixed(1)}k`;
+    return `\u20B9${value.toLocaleString('en-IN')}`;
 };
+
+// Kick off rate fetch on load
+fetchLiveRates();
+// ───────────────────────────────────────────────────────────────
 
 const calculateAppreciation = (current, purchase) => {
     if (purchase === 0) return 0;
@@ -2912,12 +2980,33 @@ async function confirmRemoveProperty() {
 document.addEventListener('DOMContentLoaded', () => {
     requireAuth();
 
-    // Set user email
+    // Set user email (hidden, used by drawer) and display name in navbar
     const userEmail = localStorage.getItem('user_email') || 'user@example.com';
+    // Store full email in hidden span for drawer to read
     document.getElementById('userEmail').textContent = userEmail;
+    // Derive display name from email prefix and show it
+    const namePart = userEmail.split('@')[0] || 'User';
+    const displayName = namePart.replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const userDisplayEl = document.getElementById('userDisplayName');
+    if (userDisplayEl) userDisplayEl.textContent = displayName;
+    // Set initials avatar
+    const initial = displayName[0]?.toUpperCase() || 'U';
+    const navAvatar = document.getElementById('userAvatarInitials');
+    if (navAvatar) navAvatar.textContent = initial;
 
-    // Initialize with Home Dashboard (not Real Estate)
-    switchSource('home'); // This will update breadcrumb, sidebar, and show home module
+    // Apply saved default page (falls back to home)
+    const _savedDefault = localStorage.getItem('aether_default_page') || 'home';
+    switchSource(_savedDefault); // This will update breadcrumb, sidebar, and show the right module
+
+    // Re-apply privacy mode AFTER data renders (DOM scan needs actual content)
+    const _privacySaved = localStorage.getItem('aether_privacy_mode') === '1';
+    if (_privacySaved) {
+        setTimeout(() => togglePrivacyMode(true), 1200);
+    }
+
+    // Restore theme preference AFTER data renders (same delay as privacy mode)
+    const _savedTheme = localStorage.getItem('aether_theme') || 'dark';
+    if (_savedTheme === 'light') setTimeout(() => setTheme('light'), 1500);
 
     // Hook up buttons
     // Note: We need to use event delegation or direct onclicks in HTML. 
@@ -5167,7 +5256,7 @@ function renderCryptoHoldings() {
             </div>
             <!--Quantity (10%)-->
             <div style="width: 10%">
-                <span class="text-white-80">${quantity.toLocaleString()}</span>
+                <span class="text-white-80 privacy-num">${quantity.toLocaleString()}</span>
             </div>
             <!--Avg Buy Price (13%)-->
             <div style="width: 13%">
@@ -8998,4 +9087,1098 @@ async function renderBondsSentimentNews() {
 window.renderBondsInsightsAndSentiment = renderBondsInsightsAndSentiment;
 window.renderBondsPortfolioInsights = renderBondsPortfolioInsights;
 
+// ==========================================
+// PROFILE DRAWER
+// ==========================================
 
+function openProfileDrawer() {
+    const drawer = document.getElementById('profileDrawer');
+    const backdrop = document.getElementById('profileDrawerBackdrop');
+    if (!drawer || !backdrop) return;
+
+    // Populate data before showing
+    _populateProfileDrawer();
+
+    // Show backdrop then slide drawer in
+    backdrop.style.display = 'block';
+    requestAnimationFrame(() => {
+        backdrop.style.opacity = '1';
+        drawer.style.transform = 'translateX(0)';
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', _drawerEscHandler);
+}
+
+function closeProfileDrawer() {
+    const drawer = document.getElementById('profileDrawer');
+    const backdrop = document.getElementById('profileDrawerBackdrop');
+    if (!drawer || !backdrop) return;
+
+    drawer.style.transform = 'translateX(100%)';
+    backdrop.style.opacity = '0';
+    setTimeout(() => { backdrop.style.display = 'none'; }, 320);
+
+    document.removeEventListener('keydown', _drawerEscHandler);
+}
+
+function _drawerEscHandler(e) {
+    if (e.key === 'Escape') closeProfileDrawer();
+}
+
+function _populateProfileDrawer() {
+    // --- Identity ---
+    const email = document.getElementById('userEmail')?.textContent?.trim() || '';
+    const namePart = email.split('@')[0] || 'User';
+    const displayName = namePart.replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const initial = displayName[0]?.toUpperCase() || 'U';
+
+    const navAvatar = document.getElementById('userAvatarInitials');
+    if (navAvatar) navAvatar.textContent = initial;
+
+    const drawerAvatar = document.getElementById('drawerAvatar');
+    if (drawerAvatar) drawerAvatar.textContent = initial;
+    const drawerName = document.getElementById('drawerName');
+    if (drawerName) drawerName.textContent = displayName;
+    const drawerEmail = document.getElementById('drawerEmail');
+    if (drawerEmail) drawerEmail.textContent = email || '—';
+
+    // --- Portfolio Stats from in-memory global data ---
+    try {
+        // Call the same function the home dashboard uses
+        const globalMetrics = (typeof calculateGlobalMetrics === 'function')
+            ? calculateGlobalMetrics()
+            : null;
+
+        // Net Worth
+        const netWorth = (globalMetrics && globalMetrics.totalNetWorth)
+            ? formatCurrency(globalMetrics.totalNetWorth)
+            : '—';
+        const drawerNW = document.getElementById('drawerNetWorth');
+        if (drawerNW) drawerNW.textContent = netWorth;
+
+        // Total asset count
+        let assetCount = 0;
+        if (typeof REAL_ESTATE_DATA !== 'undefined' && REAL_ESTATE_DATA.properties)
+            assetCount += REAL_ESTATE_DATA.properties.filter(p => p.status !== 'Sold').length;
+        if (typeof CRYPTO_DATA !== 'undefined' && CRYPTO_DATA.holdings)
+            assetCount += CRYPTO_DATA.holdings.length;
+        if (typeof SHARES_DATA !== 'undefined' && SHARES_DATA.holdings)
+            assetCount += SHARES_DATA.holdings.length;
+        if (typeof BONDS_DATA !== 'undefined' && Array.isArray(BONDS_DATA))
+            assetCount += BONDS_DATA.length;
+        if (typeof BUSINESS_DATA !== 'undefined' && Array.isArray(BUSINESS_DATA))
+            assetCount += BUSINESS_DATA.length;
+
+        const drawerAssets = document.getElementById('drawerAssets');
+        if (drawerAssets) drawerAssets.textContent = assetCount || '—';
+
+        // Categories (always 5 active modules)
+        const drawerCats = document.getElementById('drawerCategories');
+        if (drawerCats) drawerCats.textContent = '5';
+
+        // Today's change
+        const change = (globalMetrics && globalMetrics.totalNetWorth)
+            ? '+' + formatCurrency(globalMetrics.totalNetWorth * 0.0124) + ' (+1.24%)'
+            : '—';
+        const drawerChange = document.getElementById('drawerChange');
+        if (drawerChange) {
+            drawerChange.textContent = change;
+            drawerChange.style.color = change.startsWith('-') ? '#fb7185' : '#4ade80';
+        }
+    } catch (e) {
+        // silent fail — stats remain as —
+    }
+}
+
+// Run once on load to set the initial avatar letter in navbar
+document.addEventListener('DOMContentLoaded', () => {
+    // Re-run after user email is loaded (slight delay)
+    setTimeout(() => {
+        const email = document.getElementById('userEmail')?.textContent?.trim() || '';
+        const initial = (email.split('@')[0]?.[0] || 'U').toUpperCase();
+        const navAvatar = document.getElementById('userAvatarInitials');
+        if (navAvatar) navAvatar.textContent = initial;
+    }, 1500);
+});
+
+window.openProfileDrawer = openProfileDrawer;
+window.closeProfileDrawer = closeProfileDrawer;
+
+// ==========================================
+// SETTINGS FUNCTIONS
+// ==========================================
+
+// --- Privacy Mode ---
+// Shared privacy regex — catches all financially-revealing text
+const _PRIV_RE = /(^|[^\w])[\+\-]?[\u20B9$\u20AC\u00A3\u00A5\u20BD][\d,.]|[\d,.]+\s*(Cr|L|K|M|B)\b|[\+\-][\u20B9$\u20AC\u00A3\u00A5\u20BD]|\b\d{1,3}(,\d{2,3})+\b|\b\d+\.\d{2,}\b/;
+
+function _privacyScan(root) {
+    const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'META', 'HEAD', 'HTML', 'BODY', 'NAV', 'HEADER', 'FOOTER']);
+    const LAYOUT = new Set(['DIV', 'SECTION', 'ARTICLE', 'MAIN', 'TABLE', 'TBODY', 'THEAD', 'UL', 'OL', 'FORM']);
+    root.querySelectorAll('*').forEach(el => {
+        if (SKIP_TAGS.has(el.tagName)) return;
+        if (el.closest('#profileDrawer') || el.closest('.aether-toast')) return;
+        const text = el.textContent.trim();
+        // Short-text elements (leaf-like values, not full paragraphs)
+        if (text.length > 0 && text.length <= 30 && _PRIV_RE.test(text)) {
+            el.classList.add('privacy-blur');
+            return;
+        }
+        // Pure leaf node — any matching text
+        if (el.children.length === 0 && _PRIV_RE.test(text)) {
+            el.classList.add('privacy-blur');
+        }
+    });
+}
+
+function togglePrivacyMode(enabled) {
+    document.body.classList.toggle('privacy-mode', enabled);
+    localStorage.setItem('aether_privacy_mode', enabled ? '1' : '0');
+
+    // Update toggle visual
+    const track = document.getElementById('privacyModeTrack');
+    const thumb = document.getElementById('privacyModeThumb');
+    if (track) track.style.background = enabled ? 'rgba(102,126,234,0.6)' : 'rgba(255,255,255,0.1)';
+    if (track) track.style.borderColor = enabled ? 'rgba(102,126,234,0.3)' : 'rgba(255,255,255,0.1)';
+    if (thumb) thumb.style.transform = enabled ? 'translateX(18px)' : 'translateX(0)';
+    if (thumb) thumb.style.background = enabled ? '#fff' : 'rgba(255,255,255,0.5)';
+
+    if (enabled) {
+        _privacyScan(document.body);
+    } else {
+        document.querySelectorAll('.privacy-blur').forEach(el => el.classList.remove('privacy-blur'));
+    }
+}
+
+// Inject universal privacy-mode CSS
+(function injectPrivacyCSS() {
+    const style = document.createElement('style');
+    style.id = '_privacyCSSBlock';
+    style.textContent = `
+        /* ── Universal Privacy Mode ── */
+
+        /* Headings & Bootstrap utility value classes */
+        body.privacy-mode h1, body.privacy-mode h2, body.privacy-mode h3, body.privacy-mode h4,
+        body.privacy-mode .h1, body.privacy-mode .h2, body.privacy-mode .h3, body.privacy-mode .h4,
+        body.privacy-mode .h5, body.privacy-mode .display-4, body.privacy-mode .display-3,
+        body.privacy-mode .fw-light.text-white, body.privacy-mode .fw-medium,
+
+        /* Named value containers */
+        body.privacy-mode .currency-value, body.privacy-mode .stat-value,
+        body.privacy-mode .metric-value, body.privacy-mode .kpi-value,
+        body.privacy-mode [class*="net-worth"], body.privacy-mode [class*="netWorth"],
+        body.privacy-mode [class*="portfolio-value"], body.privacy-mode [class*="total-value"],
+
+        /* Asset + glass-card inner values */
+        body.privacy-mode .asset-card h4, body.privacy-mode .asset-card .fw-medium,
+        body.privacy-mode .glass-card h3, body.privacy-mode .glass-card h4,
+        body.privacy-mode .glass-card .fw-light, body.privacy-mode .glass-card .display-4,
+
+        /* Gain/loss colored text (green and red variants) */
+        body.privacy-mode .text-green-400, body.privacy-mode .text-green-500,
+        body.privacy-mode .text-red-400,   body.privacy-mode .text-red-500,
+        body.privacy-mode .text-danger,    body.privacy-mode .text-success,
+        body.privacy-mode [class*="text-green"], body.privacy-mode [class*="text-red"],
+        body.privacy-mode [style*="color:#4ade"], body.privacy-mode [style*="color:#22c5"],
+        body.privacy-mode [style*="color:#f87"],  body.privacy-mode [style*="color:#ef4"],
+        body.privacy-mode [style*="color:green"],  body.privacy-mode [style*="color:red"],
+
+        /* Charts — blur the entire canvas so Y-axis numbers vanish */
+        body.privacy-mode canvas,
+
+        /* Large inline font-size spans */
+        body.privacy-mode [style*="font-size:2"], body.privacy-mode [style*="font-size: 2"],
+        body.privacy-mode [style*="font-size:1.8"], body.privacy-mode [style*="font-size:1.6"],
+        body.privacy-mode [style*="font-size:1.5"], body.privacy-mode [style*="font-size:2.5"],
+        body.privacy-mode [style*="font-size:3"],
+
+        /* Dynamic JS-tagged elements + explicit quantity spans */
+        body.privacy-mode .privacy-blur,
+        body.privacy-mode .privacy-num {
+            filter: blur(10px) !important;
+            transition: filter 0.25s ease;
+            user-select: none;
+        }
+
+        /* Hover-to-reveal (not applied to canvas) */
+        body.privacy-mode h1:hover, body.privacy-mode h2:hover,
+        body.privacy-mode h3:hover, body.privacy-mode h4:hover,
+        body.privacy-mode .fw-light.text-white:hover, body.privacy-mode .fw-medium:hover,
+        body.privacy-mode .glass-card .fw-light:hover,
+        body.privacy-mode [class*="text-green"]:hover, body.privacy-mode [class*="text-red"]:hover,
+        body.privacy-mode .text-success:hover, body.privacy-mode .text-danger:hover,
+        body.privacy-mode [style*="font-size:2"]:hover, body.privacy-mode [style*="font-size:1.8"]:hover,
+        body.privacy-mode [style*="font-size:1.6"]:hover, body.privacy-mode [style*="font-size:1.5"]:hover,
+        body.privacy-mode .privacy-blur:hover,
+        body.privacy-mode .privacy-num:hover {
+            filter: blur(0) !important;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // MutationObserver — re-scan newly rendered subtrees
+    const observer = new MutationObserver(mutations => {
+        if (!document.body.classList.contains('privacy-mode')) return;
+        mutations.forEach(m => {
+            m.addedNodes.forEach(node => {
+                if (node.nodeType !== 1) return;
+                _privacyScan(node);
+            });
+        });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+})();
+
+
+
+// --- Currency ---
+function setCurrency(currency) {
+    window._activeCurrency = currency;
+    localStorage.setItem('aether_currency', currency);
+
+    // Update all pill buttons
+    document.querySelectorAll('.curr-pill').forEach(btn => {
+        const isActive = btn.id === 'currBtn-' + currency;
+        btn.style.background = isActive ? 'rgba(102,126,234,0.2)' : 'transparent';
+        btn.style.borderColor = isActive ? 'rgba(102,126,234,0.5)' : 'rgba(255,255,255,0.08)';
+        btn.style.color = isActive ? '#a5b4fc' : 'rgba(255,255,255,0.45)';
+    });
+
+    // Re-render ALL modules so every number updates immediately
+    refreshAllCurrencyDisplays();
+    const info = CURRENCIES[currency] || { symbol: currency, name: currency };
+    _showSettingsToast(`${info.symbol} Switched to ${info.name}`);
+}
+
+function refreshAllCurrencyDisplays() {
+    try { if (typeof renderHomeDashboard === 'function') renderHomeDashboard(); } catch (e) { }
+    // Re-render whichever module is currently active
+    const active = document.querySelector('.module-content.active');
+    const id = active ? active.id : '';
+    try {
+        if (id.includes('realestate') || id.includes('real-estate')) {
+            if (typeof renderRealEstateDashboard === 'function') renderRealEstateDashboard();
+            if (typeof renderRealEstateProperties === 'function') renderRealEstateProperties();
+        } else if (id.includes('crypto')) {
+            if (typeof renderCryptoOverview === 'function') renderCryptoOverview();
+            if (typeof renderCryptoHoldings === 'function') renderCryptoHoldings();
+        } else if (id.includes('bond')) {
+            if (typeof renderBondsOverview === 'function') renderBondsOverview();
+            if (typeof renderBondHoldings === 'function') renderBondHoldings();
+        } else if (id.includes('share')) {
+            // shares uses its own module; try calling if available
+            if (typeof window.renderSharesDashboard === 'function') window.renderSharesDashboard();
+        } else if (id.includes('business')) {
+            if (typeof renderBusinessDashboard === 'function') renderBusinessDashboard();
+        }
+    } catch (e) { console.warn('Currency re-render partial fail:', e); }
+}
+window.refreshAllCurrencyDisplays = refreshAllCurrencyDisplays;
+
+// --- Notifications ---
+function toggleNotifications(enabled) {
+    localStorage.setItem('aether_notifications', enabled ? '1' : '0');
+    const track = document.getElementById('notifTrack');
+    const thumb = document.getElementById('notifThumb');
+    if (track) track.style.background = enabled ? 'rgba(102,126,234,0.6)' : 'rgba(255,255,255,0.1)';
+    if (track) track.style.borderColor = enabled ? 'rgba(102,126,234,0.3)' : 'rgba(255,255,255,0.1)';
+    if (thumb) thumb.style.transform = enabled ? 'translateX(18px)' : 'translateX(0)';
+    _showSettingsToast(enabled ? '🔔 Alerts enabled' : '🔕 Alerts disabled');
+}
+
+// --- Export Portfolio CSV ---
+function exportPortfolioCSV() {
+    const rows = [['Asset Type', 'Name/Ticker', 'Value (₹)', 'Quantity/Units', 'Notes']];
+
+    // Real Estate
+    if (typeof REAL_ESTATE_DATA !== 'undefined' && REAL_ESTATE_DATA.properties) {
+        REAL_ESTATE_DATA.properties.filter(p => p.status !== 'Sold').forEach(p => {
+            rows.push(['Real Estate', p.name || p.address, p.currentValue || p.purchasePrice || 0, 1, p.type || '']);
+        });
+    }
+    // Crypto
+    if (typeof CRYPTO_DATA !== 'undefined' && CRYPTO_DATA.holdings) {
+        CRYPTO_DATA.holdings.forEach(h => {
+            rows.push(['Crypto', h.name + ' (' + h.symbol + ')', (h.quantity * h.current_price) || 0, h.quantity, h.network || '']);
+        });
+    }
+    // Shares
+    if (typeof SHARES_DATA !== 'undefined' && SHARES_DATA.holdings) {
+        SHARES_DATA.holdings.forEach(h => {
+            rows.push(['Shares', h.ticker, (h.quantity * h.current_price) || 0, h.quantity, h.company_name || '']);
+        });
+    }
+    // Bonds
+    if (typeof BONDS_DATA !== 'undefined' && Array.isArray(BONDS_DATA)) {
+        BONDS_DATA.forEach(b => {
+            rows.push(['Bonds', b.issuer || b.ticker, b.faceValue || 0, 1, `Coupon: ${b.couponRate || 0}%`]);
+        });
+    }
+    // Business
+    if (typeof BUSINESS_DATA !== 'undefined' && Array.isArray(BUSINESS_DATA)) {
+        BUSINESS_DATA.forEach(b => {
+            rows.push(['Business', b.name, b.valuation || 0, 1, b.type || '']);
+        });
+    }
+
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `aether-portfolio-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    _showSettingsToast('📥 Portfolio exported!');
+}
+
+// --- Mini toast for settings feedback ---
+function _showSettingsToast(msg) {
+    let toast = document.getElementById('settingsToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'settingsToast';
+        toast.style.cssText = `
+            position: fixed; bottom: 80px; right: 24px;
+            background: rgba(15,15,20,0.95); border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.85); font-size: 0.78rem;
+            padding: 10px 16px; border-radius: 10px; z-index: 9999;
+            backdrop-filter: blur(10px);
+            transition: opacity 0.3s; opacity: 0;
+            pointer-events: none;
+        `;
+        document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.style.opacity = '1';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+}
+
+// ==========================================
+// Restore settings state when drawer opens
+// ==========================================
+const _origPopulate = window._populateProfileDrawer || _populateProfileDrawer;
+
+function _populateSettingsState() {
+    // Last login
+    const loginDisplay = document.getElementById('lastLoginDisplay');
+    if (loginDisplay) {
+        // Store login time on first load
+        if (!localStorage.getItem('aether_last_login')) {
+            localStorage.setItem('aether_last_login', new Date().toISOString());
+        }
+        const ts = new Date(localStorage.getItem('aether_last_login'));
+        const timeStr = ts.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
+        loginDisplay.textContent = `${timeStr} · Chrome`;
+    }
+
+    // Privacy mode
+    const privacyOn = localStorage.getItem('aether_privacy_mode') === '1';
+    const pmToggle = document.getElementById('privacyModeToggle');
+    if (pmToggle) { pmToggle.checked = privacyOn; togglePrivacyMode(privacyOn); }
+
+    // Currency
+    const currency = localStorage.getItem('aether_currency') || 'INR';
+    setCurrency(currency);
+
+    // Security email
+    const secEmailEl = document.getElementById('securityEmail');
+    if (secEmailEl) secEmailEl.textContent = document.getElementById('userEmail')?.textContent?.trim() || '—';
+
+    // Notifications
+    const notifsOn = localStorage.getItem('aether_notifications') !== '0'; // default ON
+    const notifToggle = document.getElementById('notifToggle');
+    if (notifToggle) { notifToggle.checked = notifsOn; }
+    const notifTrack = document.getElementById('notifTrack');
+    const notifThumb = document.getElementById('notifThumb');
+    if (notifTrack) notifTrack.style.background = notifsOn ? 'rgba(102,126,234,0.6)' : 'rgba(255,255,255,0.1)';
+    if (notifThumb) notifThumb.style.transform = notifsOn ? 'translateX(18px)' : 'translateX(0)';
+}
+
+// Patch openProfileDrawer to also call settings state restore
+const _origOpenDrawer = openProfileDrawer;
+window.openProfileDrawer = function () {
+    _origOpenDrawer();
+    setTimeout(_populateSettingsState, 50);
+};
+
+// --- Settings panel switcher ---
+function switchSettingsPanel(panel) {
+    // Hide all panels
+    document.querySelectorAll('.spanel').forEach(el => el.style.display = 'none');
+    // Show selected
+    const target = document.getElementById('spanel-' + panel);
+    if (target) target.style.display = 'block';
+
+    // Update nav buttons
+    document.querySelectorAll('.snav-btn').forEach(btn => {
+        btn.style.background = 'none';
+        btn.style.border = '1px solid transparent';
+        btn.style.borderLeft = '2px solid transparent';
+        btn.style.backdropFilter = '';
+        btn.style.webkitBackdropFilter = '';
+        btn.style.boxShadow = '';
+        const label = btn.querySelector('span:last-child');
+        if (label) { label.style.color = 'rgba(255,255,255,0.42)'; label.style.fontWeight = 'normal'; }
+    });
+    const activeBtn = document.getElementById('snav-' + panel);
+    if (activeBtn) {
+        activeBtn.style.background = 'rgba(255,255,255,0.04)';
+        activeBtn.style.border = '1px solid rgba(255,255,255,0.09)';
+        activeBtn.style.borderLeft = '2px solid #667eea';
+        activeBtn.style.backdropFilter = 'blur(8px)';
+        activeBtn.style.webkitBackdropFilter = 'blur(8px)';
+        activeBtn.style.boxShadow = 'inset 0 0 10px rgba(255,255,255,0.02), 0 0 10px rgba(102,126,234,0.15)';
+        const label = activeBtn.querySelector('span:last-child');
+        if (label) { label.style.color = '#fff'; label.style.fontWeight = '500'; }
+    }
+}
+window.switchSettingsPanel = switchSettingsPanel;
+
+window.togglePrivacyMode = togglePrivacyMode;
+window.setCurrency = setCurrency;
+window.toggleNotifications = toggleNotifications;
+window.exportPortfolioCSV = exportPortfolioCSV;
+
+// ==========================================
+// APPEARANCE — accent color & AMOLED mode
+// ==========================================
+function setAccentColor(c1, c2) {
+    document.documentElement.style.setProperty('--accent-1', c1);
+    document.documentElement.style.setProperty('--accent-2', c2);
+    // update all gradient elements that use the CSS var pattern where possible
+    const style = document.getElementById('_accentStyle') || (() => {
+        const s = document.createElement('style'); s.id = '_accentStyle'; document.head.appendChild(s); return s;
+    })();
+    style.textContent = `
+        .user-avatar-initials, #drawerInitials { background: linear-gradient(135deg, ${c1}, ${c2}) !important; }
+        .snav-btn[style*="border-left:2px solid #667eea"] { border-left-color: ${c1} !important; box-shadow: inset 0 0 10px rgba(255,255,255,0.02), 0 0 10px ${c1}40 !important; }
+        button[style*="border-left: 2px solid #667eea"] { border-left-color: ${c1} !important; }
+    `;
+    localStorage.setItem('aether_accent', JSON.stringify([c1, c2]));
+    _showSettingsToast('Accent color updated');
+}
+window.setAccentColor = setAccentColor;
+
+// ==========================================
+// THEME — Dark / Light
+// ==========================================
+(function injectLightThemeCSS() {
+    const s = document.createElement('style');
+    s.id = '_lightThemeBlock';
+    s.textContent = `
+        /* ── Light Theme Overrides ── */
+
+        /* BASELINE: make ALL content dark by default — catches text not covered by inline styles */
+        body.light-theme,
+        body.light-theme span:not([class*="text-green"]):not([class*="text-red"]):not([class*="badge"]),
+        body.light-theme div:not([class*="text-green"]):not([class*="text-red"]),
+        body.light-theme p, body.light-theme label,
+        body.light-theme td, body.light-theme th,
+        body.light-theme li, body.light-theme a:not(.btn) {
+            color: rgba(0,0,0,0.82);
+        }
+
+        body.light-theme {
+            --canvas-base:            #f0f2f5;
+            --canvas-stage:           #e4e7ec;
+            --canvas-vignette:        radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.06) 100%);
+            --glass-fill:             rgba(255,255,255,0.75);
+            --glass-edge-highlight:   1px solid rgba(0,0,0,0.09);
+            --glass-outer-shadow:     0 4px 24px rgba(0,0,0,0.10);
+            --glass-blur:             blur(20px);
+            --active-glow:            0 0 20px rgba(102,126,234,0.18);
+            --text-primary:           rgba(0,0,0,0.87);
+            --text-secondary:         rgba(0,0,0,0.55);
+            --text-muted:             rgba(0,0,0,0.38);
+            --text-disabled:          rgba(0,0,0,0.25);
+            --glass-border:           rgba(0,0,0,0.09);
+            --glow-soft:              rgba(102,126,234,0.15);
+            background: var(--canvas-base) !important;
+            color: var(--text-primary) !important;
+        }
+
+        /* Scrollbar */
+        body.light-theme ::-webkit-scrollbar-track { background: rgba(0,0,0,0.06); }
+        body.light-theme ::-webkit-scrollbar-thumb { background: linear-gradient(135deg,#bbb,#999); }
+
+        /* Navbar */
+        body.light-theme .navbar {
+            background: linear-gradient(180deg, rgba(240,242,245,0.92) 0%, rgba(240,242,245,0.75) 100%) !important;
+            border-bottom: 1px solid rgba(0,0,0,0.09) !important;
+        }
+
+        /* Sidebar */
+        body.light-theme [id="sidebar"],
+        body.light-theme aside,
+        body.light-theme nav[class*="sidebar"],
+        body.light-theme .sidebar {
+            background: rgba(255,255,255,0.85) !important;
+            border-color: rgba(0,0,0,0.08) !important;
+        }
+
+        /* Glass cards & panels */
+        body.light-theme .glass-card,
+        body.light-theme .glass-panel,
+        body.light-theme .glass {
+            background: rgba(255,255,255,0.78) !important;
+            border: 1px solid rgba(0,0,0,0.08) !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
+        }
+        body.light-theme .glass-card:hover,
+        body.light-theme .glass-panel:hover {
+            border-color: rgba(0,0,0,0.13) !important;
+        }
+
+        /* Modals */
+        body.light-theme .glass-modal,
+        body.light-theme .glass-premium {
+            background: rgba(255,255,255,0.92) !important;
+            border: 1px solid rgba(0,0,0,0.10) !important;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.15) !important;
+        }
+
+        /* Inputs */
+        body.light-theme .form-control,
+        body.light-theme .glass-input,
+        body.light-theme .form-select {
+            background: rgba(0,0,0,0.04) !important;
+            border-color: rgba(0,0,0,0.14) !important;
+            color: rgba(0,0,0,0.87) !important;
+        }
+        body.light-theme .form-control::placeholder,
+        body.light-theme .glass-input::placeholder { color: rgba(0,0,0,0.35) !important; }
+        body.light-theme .form-control:focus,
+        body.light-theme .glass-input:focus {
+            background: rgba(0,0,0,0.06) !important;
+            border-color: rgba(102,126,234,0.5) !important;
+            box-shadow: 0 0 14px rgba(102,126,234,0.15) !important;
+        }
+        body.light-theme .input-group .input-group-text {
+            background: rgba(0,0,0,0.04) !important;
+            border-color: rgba(0,0,0,0.12) !important;
+            color: rgba(0,0,0,0.45) !important;
+        }
+
+        /* Text-white utilities → dark equivalents */
+        body.light-theme .text-white-30 { color: rgba(0,0,0,0.30) !important; }
+        body.light-theme .text-white-40 { color: rgba(0,0,0,0.40) !important; }
+        body.light-theme .text-white-50 { color: rgba(0,0,0,0.50) !important; }
+        body.light-theme .text-white-60 { color: rgba(0,0,0,0.60) !important; }
+        body.light-theme .text-white-70 { color: rgba(0,0,0,0.70) !important; }
+        body.light-theme .text-white-80 { color: rgba(0,0,0,0.80) !important; }
+        body.light-theme .text-white-90 { color: rgba(0,0,0,0.90) !important; }
+        body.light-theme .text-white    { color: rgba(0,0,0,0.87) !important; }
+        body.light-theme .fw-light.text-white { color: rgba(0,0,0,0.87) !important; }
+
+        /* Profile / settings drawer */
+        body.light-theme #profileDrawer {
+            background: rgba(240,242,245,0.97) !important;
+            border-left: 1px solid rgba(0,0,0,0.09) !important;
+        }
+        body.light-theme .spanel,
+        body.light-theme .snav-btn { color: rgba(0,0,0,0.75) !important; }
+
+        /* Inline bg rgba(255,255,255,0.03-.08) → light equivalents */
+        body.light-theme [style*="background:rgba(255,255,255,0.03)"],
+        body.light-theme [style*="background: rgba(255,255,255,0.03)"] {
+            background: rgba(0,0,0,0.04) !important;
+        }
+        body.light-theme [style*="background:rgba(255,255,255,0.05)"],
+        body.light-theme [style*="background: rgba(255,255,255,0.05)"] {
+            background: rgba(0,0,0,0.05) !important;
+        }
+        body.light-theme [style*="background:rgba(255,255,255,0.08)"],
+        body.light-theme [style*="background: rgba(255,255,255,0.08)"] {
+            background: rgba(0,0,0,0.07) !important;
+        }
+        body.light-theme [style*="background:rgba(255,255,255,0.1)"] {
+            background: rgba(0,0,0,0.07) !important;
+        }
+        body.light-theme [style*="background:rgba(255,255,255,0.15)"] {
+            background: rgba(0,0,0,0.09) !important;
+        }
+
+        /* Inline color:rgba(255,255,255,...) → dark text */
+        body.light-theme [style*="color:rgba(255,255,255,0.85)"],
+        body.light-theme [style*="color: rgba(255,255,255,0.85)"] { color: rgba(0,0,0,0.85) !important; }
+        body.light-theme [style*="color:rgba(255,255,255,0.7)"],
+        body.light-theme [style*="color: rgba(255,255,255,0.7)"]  { color: rgba(0,0,0,0.70) !important; }
+        body.light-theme [style*="color:rgba(255,255,255,0.6)"]   { color: rgba(0,0,0,0.60) !important; }
+        body.light-theme [style*="color:rgba(255,255,255,0.55)"]  { color: rgba(0,0,0,0.55) !important; }
+        body.light-theme [style*="color:rgba(255,255,255,0.5)"]   { color: rgba(0,0,0,0.50) !important; }
+        body.light-theme [style*="color:rgba(255,255,255,0.45)"]  { color: rgba(0,0,0,0.45) !important; }
+        body.light-theme [style*="color:rgba(255,255,255,0.4)"]   { color: rgba(0,0,0,0.40) !important; }
+        body.light-theme [style*="color:rgba(255,255,255,0.3)"]   { color: rgba(0,0,0,0.40) !important; }
+        body.light-theme [style*="color:rgba(255,255,255,0.2)"]   { color: rgba(0,0,0,0.35) !important; }
+        body.light-theme [style*="color:#fff"],
+        body.light-theme [style*="color: #fff"]                    { color: rgba(0,0,0,0.87) !important; }
+
+        /* Border overrides */
+        body.light-theme [style*="border:1px solid rgba(255,255,255,0.05)"],
+        body.light-theme [style*="border: 1px solid rgba(255,255,255,0.05)"] {
+            border-color: rgba(0,0,0,0.08) !important;
+        }
+        body.light-theme [style*="border:1px solid rgba(255,255,255,0.08)"] {
+            border-color: rgba(0,0,0,0.10) !important;
+        }
+        body.light-theme [style*="border:1px solid rgba(255,255,255,0.1)"] {
+            border-color: rgba(0,0,0,0.10) !important;
+        }
+
+        /* Table rows */
+        body.light-theme table th { color: rgba(0,0,0,0.5) !important; background: rgba(0,0,0,0.03) !important; }
+        body.light-theme table td { color: rgba(0,0,0,0.80) !important; border-color: rgba(0,0,0,0.06) !important; }
+        body.light-theme table tr:hover td { background: rgba(0,0,0,0.03) !important; }
+
+        /* Nav active item */
+        body.light-theme .nav-item.active {
+            background: linear-gradient(180deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.02) 100%) !important;
+            border-color: rgba(0,0,0,0.15) !important;
+        }
+
+        /* Module content area bg */
+        body.light-theme #main-content,
+        body.light-theme .main-content,
+        body.light-theme [id*="module-"] {
+            background: transparent !important;
+        }
+
+        /* Select options */
+        body.light-theme .form-select option { background: #f0f2f5 !important; color: rgba(0,0,0,0.87) !important; }
+
+        /* Btn-icon-glass */
+        body.light-theme .btn-icon-glass { color: rgba(0,0,0,0.45) !important; }
+        body.light-theme .btn-icon-glass:hover { background: rgba(0,0,0,0.06) !important; color: rgba(0,0,0,0.85) !important; }
+
+        /* ── Navbar ── */
+        body.light-theme .navbar {
+            background: rgba(240,242,245,0.92) !important;
+            border-bottom: 1px solid rgba(0,0,0,0.09) !important;
+            backdrop-filter: blur(20px) !important;
+        }
+
+        /* Module-switcher pill container (the dark elongated bar with tab buttons) */
+        body.light-theme [style*="background:rgba(0,0,0,0.3)"],
+        body.light-theme [style*="background: rgba(0,0,0,0.3)"],
+        body.light-theme [style*="background:rgba(0,0,0,0.35)"],
+        body.light-theme [style*="background:rgba(0,0,0,0.4)"],
+        body.light-theme [style*="background:rgba(0,0,0,0.45)"],
+        body.light-theme [style*="background:rgba(0,0,0,0.5)"],
+        body.light-theme [style*="background:rgba(0,0,0,0.6)"],
+        body.light-theme [style*="background:rgba(0,0,0,0.7)"] {
+            background: rgba(0,0,0,0.07) !important;
+        }
+
+        /* Breadcrumb text */
+        body.light-theme [style*="color:rgba(255,255,255,0.5)"],
+        body.light-theme [style*="color:rgba(255,255,255,0.6)"] {
+            color: rgba(0,0,0,0.50) !important;
+        }
+
+        /* ── Sidebar active nav item — swap white glow for dark/purple ── */
+        body.light-theme .nav-item.active {
+            background: linear-gradient(180deg, rgba(102,126,234,0.10) 0%, rgba(102,126,234,0.04) 100%) !important;
+            border-color: rgba(102,126,234,0.25) !important;
+            box-shadow:
+                inset 0 1px 0 rgba(102,126,234,0.12),
+                0 0 14px rgba(102,126,234,0.18) !important;
+        }
+
+        /* Active indicator bar — was white, now purple */
+        body.light-theme .nav-item.active::before {
+            background: #667eea !important;
+            box-shadow: 0 0 8px rgba(102,126,234,0.5) !important;
+        }
+
+        /* Glass card hover glow — was white, now soft shadow */
+        body.light-theme .glass-card:hover,
+        body.light-theme .glass-panel:hover {
+            box-shadow:
+                0 6px 24px rgba(0,0,0,0.12),
+                0 0 16px rgba(102,126,234,0.12) !important;
+        }
+
+        /* Active glow variable override */
+        body.light-theme {
+            --active-glow: 0 0 16px rgba(102,126,234,0.18);
+            --signal-positive: #16a34a;
+            --signal-negative: #dc2626;
+        }
+
+        /* ── Module tabs pill bar (navbar center) ── */
+        body.light-theme .module-tabs {
+            background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(240,242,245,0.92) 100%) !important;
+            border: 1px solid rgba(0,0,0,0.12) !important;
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.8),
+                0 4px 16px rgba(0,0,0,0.10) !important;
+        }
+
+        body.light-theme .module-tab {
+            color: rgba(0,0,0,0.50) !important;
+        }
+
+        body.light-theme .module-tab:hover {
+            color: rgba(0,0,0,0.80) !important;
+            background: rgba(0,0,0,0.06) !important;
+        }
+
+        /* Active tab — dark pill so it's clearly visible */
+        body.light-theme .module-tab.active {
+            background: rgba(0,0,0,0.82) !important;
+            border-color: rgba(0,0,0,0.15) !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.25) !important;
+        }
+
+        /* ── Navbar top bar ── */
+        body.light-theme nav,
+        body.light-theme header,
+        body.light-theme .navbar {
+            background: rgba(240,242,245,0.95) !important;
+            border-bottom: 1px solid rgba(0,0,0,0.09) !important;
+        }
+
+        /* ── Sidebar left panel ── */
+        body.light-theme #sidebar,
+        body.light-theme [id="mainSidebar"],
+        body.light-theme .sidebar,
+        body.light-theme aside {
+            background: rgba(255,255,255,0.90) !important;
+            border-right: 1px solid rgba(0,0,0,0.09) !important;
+            box-shadow: 2px 0 12px rgba(0,0,0,0.06) !important;
+        }
+
+        /* Sidebar logo / brand area */
+        body.light-theme [style*="border-bottom:1px solid rgba(255,255,255"],
+        body.light-theme [style*="border-bottom: 1px solid rgba(255,255,255"] {
+            border-bottom-color: rgba(0,0,0,0.08) !important;
+        }
+
+        /* ── All white/light glows → dark equivalents ── */
+        /* Remove white box-shadows from glass cards */
+        body.light-theme .glass-card,
+        body.light-theme .glass-panel,
+        body.light-theme .glass {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.06) !important;
+        }
+        body.light-theme .glass-card:hover,
+        body.light-theme .glass-panel:hover {
+            box-shadow: 0 6px 28px rgba(0,0,0,0.13), 0 0 0 1px rgba(0,0,0,0.08) !important;
+        }
+
+        /* Nav active item uses purple that's visible on light */
+        body.light-theme .nav-item.active {
+            background: linear-gradient(180deg, rgba(102,126,234,0.12) 0%, rgba(102,126,234,0.05) 100%) !important;
+            border: 1px solid rgba(102,126,234,0.30) !important;
+            box-shadow:
+                inset 0 1px 0 rgba(102,126,234,0.15),
+                0 0 14px rgba(102,126,234,0.20) !important;
+        }
+        body.light-theme .nav-item.active::before {
+            background: #667eea !important;
+            box-shadow: 0 0 8px rgba(102,126,234,0.6) !important;
+        }
+
+        /* User section pill (top right) */
+        body.light-theme .user-section {
+            background: rgba(0,0,0,0.04) !important;
+            border: 1px solid rgba(0,0,0,0.10) !important;
+            box-shadow: none !important;
+        }
+    `;
+    document.head.appendChild(s);
+})();
+
+function setTheme(theme) {
+    const isLight = theme === 'light';
+    document.body.classList.toggle('light-theme', isLight);
+    localStorage.setItem('aether_theme', theme);
+
+    // ── DOM walk: patch / restore inline white colors ──
+    const WHITE_COLOR_RE = /rgba\(255\s*,\s*255\s*,\s*255\s*,\s*([\d.]+)\)/g;
+    const WHITE_HEX_RE = /#(?:fff|ffffff)\b/gi;
+    // Alpha → matching dark rgba
+    const darkAlpha = a => {
+        const n = parseFloat(a);
+        if (n >= 0.8) return 'rgba(0,0,0,0.87)';
+        if (n >= 0.65) return 'rgba(0,0,0,0.70)';
+        if (n >= 0.5) return 'rgba(0,0,0,0.55)';
+        if (n >= 0.35) return 'rgba(0,0,0,0.40)';
+        if (n >= 0.2) return 'rgba(0,0,0,0.30)';
+        return 'rgba(0,0,0,0.20)';
+    };
+    const SKIP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'SVG', 'CANVAS', 'PATH', 'RECT', 'CIRCLE', 'G', 'LINE', 'POLYLINE', 'POLYGON']);
+
+    try {
+        document.querySelectorAll('[style]').forEach(el => {
+            if (SKIP.has(el.tagName.toUpperCase())) return;
+            // Skip gain/loss colored elements
+            try {
+                if (el.closest('[class*="text-green"],[class*="text-red"],.text-positive,.text-negative')) return;
+            } catch (e) { return; }
+
+            if (isLight) {
+                // Save originals
+                el.dataset.darkColor = el.style.color || '';
+                el.dataset.darkBackground = el.style.background || '';
+                el.dataset.darkBackgroundColor = el.style.backgroundColor || '';
+
+                // Patch inline color
+                if (el.style.color) {
+                    const patched = el.style.color
+                        .replace(WHITE_COLOR_RE, (_, a) => darkAlpha(a))
+                        .replace(WHITE_HEX_RE, 'rgba(0,0,0,0.87)');
+                    el.style.color = patched;
+                }
+                // Patch very-transparent white backgrounds only
+                const src = el.style.background || el.style.backgroundColor;
+                if (src) {
+                    const patched = src.replace(/rgba\(255\s*,\s*255\s*,\s*255\s*,\s*(0?\.0[0-9]*)\)/g, (_, a) => {
+                        const n = parseFloat(a);
+                        return `rgba(0,0,0,${Math.min(n * 3, 0.08).toFixed(2)})`;
+                    });
+                    if (el.style.background) el.style.background = patched;
+                    else el.style.backgroundColor = patched;
+                }
+            } else {
+                // Restore
+                if (el.dataset.darkColor !== undefined) el.style.color = el.dataset.darkColor;
+                if (el.dataset.darkBackground !== undefined) el.style.background = el.dataset.darkBackground;
+                if (el.dataset.darkBackgroundColor !== undefined) el.style.backgroundColor = el.dataset.darkBackgroundColor;
+                delete el.dataset.darkColor;
+                delete el.dataset.darkBackground;
+                delete el.dataset.darkBackgroundColor;
+            }
+        });
+    } catch (e) {
+        console.warn('[Theme] DOM walk error (non-fatal):', e);
+    }
+
+    // Update theme button active states
+    const darkBtn = document.getElementById('theme-btn-dark');
+    const lightBtn = document.getElementById('theme-btn-light');
+    if (darkBtn) {
+        darkBtn.style.background = isLight ? 'transparent' : 'rgba(102,126,234,0.15)';
+        darkBtn.style.borderColor = isLight ? 'rgba(255,255,255,0.08)' : 'rgba(102,126,234,0.5)';
+        const lbl = darkBtn.querySelector('span:last-child');
+        if (lbl) lbl.style.color = isLight ? 'rgba(255,255,255,0.45)' : '#a5b4fc';
+    }
+    if (lightBtn) {
+        lightBtn.style.background = isLight ? 'rgba(102,126,234,0.15)' : 'transparent';
+        lightBtn.style.borderColor = isLight ? 'rgba(102,126,234,0.5)' : 'rgba(255,255,255,0.08)';
+        const lbl = lightBtn.querySelector('span:last-child');
+        if (lbl) lbl.style.color = isLight ? '#a5b4fc' : 'rgba(255,255,255,0.45)';
+    }
+    _showSettingsToast(isLight ? '☀️ Light theme applied' : '🌙 Dark theme applied');
+}
+window.setTheme = setTheme;
+
+
+function toggleAmoled(enabled) {
+    document.body.style.background = enabled ? '#000' : '';
+    document.documentElement.style.setProperty('--bg-base', enabled ? '#000' : '#0f0f14');
+    localStorage.setItem('aether_amoled', enabled ? '1' : '0');
+    const track = document.getElementById('amoledTrack');
+    const thumb = document.getElementById('amoledThumb');
+    if (track) track.style.background = enabled ? 'rgba(102,126,234,0.6)' : 'rgba(255,255,255,0.1)';
+    if (thumb) thumb.style.transform = enabled ? 'translateX(18px)' : 'translateX(0)';
+    _showSettingsToast(enabled ? 'AMOLED mode on' : 'AMOLED mode off');
+}
+window.toggleAmoled = toggleAmoled;
+
+// ==========================================
+// DEFAULT PAGE — save preferred landing tab
+// ==========================================
+function setDefaultPage(page) {
+    localStorage.setItem('aether_default_page', page);
+
+    // Update every dp-btn: clear active state
+    document.querySelectorAll('.dp-btn').forEach(btn => {
+        btn.style.background = 'none';
+        btn.style.borderLeft = '2px solid transparent';
+        // Reset label colour (2nd span — index 1)
+        const spans = btn.querySelectorAll('span');
+        if (spans[1]) spans[1].style.cssText = 'color:rgba(255,255,255,0.55);font-size:0.8rem;';
+        // Remove any badge
+        const badge = btn.querySelector('.dp-current');
+        if (badge) badge.remove();
+    });
+
+    // Activate the selected button
+    const active = document.getElementById('dp-' + page);
+    if (active) {
+        active.style.background = 'rgba(102,126,234,0.15)';
+        active.style.borderLeft = '2px solid #667eea';
+        const spans = active.querySelectorAll('span');
+        if (spans[1]) spans[1].style.cssText = 'color:#fff;font-size:0.8rem;font-weight:500;';
+        // Add badge after the label
+        const badge = document.createElement('span');
+        badge.className = 'dp-current';
+        badge.style.cssText = 'margin-left:auto;color:#a5b4fc;font-size:0.6rem;flex-shrink:0;';
+        badge.textContent = 'Selected';
+        active.appendChild(badge);
+    }
+
+    // Actually navigate to the selected module immediately
+    if (typeof switchSource === 'function') switchSource(page);
+
+    _showSettingsToast('Default page updated');
+}
+window.setDefaultPage = setDefaultPage;
+
+// ==========================================
+// NUMBER FORMAT — Indian (L/Cr) vs Intl (K/M)
+// ==========================================
+function setNumberFormat(fmt) {
+    localStorage.setItem('aether_num_format', fmt);
+    const indianBtn = document.getElementById('nf-indian');
+    const intlBtn = document.getElementById('nf-intl');
+    if (indianBtn && intlBtn) {
+        if (fmt === 'indian') {
+            indianBtn.style.background = 'rgba(102,126,234,0.15)';
+            indianBtn.style.borderColor = 'rgba(102,126,234,0.3)';
+            indianBtn.style.color = '#a5b4fc';
+            intlBtn.style.background = 'transparent';
+            intlBtn.style.borderColor = 'rgba(255,255,255,0.07)';
+            intlBtn.style.color = 'rgba(255,255,255,0.5)';
+        } else {
+            intlBtn.style.background = 'rgba(102,126,234,0.15)';
+            intlBtn.style.borderColor = 'rgba(102,126,234,0.3)';
+            intlBtn.style.color = '#a5b4fc';
+            indianBtn.style.background = 'transparent';
+            indianBtn.style.borderColor = 'rgba(255,255,255,0.07)';
+            indianBtn.style.color = 'rgba(255,255,255,0.5)';
+        }
+    }
+    _showSettingsToast(fmt === 'indian' ? 'Indian format: Lakhs & Crores' : 'International format: M & B');
+}
+window.setNumberFormat = setNumberFormat;
+
+// ==========================================
+// DATA REFRESH — auto-refresh live prices
+// ==========================================
+let _refreshTimer = null;
+function setRefreshInterval(val) {
+    localStorage.setItem('aether_refresh', val);
+    // Update button states
+    ['off', '1', '5', '15'].forEach(v => {
+        const btn = document.getElementById('rf-' + v);
+        if (!btn) return;
+        const isActive = v === val;
+        btn.style.background = isActive ? 'rgba(102,126,234,0.15)' : 'transparent';
+        btn.style.borderColor = isActive ? 'rgba(102,126,234,0.3)' : 'rgba(255,255,255,0.07)';
+        btn.style.color = isActive ? '#a5b4fc' : 'rgba(255,255,255,0.45)';
+    });
+    const label = document.getElementById('refreshStatusLabel');
+    if (label) label.textContent = val === 'off' ? 'off' : `every ${val} minute${val === '1' ? '' : 's'}`;
+    // Clear previous timer
+    if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
+    if (val !== 'off') {
+        const ms = parseInt(val) * 60 * 1000;
+        _refreshTimer = setInterval(() => {
+            if (typeof fetchAllData === 'function') fetchAllData();
+            else if (typeof loadDashboardData === 'function') loadDashboardData();
+        }, ms);
+        _showSettingsToast(`Auto-refresh every ${val} min`);
+    } else {
+        _showSettingsToast('Auto-refresh disabled');
+    }
+}
+window.setRefreshInterval = setRefreshInterval;
+
+// ==========================================
+// Restore all settings state on drawer open
+// ==========================================
+const _origPopulateSettings = window._populateSettingsState;
+window._populateSettingsState = function () {
+    if (typeof _origPopulateSettings === 'function') _origPopulateSettings();
+    // Restore accent
+    try {
+        const acc = JSON.parse(localStorage.getItem('aether_accent') || 'null');
+        if (acc) setAccentColor(acc[0], acc[1]);
+    } catch (e) { }
+    // Restore AMOLED
+    const amoledEl = document.getElementById('amoledToggle');
+    if (amoledEl) { amoledEl.checked = localStorage.getItem('aether_amoled') === '1'; toggleAmoled(amoledEl.checked); }
+    // Restore default page
+    const dp = localStorage.getItem('aether_default_page') || 'home';
+    setDefaultPage(dp);
+    // Restore number format
+    setNumberFormat(localStorage.getItem('aether_num_format') || 'indian');
+    // Restore refresh interval
+    setRefreshInterval(localStorage.getItem('aether_refresh') || 'off');
+    // Restore security email
+    const secEmailEl = document.getElementById('securityEmail');
+    if (secEmailEl) secEmailEl.textContent = document.getElementById('userEmail')?.textContent?.trim() || '—';
+};
+
+// ==========================================
+// SAVE / CANCEL SYSTEM
+// ==========================================
+const _settingsKeys = new Set([
+    'aether_privacy', 'aether_currency', 'aether_notifications',
+    'aether_accent', 'aether_amoled', 'aether_default_page',
+    'aether_num_format', 'aether_refresh'
+]);
+
+let _settingsSnapshot = null;
+let _settingsDirty = false;
+
+function _snapshotSettings() {
+    _settingsSnapshot = {};
+    _settingsKeys.forEach(k => { _settingsSnapshot[k] = localStorage.getItem(k); });
+    _settingsDirty = false;
+    const bar = document.getElementById('settingsSaveBar');
+    if (bar) bar.style.display = 'none';
+}
+
+function _markSettingsDirty() {
+    if (_settingsDirty) return;
+    _settingsDirty = true;
+    const bar = document.getElementById('settingsSaveBar');
+    if (bar) bar.style.display = 'flex';
+}
+
+// Intercept localStorage to detect setting changes
+const _origSetItem = localStorage.setItem.bind(localStorage);
+localStorage.setItem = function (key, value) {
+    _origSetItem(key, value);
+    if (_settingsKeys.has(key)) _markSettingsDirty();
+};
+
+function saveAllSettings() {
+    _settingsDirty = false;
+    _settingsSnapshot = null;
+    const bar = document.getElementById('settingsSaveBar');
+    if (bar) bar.style.display = 'none';
+    _showSettingsToast('✓ Settings saved');
+}
+window.saveAllSettings = saveAllSettings;
+
+function cancelSettings() {
+    // Restore snapshot to localStorage (bypassing the interceptor)
+    if (_settingsSnapshot) {
+        Object.entries(_settingsSnapshot).forEach(([k, v]) => {
+            if (v === null) localStorage.removeItem(k);
+            else _origSetItem(k, v);     // use original to avoid re-triggering dirty
+        });
+    }
+    _settingsDirty = false;
+    const bar = document.getElementById('settingsSaveBar');
+    if (bar) bar.style.display = 'none';
+    // Re-populate UI from restored localStorage
+    if (typeof window._populateSettingsState === 'function') window._populateSettingsState();
+    _showSettingsToast('Changes cancelled');
+}
+window.cancelSettings = cancelSettings;
+
+// Snapshot on drawer open — patch openProfileDrawer
+const _origOpenDrawerForSnap = window.openProfileDrawer;
+window.openProfileDrawer = function () {
+    if (typeof _origOpenDrawerForSnap === 'function') _origOpenDrawerForSnap();
+    setTimeout(_snapshotSettings, 80);   // after _populateSettingsState runs
+};
