@@ -3004,9 +3004,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => togglePrivacyMode(true), 1200);
     }
 
-    // Restore theme preference AFTER data renders (same delay as privacy mode)
+    // Restore theme on load — class toggle only (safe, no DOM walk)
+    // Full DOM walk only runs when user explicitly clicks the theme button
     const _savedTheme = localStorage.getItem('aether_theme') || 'dark';
-    if (_savedTheme === 'light') setTimeout(() => setTheme('light'), 1500);
+    if (_savedTheme === 'light') document.body.classList.add('light-theme');
 
     // Hook up buttons
     // Note: We need to use event delegation or direct onclicks in HTML. 
@@ -9733,11 +9734,28 @@ window.setAccentColor = setAccentColor;
         body.light-theme table td { color: rgba(0,0,0,0.80) !important; border-color: rgba(0,0,0,0.06) !important; }
         body.light-theme table tr:hover td { background: rgba(0,0,0,0.03) !important; }
 
-        /* Nav active item */
-        body.light-theme .nav-item.active {
-            background: linear-gradient(180deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.02) 100%) !important;
-            border-color: rgba(0,0,0,0.15) !important;
+        /* ── Sidebar active item (correct selector) ── */
+        body.light-theme .sidebar-item {
+            color: rgba(0,0,0,0.55) !important;
         }
+        body.light-theme .sidebar-item:hover {
+            color: rgba(0,0,0,0.80) !important;
+            background: rgba(0,0,0,0.06) !important;
+        }
+        body.light-theme .sidebar-item.active {
+            color: rgba(0,0,0,0.90) !important;
+            background: linear-gradient(90deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.04) 100%) !important;
+            border: 1px solid rgba(0,0,0,0.15) !important;
+            box-shadow:
+                inset 0 0 12px rgba(0,0,0,0.05),
+                0 0 14px rgba(0,0,0,0.08) !important;
+        }
+        body.light-theme .sidebar-item.active::before {
+            background: rgba(0,0,0,0.75) !important;
+            box-shadow: 0 0 6px rgba(0,0,0,0.3) !important;
+        }
+        body.light-theme .sidebar-item svg { opacity: 0.55 !important; }
+        body.light-theme .sidebar-item.active svg { opacity: 0.85 !important; color: rgba(0,0,0,0.85) !important; }
 
         /* Module content area bg */
         body.light-theme #main-content,
@@ -9787,10 +9805,9 @@ window.setAccentColor = setAccentColor;
                 0 0 14px rgba(102,126,234,0.18) !important;
         }
 
-        /* Active indicator bar — was white, now purple */
-        body.light-theme .nav-item.active::before {
-            background: #667eea !important;
-            box-shadow: 0 0 8px rgba(102,126,234,0.5) !important;
+        /* ── Sidebar divider ── */
+        body.light-theme .sidebar-divider {
+            background: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.10) 50%, transparent 100%) !important;
         }
 
         /* Glass card hover glow — was white, now soft shadow */
