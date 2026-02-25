@@ -186,15 +186,21 @@ async def predict_all_properties(
         return {"predictions": [], "message": "No properties found"}
 
     # Build list of (property, property_data) for those with enough data
+    # ── Minimum value guard: skip properties with suspiciously low amounts
+    #    (< ₹1 L = 100 000 indicates test / corrupted data and causes Prophet
+    #    to produce explosive multi-thousand-percent forecasts)
+    _MIN_PRICE = 100_000
     eligible = []
     for prop in properties:
-        if not prop.purchase_price or not prop.current_value:
+        purchase_price = float(prop.purchase_price or 0)
+        current_value  = float(prop.current_value  or 0)
+        if purchase_price < _MIN_PRICE or current_value < _MIN_PRICE:
             continue
         date_to_use = prop.acquisition_date if prop.acquisition_date else prop.created_at
         property_data = {
             "purchase_date": date_to_use.isoformat() if hasattr(date_to_use, 'isoformat') else str(date_to_use),
-            "purchase_price": float(prop.purchase_price),
-            "current_value": float(prop.current_value)
+            "purchase_price": purchase_price,
+            "current_value":  current_value
         }
         eligible.append((prop, property_data))
 
@@ -212,7 +218,14 @@ async def predict_all_properties(
             return None
 
     results = await asyncio.gather(*[_safe_predict(p, d) for p, d in eligible])
-    predictions = [r for r in results if r is not None]
+
+    # ── Sanity cap: drop predictions where Prophet returns >500 % change.
+    #    This happens when base data is inconsistent (e.g. purchase_price ≈ 0).
+    _MAX_PCT = 500
+    predictions = [
+        r for r in results
+        if r is not None and abs(r.get("percent_change", 0)) <= _MAX_PCT
+    ]
 
     # Sort by predicted percent change (best performers first)
     predictions.sort(key=lambda x: x.get("percent_change", 0), reverse=True)
@@ -247,18 +260,22 @@ async def get_portfolio_forecast(
     if not properties:
         return {"message": "No properties found"}
 
+    # ── Minimum value guard (same as predict-all)
+    _MIN_PRICE = 100_000
     # Split into predictable vs non-predictable
     eligible = []
     no_data_value = 0.0
     for prop in properties:
-        if not prop.purchase_price or not prop.current_value:
-            no_data_value += float(prop.current_value or 0)
+        purchase_price = float(prop.purchase_price or 0)
+        current_value  = float(prop.current_value  or 0)
+        if purchase_price < _MIN_PRICE or current_value < _MIN_PRICE:
+            no_data_value += current_value
             continue
         date_to_use = prop.acquisition_date if prop.acquisition_date else prop.created_at
         property_data = {
             "purchase_date": date_to_use.isoformat() if hasattr(date_to_use, 'isoformat') else str(date_to_use),
-            "purchase_price": float(prop.purchase_price),
-            "current_value": float(prop.current_value),
+            "purchase_price": purchase_price,
+            "current_value":  current_value,
         }
         eligible.append((prop, property_data))
 
