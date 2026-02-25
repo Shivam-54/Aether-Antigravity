@@ -3,6 +3,7 @@ Bonds AI Lab – ML API Routes
 Real AI insights from the user's actual bond portfolio using Google Gemini + VADER
 """
 
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
@@ -56,7 +57,7 @@ async def get_bond_portfolio_insights(
         ]
 
         generator = BondInsightsGenerator()
-        result = generator.generate_insights(bond_list)
+        result = await asyncio.to_thread(generator.generate_insights, bond_list)
 
         return {"status": "success", "data": result}
 
@@ -74,7 +75,7 @@ async def get_bond_market_sentiment():
     """
     try:
         analyzer = BondSentimentAnalyzer()
-        result = analyzer.analyze()
+        result = await asyncio.to_thread(analyzer.analyze)
         return {"status": "success", "data": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Bond sentiment error: {str(e)}")

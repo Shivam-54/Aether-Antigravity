@@ -1435,11 +1435,17 @@
                         submitBtn.textContent = 'AUTHENTICATING...';
                         submitBtn.disabled = true;
 
+                        // Abort controller — 15 s timeout so we never hang forever
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
                         fetch('http://localhost:8000/api/auth/login', {
                             method: 'POST',
-                            body: formData
+                            body: formData,
+                            signal: controller.signal
                         })
                             .then(response => {
+                                clearTimeout(timeoutId);
                                 if (!response.ok) {
                                     return response.json().then(err => {
                                         throw new Error(err.detail || 'Authentication failed');
@@ -1456,9 +1462,13 @@
                                 window.location.href = 'dashboard.html';
                             })
                             .catch(error => {
+                                clearTimeout(timeoutId);
                                 // Show error message
+                                const msg = error.name === 'AbortError'
+                                    ? 'Server took too long to respond. Please try again.'
+                                    : (error.message || 'Authentication failed. Please check your credentials.');
                                 console.error('Login error:', error);
-                                showError(loginAuthKey, error.message || 'Authentication failed. Please check your credentials.');
+                                showError(loginAuthKey, msg);
 
                                 // Reset button
                                 submitBtn.textContent = originalText;

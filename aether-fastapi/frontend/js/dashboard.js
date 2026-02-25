@@ -812,17 +812,42 @@ function renderHomeDashboard() {
 }
 
 function initHomeCharts(metrics) {
-    // Shared Chart Options for Premium Feel
+    const lt = document.body.classList.contains('light-theme');
+
+    // Theme-aware color palette
+    const chartTextPrimary = lt ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.6)';
+    const chartTextSecondary = lt ? 'rgba(0,0,0,0.50)' : 'rgba(255,255,255,0.4)';
+    const chartGrid = lt ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.05)';
+    const tooltipBg = lt ? 'rgba(15,20,35,0.92)' : 'rgba(10,10,12,0.95)';
+
+    // Rich palette for light mode (indigo/teal/amber/green/rose)
+    const lightPalette = [
+        '#6366f1', // indigo
+        '#14b8a6', // teal
+        '#f59e0b', // amber
+        '#22c55e', // green
+        '#f43f5e'  // rose
+    ];
+    const darkPalette = [
+        'rgba(255,255,255,0.90)',
+        'rgba(255,255,255,0.70)',
+        'rgba(255,255,255,0.50)',
+        'rgba(255,255,255,0.30)',
+        'rgba(255,255,255,0.10)'
+    ];
+    const piePalette = lt ? lightPalette : darkPalette;
+    const barColor = lt ? '#6366f1' : 'rgba(255,255,255,0.8)';
+
     const commonOptions = {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
             legend: {
                 position: 'bottom',
-                labels: { color: 'rgba(255,255,255,0.6)', padding: 20, font: { family: 'Inter', size: 11 } }
+                labels: { color: chartTextPrimary, padding: 20, font: { family: 'Inter', size: 11 } }
             },
             tooltip: {
-                backgroundColor: 'rgba(10,10,12,0.95)',
+                backgroundColor: tooltipBg,
                 titleColor: '#fff',
                 bodyColor: 'rgba(255,255,255,0.8)',
                 borderColor: 'rgba(255,255,255,0.1)',
@@ -837,7 +862,6 @@ function initHomeCharts(metrics) {
     // 1. PIE CHART (Asset Counts)
     const ctxPie = document.getElementById('homePieChart');
     if (ctxPie) {
-        // Safe counts (mock logic for missing data similar to metrics)
         const counts = [
             REAL_ESTATE_DATA.properties.filter(p => p.status !== 'Sold').length,
             (typeof CRYPTO_DATA !== 'undefined' && CRYPTO_DATA.holdings) ? CRYPTO_DATA.holdings.length : 0,
@@ -845,61 +869,52 @@ function initHomeCharts(metrics) {
             (typeof BONDS_DATA !== 'undefined' && Array.isArray(BONDS_DATA)) ? BONDS_DATA.length : 0,
             (typeof BUSINESS_DATA !== 'undefined' && Array.isArray(BUSINESS_DATA)) ? BUSINESS_DATA.length : 0
         ];
-
         new Chart(ctxPie, {
             type: 'doughnut',
             data: {
                 labels: ['Real Estate', 'Crypto', 'Shares', 'Bonds', 'Business'],
                 datasets: [{
                     data: counts,
-                    backgroundColor: [
-                        'rgba(255, 255, 255, 0.9)',
-                        'rgba(255, 255, 255, 0.7)',
-                        'rgba(255, 255, 255, 0.5)',
-                        'rgba(255, 255, 255, 0.3)',
-                        'rgba(255, 255, 255, 0.1)'
-                    ],
-                    borderWidth: 0,
+                    backgroundColor: piePalette,
+                    borderWidth: lt ? 2 : 0,
+                    borderColor: lt ? '#f0f4f8' : 'transparent',
                     hoverOffset: 10
                 }]
             },
-            options: {
-                ...commonOptions,
-                cutout: '70%', // Thinner elegant ring
-            }
+            options: { ...commonOptions, cutout: '70%' }
         });
     }
 
     // 2. BAR CHART (Asset Values)
     const ctxBar = document.getElementById('homeBarChart');
     if (ctxBar) {
+        const barColors = lt
+            ? ['#6366f1', '#14b8a6', '#f59e0b', '#22c55e', '#f43f5e']
+            : 'rgba(255,255,255,0.8)';
         new Chart(ctxBar, {
             type: 'bar',
             data: {
                 labels: ['Real Estate', 'Crypto', 'Shares', 'Bonds', 'Business'],
                 datasets: [{
-                    label: 'Value (INR)',
+                    label: 'Value',
                     data: [metrics.realEstateVal, metrics.cryptoVal, metrics.sharesVal, metrics.bondsVal, metrics.businessVal],
-                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                    borderRadius: 4,
-                    barPercentage: 0.5
+                    backgroundColor: barColors,
+                    borderRadius: 6,
+                    barPercentage: 0.55
                 }]
             },
             options: {
                 ...commonOptions,
-                plugins: {
-                    ...commonOptions.plugins,
-                    legend: { display: false } // No legend needed for single dataset bar
-                },
+                plugins: { ...commonOptions.plugins, legend: { display: false } },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
-                        ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 } }
+                        grid: { color: chartGrid, drawBorder: false },
+                        ticks: { color: chartTextSecondary, font: { size: 10 } }
                     },
                     x: {
                         grid: { display: false },
-                        ticks: { color: 'rgba(255,255,255,0.6)', font: { size: 11 } }
+                        ticks: { color: chartTextPrimary, font: { size: 11 } }
                     }
                 }
             }
@@ -925,14 +940,47 @@ function requireAuth() {
     }
 }
 
-// Logout
-function logout() {
-    showToast("Session expired. Please log in again.", "info");
+// ── AUTH HANDLER (Custom JWT) ─────────────────────────────────────────────
+//  The app uses a custom JWT issued by /api/auth/login, NOT Supabase sessions.
+//  - logout(true)  → explicit user logout, immediate
+//  - logout()      → triggered by a 401; debounced, shows a warning, redirects
+//                    after 5s so the user has time to see the message.
+//  - handle401()   → lightweight wrapper for background data fetches where a
+//                    401 is a Supabase RLS denial for a SPECIFIC resource (not
+//                    a global token expiry) — these should not force a logout,
+//                    so we just log and return false, letting callers skip.
+// ────────────────────────────────────────────────────────────────────────────
+let _logoutLock = false;
 
-    // Clear ALL local storage to prevent data leakage between users
-    localStorage.clear();
+async function logout(force = false) {
+    // Explicit user logout — always honour immediately
+    if (force) {
+        localStorage.clear();
+        window.location.href = 'index.html';
+        return;
+    }
 
-    window.location.href = 'index.html';
+    // Background 401 — debounce so multiple concurrent 401s only fire once
+    if (_logoutLock) return;
+    _logoutLock = true;
+
+    // Show a non-disruptive warning, wait 5 s, then redirect
+    showToast('Session expired — redirecting to login in 5 seconds…', 'warning');
+    setTimeout(() => {
+        localStorage.clear();
+        window.location.href = 'index.html';
+    }, 5000);
+}
+
+/**
+ * Call this instead of logout() for SECONDARY resource fetches (e.g. individual
+ * property valuations). A 401 here means Supabase RLS denied access to that
+ * specific record — it is NOT a global token expiry and should not log the user out.
+ * Returns false so the caller can skip/continue gracefully.
+ */
+function handle401Resource(context = '') {
+    console.warn(`[Auth] 401 on resource (${context}) — RLS denial, skipping.`);
+    return false;
 }
 
 // Switch source
@@ -9570,215 +9618,239 @@ window.setAccentColor = setAccentColor;
     const s = document.createElement('style');
     s.id = '_lightThemeBlock';
     s.textContent = `
-        /* ── Light Theme Overrides ── */
+        /* ════════════════════════════════════════
+           AETHER — PREMIUM LIGHT THEME
+           ════════════════════════════════════════ */
 
-        /* BASELINE: make ALL content dark by default — catches text not covered by inline styles */
-        body.light-theme,
-        body.light-theme span:not([class*="text-green"]):not([class*="text-red"]):not([class*="badge"]),
-        body.light-theme div:not([class*="text-green"]):not([class*="text-red"]),
-        body.light-theme p, body.light-theme label,
-        body.light-theme td, body.light-theme th,
-        body.light-theme li, body.light-theme a:not(.btn) {
-            color: rgba(0,0,0,0.82);
-        }
-
+        /* ── Page base ── */
         body.light-theme {
-            --canvas-base:            #f0f2f5;
-            --canvas-stage:           #e4e7ec;
-            --canvas-vignette:        radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.06) 100%);
-            --glass-fill:             rgba(255,255,255,0.75);
-            --glass-edge-highlight:   1px solid rgba(0,0,0,0.09);
-            --glass-outer-shadow:     0 4px 24px rgba(0,0,0,0.10);
-            --glass-blur:             blur(20px);
-            --active-glow:            0 0 20px rgba(102,126,234,0.18);
-            --text-primary:           rgba(0,0,0,0.87);
-            --text-secondary:         rgba(0,0,0,0.55);
-            --text-muted:             rgba(0,0,0,0.38);
-            --text-disabled:          rgba(0,0,0,0.25);
-            --glass-border:           rgba(0,0,0,0.09);
-            --glow-soft:              rgba(102,126,234,0.15);
-            background: var(--canvas-base) !important;
-            color: var(--text-primary) !important;
+            --lt-bg:           #eef0f6;
+            --lt-surface:      #ffffff;
+            --lt-surface-2:    #f5f6fa;
+            --lt-border:       rgba(99,102,241,0.12);
+            --lt-border-muted: rgba(0,0,0,0.07);
+            --lt-shadow-sm:    0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+            --lt-shadow-md:    0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.05);
+            --lt-shadow-lg:    0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+            --lt-accent:       #6366f1;
+            --lt-accent-soft:  rgba(99,102,241,0.10);
+            --lt-text-1:       rgba(15,18,35,0.90);
+            --lt-text-2:       rgba(15,18,35,0.60);
+            --lt-text-3:       rgba(15,18,35,0.40);
+            background: var(--lt-bg) !important;
+            color: var(--lt-text-1) !important;
         }
 
-        /* Scrollbar */
-        body.light-theme ::-webkit-scrollbar-track { background: rgba(0,0,0,0.06); }
-        body.light-theme ::-webkit-scrollbar-thumb { background: linear-gradient(135deg,#bbb,#999); }
+        /* ── Broad text baseline ── */
+        body.light-theme h1, body.light-theme h2, body.light-theme h3,
+        body.light-theme h4, body.light-theme h5, body.light-theme h6 {
+            color: rgba(15,18,35,0.92) !important;
+        }
+        body.light-theme p, body.light-theme label,
+        body.light-theme td, body.light-theme li {
+            color: rgba(15,18,35,0.75) !important;
+        }
+        body.light-theme th { color: rgba(15,18,35,0.55) !important; }
+        body.light-theme small, body.light-theme .small { color: rgba(15,18,35,0.50) !important; }
 
-        /* Navbar */
+        body.light-theme div:not([class*="text-green"]):not([class*="text-red"]):not([class*="text-amber"]) {
+            color: rgba(15,18,35,0.82);
+        }
+        body.light-theme span:not([class*="text-green"]):not([class*="text-red"]):not([class*="badge"]) {
+            color: rgba(15,18,35,0.82);
+        }
+
+        /* Gain/loss — keep their semantic colors */
+        body.light-theme .text-success, body.light-theme [class*="text-green"] { color: #16a34a !important; }
+        body.light-theme .text-danger,  body.light-theme [class*="text-red"]   { color: #dc2626 !important; }
+
+        /* ── Scrollbar ── */
+        body.light-theme ::-webkit-scrollbar-track { background: rgba(0,0,0,0.04); }
+        body.light-theme ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg,#c7cad8,#a8abbe);
+            border-radius: 4px;
+        }
+
+        /* ── Navbar / header ── */
+        body.light-theme nav,
+        body.light-theme header,
         body.light-theme .navbar {
-            background: linear-gradient(180deg, rgba(240,242,245,0.92) 0%, rgba(240,242,245,0.75) 100%) !important;
-            border-bottom: 1px solid rgba(0,0,0,0.09) !important;
+            background: rgba(238,240,246,0.96) !important;
+            border-bottom: 1px solid var(--lt-border-muted) !important;
+            backdrop-filter: blur(20px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
         }
 
-        /* Sidebar */
-        body.light-theme [id="sidebar"],
-        body.light-theme aside,
-        body.light-theme nav[class*="sidebar"],
-        body.light-theme .sidebar {
-            background: rgba(255,255,255,0.85) !important;
-            border-color: rgba(0,0,0,0.08) !important;
+        /* ── Module tabs pill ── */
+        body.light-theme .module-tabs {
+            background: var(--lt-surface) !important;
+            border: 1px solid var(--lt-border-muted) !important;
+            box-shadow: var(--lt-shadow-sm) !important;
+        }
+        body.light-theme .module-tab {
+            color: rgba(15,18,35,0.50) !important;
+            font-weight: 400 !important;
+        }
+        body.light-theme .module-tab:hover {
+            color: rgba(15,18,35,0.80) !important;
+            background: rgba(99,102,241,0.07) !important;
+        }
+        body.light-theme .module-tab.active {
+            background: rgba(15,18,35,0.88) !important;
+            color: #ffffff !important;
+            border-color: rgba(15,18,35,0.10) !important;
+            box-shadow: 0 2px 10px rgba(15,18,35,0.20) !important;
+            font-weight: 500 !important;
         }
 
-        /* Glass cards & panels */
+        /* ── User pill (top-right) ── */
+        body.light-theme .user-section {
+            background: var(--lt-surface) !important;
+            border: 1px solid var(--lt-border-muted) !important;
+            box-shadow: var(--lt-shadow-sm) !important;
+        }
+
+        /* ── Sidebar ── */
+        body.light-theme #sidebar,
+        body.light-theme [id="mainSidebar"],
+        body.light-theme .sidebar,
+        body.light-theme aside {
+            background: var(--lt-surface) !important;
+            border-right: 1px solid var(--lt-border-muted) !important;
+            box-shadow: 2px 0 16px rgba(99,102,241,0.06) !important;
+        }
+        body.light-theme .sidebar-item {
+            color: rgba(15,18,35,0.55) !important;
+        }
+        body.light-theme .sidebar-item:hover {
+            color: rgba(15,18,35,0.85) !important;
+            background: rgba(99,102,241,0.06) !important;
+        }
+        body.light-theme .sidebar-item.active {
+            color: rgba(15,18,35,0.92) !important;
+            background: linear-gradient(90deg, rgba(99,102,241,0.12) 0%, rgba(99,102,241,0.04) 100%) !important;
+            border: 1px solid rgba(99,102,241,0.22) !important;
+            box-shadow: 0 0 20px rgba(99,102,241,0.10) !important;
+        }
+        body.light-theme .sidebar-item.active::before {
+            background: #6366f1 !important;
+            box-shadow: 0 0 8px rgba(99,102,241,0.5) !important;
+        }
+        body.light-theme .sidebar-item svg { opacity: 0.50 !important; }
+        body.light-theme .sidebar-item.active svg {
+            opacity: 1 !important;
+            color: #6366f1 !important;
+        }
+        body.light-theme .sidebar-divider {
+            background: linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.15) 50%, transparent 100%) !important;
+        }
+
+        /* ── Glass cards / panels — elevated white ── */
         body.light-theme .glass-card,
         body.light-theme .glass-panel,
         body.light-theme .glass {
-            background: rgba(255,255,255,0.78) !important;
-            border: 1px solid rgba(0,0,0,0.08) !important;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
+            background: var(--lt-surface) !important;
+            border: 1px solid var(--lt-border-muted) !important;
+            box-shadow: var(--lt-shadow-md) !important;
         }
         body.light-theme .glass-card:hover,
         body.light-theme .glass-panel:hover {
-            border-color: rgba(0,0,0,0.13) !important;
+            border-color: rgba(99,102,241,0.20) !important;
+            box-shadow: var(--lt-shadow-lg), 0 0 0 1px rgba(99,102,241,0.08) !important;
         }
 
         /* Modals */
         body.light-theme .glass-modal,
         body.light-theme .glass-premium {
-            background: rgba(255,255,255,0.92) !important;
-            border: 1px solid rgba(0,0,0,0.10) !important;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.15) !important;
+            background: var(--lt-surface) !important;
+            border: 1px solid var(--lt-border-muted) !important;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.14), 0 4px 16px rgba(0,0,0,0.08) !important;
         }
-
-        /* Inputs */
-        body.light-theme .form-control,
-        body.light-theme .glass-input,
-        body.light-theme .form-select {
-            background: rgba(0,0,0,0.04) !important;
-            border-color: rgba(0,0,0,0.14) !important;
-            color: rgba(0,0,0,0.87) !important;
-        }
-        body.light-theme .form-control::placeholder,
-        body.light-theme .glass-input::placeholder { color: rgba(0,0,0,0.35) !important; }
-        body.light-theme .form-control:focus,
-        body.light-theme .glass-input:focus {
-            background: rgba(0,0,0,0.06) !important;
-            border-color: rgba(102,126,234,0.5) !important;
-            box-shadow: 0 0 14px rgba(102,126,234,0.15) !important;
-        }
-        body.light-theme .input-group .input-group-text {
-            background: rgba(0,0,0,0.04) !important;
-            border-color: rgba(0,0,0,0.12) !important;
-            color: rgba(0,0,0,0.45) !important;
-        }
-
-        /* Text-white utilities → dark equivalents */
-        body.light-theme .text-white-30 { color: rgba(0,0,0,0.30) !important; }
-        body.light-theme .text-white-40 { color: rgba(0,0,0,0.40) !important; }
-        body.light-theme .text-white-50 { color: rgba(0,0,0,0.50) !important; }
-        body.light-theme .text-white-60 { color: rgba(0,0,0,0.60) !important; }
-        body.light-theme .text-white-70 { color: rgba(0,0,0,0.70) !important; }
-        body.light-theme .text-white-80 { color: rgba(0,0,0,0.80) !important; }
-        body.light-theme .text-white-90 { color: rgba(0,0,0,0.90) !important; }
-        body.light-theme .text-white    { color: rgba(0,0,0,0.87) !important; }
-        body.light-theme .fw-light.text-white { color: rgba(0,0,0,0.87) !important; }
 
         /* Profile / settings drawer */
         body.light-theme #profileDrawer {
-            background: rgba(240,242,245,0.97) !important;
-            border-left: 1px solid rgba(0,0,0,0.09) !important;
+            background: var(--lt-surface) !important;
+            border-left: 1px solid var(--lt-border-muted) !important;
+            box-shadow: -4px 0 24px rgba(0,0,0,0.10) !important;
         }
         body.light-theme .spanel,
-        body.light-theme .snav-btn { color: rgba(0,0,0,0.75) !important; }
+        body.light-theme .snav-btn { color: rgba(15,18,35,0.72) !important; }
 
-        /* Inline bg rgba(255,255,255,0.03-.08) → light equivalents */
-        body.light-theme [style*="background:rgba(255,255,255,0.03)"],
-        body.light-theme [style*="background: rgba(255,255,255,0.03)"] {
-            background: rgba(0,0,0,0.04) !important;
+        /* ── Inputs ── */
+        body.light-theme .form-control,
+        body.light-theme .glass-input,
+        body.light-theme .form-select {
+            background: var(--lt-surface-2) !important;
+            border-color: rgba(0,0,0,0.12) !important;
+            color: rgba(15,18,35,0.90) !important;
         }
-        body.light-theme [style*="background:rgba(255,255,255,0.05)"],
-        body.light-theme [style*="background: rgba(255,255,255,0.05)"] {
-            background: rgba(0,0,0,0.05) !important;
+        body.light-theme .form-control::placeholder,
+        body.light-theme .glass-input::placeholder { color: rgba(15,18,35,0.30) !important; }
+        body.light-theme .form-control:focus,
+        body.light-theme .glass-input:focus {
+            background: var(--lt-surface) !important;
+            border-color: rgba(99,102,241,0.50) !important;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.10) !important;
         }
-        body.light-theme [style*="background:rgba(255,255,255,0.08)"],
-        body.light-theme [style*="background: rgba(255,255,255,0.08)"] {
-            background: rgba(0,0,0,0.07) !important;
+        body.light-theme .input-group .input-group-text {
+            background: var(--lt-surface-2) !important;
+            border-color: rgba(0,0,0,0.10) !important;
+            color: rgba(15,18,35,0.45) !important;
         }
-        body.light-theme [style*="background:rgba(255,255,255,0.1)"] {
-            background: rgba(0,0,0,0.07) !important;
+        body.light-theme .form-select option { background: var(--lt-surface) !important; color: rgba(15,18,35,0.90) !important; }
+
+        /* ── Tables ── */
+        body.light-theme table th {
+            color: rgba(15,18,35,0.50) !important;
+            background: var(--lt-surface-2) !important;
+            border-color: var(--lt-border-muted) !important;
         }
-        body.light-theme [style*="background:rgba(255,255,255,0.15)"] {
-            background: rgba(0,0,0,0.09) !important;
+        body.light-theme table td {
+            color: rgba(15,18,35,0.80) !important;
+            border-color: rgba(0,0,0,0.05) !important;
+        }
+        body.light-theme table tr:hover td {
+            background: rgba(99,102,241,0.04) !important;
         }
 
-        /* Inline color:rgba(255,255,255,...) → dark text */
+        /* ── Text utility overrides (white → dark) ── */
+        body.light-theme .text-white-30 { color: rgba(15,18,35,0.30) !important; }
+        body.light-theme .text-white-40 { color: rgba(15,18,35,0.40) !important; }
+        body.light-theme .text-white-50 { color: rgba(15,18,35,0.50) !important; }
+        body.light-theme .text-white-60 { color: rgba(15,18,35,0.60) !important; }
+        body.light-theme .text-white-70 { color: rgba(15,18,35,0.70) !important; }
+        body.light-theme .text-white-80 { color: rgba(15,18,35,0.80) !important; }
+        body.light-theme .text-white-90 { color: rgba(15,18,35,0.90) !important; }
+        body.light-theme .text-white    { color: rgba(15,18,35,0.90) !important; }
+        body.light-theme .fw-light.text-white { color: rgba(15,18,35,0.90) !important; }
+
+        /* ── Inline style overrides ── */
+        /* color: rgba(255,255,255,...) → dark */
         body.light-theme [style*="color:rgba(255,255,255,0.85)"],
-        body.light-theme [style*="color: rgba(255,255,255,0.85)"] { color: rgba(0,0,0,0.85) !important; }
+        body.light-theme [style*="color: rgba(255,255,255,0.85)"] { color: rgba(15,18,35,0.88) !important; }
         body.light-theme [style*="color:rgba(255,255,255,0.7)"],
-        body.light-theme [style*="color: rgba(255,255,255,0.7)"]  { color: rgba(0,0,0,0.70) !important; }
-        body.light-theme [style*="color:rgba(255,255,255,0.6)"]   { color: rgba(0,0,0,0.60) !important; }
-        body.light-theme [style*="color:rgba(255,255,255,0.55)"]  { color: rgba(0,0,0,0.55) !important; }
-        body.light-theme [style*="color:rgba(255,255,255,0.5)"]   { color: rgba(0,0,0,0.50) !important; }
-        body.light-theme [style*="color:rgba(255,255,255,0.45)"]  { color: rgba(0,0,0,0.45) !important; }
-        body.light-theme [style*="color:rgba(255,255,255,0.4)"]   { color: rgba(0,0,0,0.40) !important; }
-        body.light-theme [style*="color:rgba(255,255,255,0.3)"]   { color: rgba(0,0,0,0.40) !important; }
-        body.light-theme [style*="color:rgba(255,255,255,0.2)"]   { color: rgba(0,0,0,0.35) !important; }
+        body.light-theme [style*="color: rgba(255,255,255,0.7)"]  { color: rgba(15,18,35,0.72) !important; }
+        body.light-theme [style*="color:rgba(255,255,255,0.6)"]   { color: rgba(15,18,35,0.62) !important; }
+        body.light-theme [style*="color:rgba(255,255,255,0.55)"]  { color: rgba(15,18,35,0.56) !important; }
+        body.light-theme [style*="color:rgba(255,255,255,0.5)"]   { color: rgba(15,18,35,0.50) !important; }
+        body.light-theme [style*="color:rgba(255,255,255,0.45)"]  { color: rgba(15,18,35,0.45) !important; }
+        body.light-theme [style*="color:rgba(255,255,255,0.4)"]   { color: rgba(15,18,35,0.40) !important; }
+        body.light-theme [style*="color:rgba(255,255,255,0.3)"]   { color: rgba(15,18,35,0.40) !important; }
+        body.light-theme [style*="color:rgba(255,255,255,0.2)"]   { color: rgba(15,18,35,0.35) !important; }
         body.light-theme [style*="color:#fff"],
-        body.light-theme [style*="color: #fff"]                    { color: rgba(0,0,0,0.87) !important; }
+        body.light-theme [style*="color: #fff"]                    { color: rgba(15,18,35,0.90) !important; }
 
-        /* Border overrides */
-        body.light-theme [style*="border:1px solid rgba(255,255,255,0.05)"],
-        body.light-theme [style*="border: 1px solid rgba(255,255,255,0.05)"] {
-            border-color: rgba(0,0,0,0.08) !important;
-        }
-        body.light-theme [style*="border:1px solid rgba(255,255,255,0.08)"] {
-            border-color: rgba(0,0,0,0.10) !important;
-        }
-        body.light-theme [style*="border:1px solid rgba(255,255,255,0.1)"] {
-            border-color: rgba(0,0,0,0.10) !important;
-        }
+        /* background: rgba(255,255,255,0.0x) → subtle surface */
+        body.light-theme [style*="background:rgba(255,255,255,0.03)"],
+        body.light-theme [style*="background: rgba(255,255,255,0.03)"] { background: rgba(15,18,35,0.03) !important; }
+        body.light-theme [style*="background:rgba(255,255,255,0.05)"],
+        body.light-theme [style*="background: rgba(255,255,255,0.05)"] { background: rgba(15,18,35,0.04) !important; }
+        body.light-theme [style*="background:rgba(255,255,255,0.08)"],
+        body.light-theme [style*="background: rgba(255,255,255,0.08)"] { background: rgba(15,18,35,0.05) !important; }
+        body.light-theme [style*="background:rgba(255,255,255,0.1)"]   { background: rgba(15,18,35,0.05) !important; }
+        body.light-theme [style*="background:rgba(255,255,255,0.15)"]  { background: rgba(15,18,35,0.07) !important; }
 
-        /* Table rows */
-        body.light-theme table th { color: rgba(0,0,0,0.5) !important; background: rgba(0,0,0,0.03) !important; }
-        body.light-theme table td { color: rgba(0,0,0,0.80) !important; border-color: rgba(0,0,0,0.06) !important; }
-        body.light-theme table tr:hover td { background: rgba(0,0,0,0.03) !important; }
-
-        /* ── Sidebar active item (correct selector) ── */
-        body.light-theme .sidebar-item {
-            color: rgba(0,0,0,0.55) !important;
-        }
-        body.light-theme .sidebar-item:hover {
-            color: rgba(0,0,0,0.80) !important;
-            background: rgba(0,0,0,0.06) !important;
-        }
-        body.light-theme .sidebar-item.active {
-            color: rgba(0,0,0,0.90) !important;
-            background: linear-gradient(90deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.04) 100%) !important;
-            border: 1px solid rgba(0,0,0,0.15) !important;
-            box-shadow:
-                inset 0 0 12px rgba(0,0,0,0.05),
-                0 0 14px rgba(0,0,0,0.08) !important;
-        }
-        body.light-theme .sidebar-item.active::before {
-            background: rgba(0,0,0,0.75) !important;
-            box-shadow: 0 0 6px rgba(0,0,0,0.3) !important;
-        }
-        body.light-theme .sidebar-item svg { opacity: 0.55 !important; }
-        body.light-theme .sidebar-item.active svg { opacity: 0.85 !important; color: rgba(0,0,0,0.85) !important; }
-
-        /* Module content area bg */
-        body.light-theme #main-content,
-        body.light-theme .main-content,
-        body.light-theme [id*="module-"] {
-            background: transparent !important;
-        }
-
-        /* Select options */
-        body.light-theme .form-select option { background: #f0f2f5 !important; color: rgba(0,0,0,0.87) !important; }
-
-        /* Btn-icon-glass */
-        body.light-theme .btn-icon-glass { color: rgba(0,0,0,0.45) !important; }
-        body.light-theme .btn-icon-glass:hover { background: rgba(0,0,0,0.06) !important; color: rgba(0,0,0,0.85) !important; }
-
-        /* ── Navbar ── */
-        body.light-theme .navbar {
-            background: rgba(240,242,245,0.92) !important;
-            border-bottom: 1px solid rgba(0,0,0,0.09) !important;
-            backdrop-filter: blur(20px) !important;
-        }
-
-        /* Module-switcher pill container (the dark elongated bar with tab buttons) */
+        /* dark rgba(0,0,...) backgrounds → light surface */
         body.light-theme [style*="background:rgba(0,0,0,0.3)"],
         body.light-theme [style*="background: rgba(0,0,0,0.3)"],
         body.light-theme [style*="background:rgba(0,0,0,0.35)"],
@@ -9786,129 +9858,342 @@ window.setAccentColor = setAccentColor;
         body.light-theme [style*="background:rgba(0,0,0,0.45)"],
         body.light-theme [style*="background:rgba(0,0,0,0.5)"],
         body.light-theme [style*="background:rgba(0,0,0,0.6)"],
-        body.light-theme [style*="background:rgba(0,0,0,0.7)"] {
-            background: rgba(0,0,0,0.07) !important;
-        }
+        body.light-theme [style*="background:rgba(0,0,0,0.7)"] { background: rgba(15,18,35,0.06) !important; }
 
-        /* Breadcrumb text */
-        body.light-theme [style*="color:rgba(255,255,255,0.5)"],
-        body.light-theme [style*="color:rgba(255,255,255,0.6)"] {
-            color: rgba(0,0,0,0.50) !important;
-        }
+        /* border overrides */
+        body.light-theme [style*="border:1px solid rgba(255,255,255,0.05)"],
+        body.light-theme [style*="border: 1px solid rgba(255,255,255,0.05)"],
+        body.light-theme [style*="border:1px solid rgba(255,255,255,0.08)"],
+        body.light-theme [style*="border:1px solid rgba(255,255,255,0.1)"]  { border-color: rgba(15,18,35,0.08) !important; }
 
-        /* ── Sidebar active nav item — swap white glow for dark/purple ── */
-        body.light-theme .nav-item.active {
-            background: linear-gradient(180deg, rgba(102,126,234,0.10) 0%, rgba(102,126,234,0.04) 100%) !important;
-            border-color: rgba(102,126,234,0.25) !important;
-            box-shadow:
-                inset 0 1px 0 rgba(102,126,234,0.12),
-                0 0 14px rgba(102,126,234,0.18) !important;
-        }
-
-        /* ── Sidebar divider ── */
-        body.light-theme .sidebar-divider {
-            background: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.10) 50%, transparent 100%) !important;
-        }
-
-        /* Glass card hover glow — was white, now soft shadow */
-        body.light-theme .glass-card:hover,
-        body.light-theme .glass-panel:hover {
-            box-shadow:
-                0 6px 24px rgba(0,0,0,0.12),
-                0 0 16px rgba(102,126,234,0.12) !important;
-        }
-
-        /* Active glow variable override */
-        body.light-theme {
-            --active-glow: 0 0 16px rgba(102,126,234,0.18);
-            --signal-positive: #16a34a;
-            --signal-negative: #dc2626;
-        }
-
-        /* ── Module tabs pill bar (navbar center) ── */
-        body.light-theme .module-tabs {
-            background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(240,242,245,0.92) 100%) !important;
-            border: 1px solid rgba(0,0,0,0.12) !important;
-            box-shadow:
-                inset 0 1px 0 rgba(255,255,255,0.8),
-                0 4px 16px rgba(0,0,0,0.10) !important;
-        }
-
-        body.light-theme .module-tab {
-            color: rgba(0,0,0,0.50) !important;
-        }
-
-        body.light-theme .module-tab:hover {
-            color: rgba(0,0,0,0.80) !important;
-            background: rgba(0,0,0,0.06) !important;
-        }
-
-        /* Active tab — dark pill so it's clearly visible */
-        body.light-theme .module-tab.active {
-            background: rgba(0,0,0,0.82) !important;
-            border-color: rgba(0,0,0,0.15) !important;
-            color: #ffffff !important;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.25) !important;
-        }
-
-        /* ── Navbar top bar ── */
-        body.light-theme nav,
-        body.light-theme header,
-        body.light-theme .navbar {
-            background: rgba(240,242,245,0.95) !important;
-            border-bottom: 1px solid rgba(0,0,0,0.09) !important;
-        }
-
-        /* ── Sidebar left panel ── */
-        body.light-theme #sidebar,
-        body.light-theme [id="mainSidebar"],
-        body.light-theme .sidebar,
-        body.light-theme aside {
-            background: rgba(255,255,255,0.90) !important;
-            border-right: 1px solid rgba(0,0,0,0.09) !important;
-            box-shadow: 2px 0 12px rgba(0,0,0,0.06) !important;
-        }
-
-        /* Sidebar logo / brand area */
+        /* Sidebar border-bottom separator */
         body.light-theme [style*="border-bottom:1px solid rgba(255,255,255"],
-        body.light-theme [style*="border-bottom: 1px solid rgba(255,255,255"] {
-            border-bottom-color: rgba(0,0,0,0.08) !important;
+        body.light-theme [style*="border-bottom: 1px solid rgba(255,255,255"] { border-bottom-color: rgba(15,18,35,0.07) !important; }
+
+        /* ── Btn icon ── */
+        body.light-theme .btn-icon-glass { color: rgba(15,18,35,0.45) !important; }
+        body.light-theme .btn-icon-glass:hover { background: rgba(99,102,241,0.08) !important; color: rgba(15,18,35,0.85) !important; }
+
+        /* ── Glass containers → proper white cards in light mode ──
+             Targets any rounded container that uses backdrop-filter (all chart cards,
+             hero cards, module cards) without changing every JS template string.   */
+        body.light-theme .rounded-4[style*="backdrop-filter"],
+        body.light-theme .rounded-3[style*="backdrop-filter"],
+        body.light-theme  .glass-card[style*="backdrop-filter"] {
+            background: #ffffff !important;
+            border: 1px solid rgba(0, 0, 0, 0.07) !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05), 0 8px 24px rgba(0,0,0,0.07) !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
         }
 
-        /* ── All white/light glows → dark equivalents ── */
-        /* Remove white box-shadows from glass cards */
-        body.light-theme .glass-card,
-        body.light-theme .glass-panel,
-        body.light-theme .glass {
-            box-shadow: 0 4px 20px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.06) !important;
-        }
-        body.light-theme .glass-card:hover,
-        body.light-theme .glass-panel:hover {
-            box-shadow: 0 6px 28px rgba(0,0,0,0.13), 0 0 0 1px rgba(0,0,0,0.08) !important;
+        /* ── Signal colours: vibrant green/red on white ──────────────────────
+             Inline styles use #10b981 (dark teal) / #ef4444 which are hard to
+             distinguish from dark text on white cards. Remap to vivid equivalents.  */
+        body.light-theme [style*="color: #10b981"]         { color: #16a34a !important; }
+        body.light-theme [style*="color: #10B981"]         { color: #16a34a !important; }
+        body.light-theme [style*="color: #22c55e"]         { color: #16a34a !important; }
+        body.light-theme [style*="color: #34d399"]         { color: #16a34a !important; }
+        body.light-theme [style*="color: rgba(16, 185"]    { color: #16a34a !important; }
+        body.light-theme [style*="color: rgba(16,185"]     { color: #16a34a !important; }
+        body.light-theme [style*="color: rgb(16, 185"]     { color: #16a34a !important; }
+        body.light-theme [style*="color: #ef4444"]         { color: #dc2626 !important; }
+        body.light-theme [style*="color: #EF4444"]         { color: #dc2626 !important; }
+        body.light-theme [style*="color: rgba(239, 68"]    { color: #dc2626 !important; }
+        body.light-theme [style*="color: rgba(239,68"]     { color: #dc2626 !important; }
+        body.light-theme [style*="color: rgb(239, 68"]     { color: #dc2626 !important; }
+
+        /* Bootstrap & custom utility classes */
+        body.light-theme .text-success { color: #16a34a !important; }
+        body.light-theme .text-danger  { color: #dc2626 !important; }
+        body.light-theme .positive-change, body.light-theme .text-positive { color: #16a34a !important; }
+        body.light-theme .negative-change, body.light-theme .text-negative { color: #dc2626 !important; }
+
+        /* ── Negative/positive insets inside those cards keep their tint ── */
+        body.light-theme .rounded-4[style*="backdrop-filter"] [style*="rgba(16, 185"],
+        body.light-theme .rounded-4[style*="backdrop-filter"] [style*="rgba(239, 68"] {
+            background: inherit !important;  /* don't override signal-color rows */
         }
 
-        /* Nav active item uses purple that's visible on light */
-        body.light-theme .nav-item.active {
-            background: linear-gradient(180deg, rgba(102,126,234,0.12) 0%, rgba(102,126,234,0.05) 100%) !important;
-            border: 1px solid rgba(102,126,234,0.30) !important;
-            box-shadow:
-                inset 0 1px 0 rgba(102,126,234,0.15),
-                0 0 14px rgba(102,126,234,0.20) !important;
-        }
-        body.light-theme .nav-item.active::before {
-            background: #667eea !important;
-            box-shadow: 0 0 8px rgba(102,126,234,0.6) !important;
+        /* ════════════════════════════════════════════════════
+           COMPREHENSIVE LIGHT THEME — ALL REMAINING COMPONENTS
+           ════════════════════════════════════════════════════ */
+
+        /* ── Top-bar ─────────────────────────────────────── */
+        body.light-theme .top-bar {
+            background: rgba(238,240,246,0.85) !important;
+            backdrop-filter: blur(20px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+            border-bottom: 1px solid rgba(0,0,0,0.06) !important;
         }
 
-        /* User section pill (top right) */
+        /* ── Breadcrumb capsule ──────────────────────────── */
+        body.light-theme .breadcrumb-capsule {
+            background: #ffffff !important;
+            border: 1px solid rgba(0,0,0,0.08) !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 0 transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+        body.light-theme #breadcrumb,
+        body.light-theme [style*="color: rgba(255,255,255,0.6)"],
+        body.light-theme [style*="color:rgba(255,255,255,0.6)"] {
+            color: rgba(15,18,35,0.55) !important;
+        }
+
+        /* ── User section — icon + display name ─────────── */
         body.light-theme .user-section {
-            background: rgba(0,0,0,0.04) !important;
+            background: #ffffff !important;
+            border: 1px solid rgba(0,0,0,0.08) !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+        body.light-theme #userDisplayName,
+        body.light-theme .user-email,
+        body.light-theme [style*="color: rgba(255,255,255,0.75)"],
+        body.light-theme [style*="color:rgba(255,255,255,0.75)"] {
+            color: rgba(15,18,35,0.65) !important;
+        }
+        body.light-theme .user-section svg { color: rgba(15,18,35,0.45) !important; }
+
+        /* ── Sidebar brand + vertical glow line ─────────── */
+        body.light-theme .sidebar-brand {
+            color: rgba(99,102,241,0.85) !important;
+            border-bottom: 1px solid rgba(99,102,241,0.12) !important;
+            letter-spacing: 0.35em !important;
+        }
+        body.light-theme .sidebar-container::after {
+            background: linear-gradient(180deg,
+                transparent 0%,
+                rgba(99,102,241,0.18) 50%,
+                transparent 100%) !important;
+        }
+
+        /* ── Glass capsule ───────────────────────────────── */
+        body.light-theme .glass-capsule {
+            background: #ffffff !important;
+            border: 1px solid rgba(0,0,0,0.08) !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+
+        /* ── Glass button ────────────────────────────────── */
+        body.light-theme .glass-button {
+            background: #ffffff !important;
             border: 1px solid rgba(0,0,0,0.10) !important;
-            box-shadow: none !important;
+            color: rgba(15,18,35,0.75) !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+        }
+        body.light-theme .glass-button:hover {
+            background: rgba(99,102,241,0.07) !important;
+            border-color: rgba(99,102,241,0.25) !important;
+            color: rgba(15,18,35,0.90) !important;
+            box-shadow: 0 2px 8px rgba(99,102,241,0.12) !important;
+        }
+        body.light-theme .glass-button.selected {
+            background: rgba(99,102,241,0.10) !important;
+            border-color: rgba(99,102,241,0.30) !important;
+            color: #6366f1 !important;
+        }
+
+        /* ── Modal glass ─────────────────────────────────── */
+        body.light-theme .modal-glass,
+        body.light-theme .modal-glass-inner,
+        body.light-theme .glass-premium  {
+            background: #ffffff !important;
+            border: 1px solid rgba(0,0,0,0.08) !important;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.14), 0 4px 16px rgba(0,0,0,0.08) !important;
+        }
+        body.light-theme .modal-close-btn {
+            color: rgba(15,18,35,0.40) !important;
+        }
+        body.light-theme .modal-close-btn:hover { color: rgba(15,18,35,0.80) !important; }
+
+        /* ── Modal inputs ────────────────────────────────── */
+        body.light-theme .modal-glass-input,
+        body.light-theme .modal-glass-input:-webkit-autofill,
+        body.light-theme .modal-glass-input:-webkit-autofill:focus {
+            background: #f5f6fa !important;
+            border: 1px solid rgba(0,0,0,0.12) !important;
+            color: rgba(15,18,35,0.88) !important;
+            -webkit-box-shadow: 0 0 0 100px #f5f6fa inset !important;
+            -webkit-text-fill-color: rgba(15,18,35,0.88) !important;
+        }
+        body.light-theme .modal-glass-input:focus {
+            background: #ffffff !important;
+            border-color: rgba(99,102,241,0.45) !important;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.10) !important;
+        }
+        body.light-theme .modal-label { color: rgba(15,18,35,0.55) !important; }
+
+        /* ── Modal buttons ───────────────────────────────── */
+        body.light-theme .modal-btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+            border: 1px solid rgba(99,102,241,0.3) !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 8px rgba(99,102,241,0.25) !important;
+        }
+        body.light-theme .modal-btn-primary:hover {
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+            box-shadow: 0 4px 16px rgba(99,102,241,0.35) !important;
+        }
+        body.light-theme .modal-btn-secondary {
+            background: #ffffff !important;
+            border: 1px solid rgba(0,0,0,0.12) !important;
+            color: rgba(15,18,35,0.65) !important;
+        }
+        body.light-theme .modal-btn-secondary:hover {
+            background: rgba(99,102,241,0.06) !important;
+            border-color: rgba(99,102,241,0.20) !important;
+            color: rgba(15,18,35,0.85) !important;
+        }
+
+        /* ── Modal network buttons ───────────────────────── */
+        body.light-theme .modal-network-btn {
+            background: #f5f6fa !important;
+            border: 1px solid rgba(0,0,0,0.10) !important;
+            color: rgba(15,18,35,0.65) !important;
+        }
+        body.light-theme .modal-network-btn:hover {
+            background: rgba(99,102,241,0.08) !important;
+            border-color: rgba(99,102,241,0.22) !important;
+            color: rgba(15,18,35,0.88) !important;
+        }
+        body.light-theme .modal-network-btn.selected {
+            background: rgba(99,102,241,0.12) !important;
+            border-color: rgba(99,102,241,0.35) !important;
+            color: #6366f1 !important;
+            box-shadow: 0 0 0 2px rgba(99,102,241,0.12) !important;
+        }
+
+        /* ── Property folder cards ───────────────────────── */
+        body.light-theme .property-folder-card {
+            background: #ffffff !important;
+            border: 1px solid rgba(0,0,0,0.07) !important;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
+            backdrop-filter: none !important;
+        }
+        body.light-theme .property-folder-card:hover {
+            border-color: rgba(99,102,241,0.20) !important;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.10), 0 0 0 1px rgba(99,102,241,0.10) !important;
+        }
+        body.light-theme .property-folder-card .property-name { color: rgba(15,18,35,0.88) !important; }
+        body.light-theme .property-folder-card .property-value { color: rgba(15,18,35,0.92) !important; }
+        body.light-theme .property-folder-card .folder-stats { border-top-color: rgba(0,0,0,0.07) !important; }
+        body.light-theme .property-folder-card .stat-item { color: rgba(15,18,35,0.55) !important; }
+
+        /* ── Property status toggle ──────────────────────── */
+        body.light-theme .property-status-toggle {
+            background: rgba(0,0,0,0.05) !important;
+            border: 1px solid rgba(0,0,0,0.07) !important;
+        }
+        body.light-theme .property-status-toggle .toggle-btn {
+            color: rgba(15,18,35,0.50) !important;
+        }
+        body.light-theme .property-status-toggle .toggle-btn.active {
+            background: #ffffff !important;
+            color: rgba(15,18,35,0.88) !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important;
+        }
+
+        /* ── Timeline ────────────────────────────────────── */
+        body.light-theme .valuation-timeline::before {
+            background: linear-gradient(to bottom,
+                rgba(99,102,241,0.25), rgba(99,102,241,0.06)) !important;
+        }
+        body.light-theme .timeline-dot {
+            background: rgba(99,102,241,0.08) !important;
+            border: 2px solid rgba(99,102,241,0.30) !important;
+        }
+        body.light-theme .timeline-dot.active {
+            background: #16a34a !important;
+            border-color: #16a34a !important;
+            box-shadow: 0 0 10px rgba(22,163,74,0.25) !important;
+        }
+
+        /* ── Valuation table ─────────────────────────────── */
+        body.light-theme .valuation-table th {
+            color: rgba(15,18,35,0.50) !important;
+            border-bottom: 1px solid rgba(0,0,0,0.08) !important;
+        }
+        body.light-theme .valuation-table td {
+            background: rgba(0,0,0,0.02) !important;
+            border-top:    1px solid rgba(0,0,0,0.04) !important;
+            border-bottom: 1px solid rgba(0,0,0,0.04) !important;
+            color: rgba(15,18,35,0.80) !important;
+        }
+        body.light-theme .valuation-table td:first-child {
+            border-left: 1px solid rgba(0,0,0,0.04) !important;
+        }
+        body.light-theme .valuation-table td:last-child {
+            border-right: 1px solid rgba(0,0,0,0.04) !important;
+        }
+        body.light-theme .valuation-table tbody tr:hover td {
+            background: rgba(99,102,241,0.04) !important;
+        }
+
+        /* ── Custom scrollbar (inside modals etc.) ───────── */
+        body.light-theme .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.04) !important;
+        }
+        body.light-theme .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(99,102,241,0.20) !important;
+        }
+        body.light-theme .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(99,102,241,0.35) !important;
+        }
+        body.light-theme .custom-scrollbar {
+            scrollbar-color: rgba(99,102,241,0.20) rgba(0,0,0,0.04) !important;
+        }
+
+        /* ── Sub-nav (snav-btn) ──────────────────────────── */
+        body.light-theme .snav-btn {
+            color: rgba(15,18,35,0.55) !important;
+        }
+        body.light-theme .snav-btn:hover {
+            color: rgba(15,18,35,0.85) !important;
+            background: rgba(99,102,241,0.07) !important;
+        }
+        body.light-theme .snav-btn[style*="border-left"] {
+            color: rgba(15,18,35,0.90) !important;
+            border-left-color: #6366f1 !important;
+            background: rgba(99,102,241,0.07) !important;
+        }
+
+        /* ── Badge / pill overrides ──────────────────────── */
+        body.light-theme .badge,
+        body.light-theme [class*="badge-"] {
+            filter: none !important;
+        }
+
+        /* ── Search icon in wrappers ─────────────────────── */
+        body.light-theme .search-input-wrapper .search-icon {
+            color: rgba(15,18,35,0.35) !important;
+        }
+
+        /* ── Profile / settings panels ───────────────────── */
+        body.light-theme .spanel { background: #f5f6fa !important; border-color: rgba(0,0,0,0.07) !important; }
+        body.light-theme .spanel h6, body.light-theme .spanel label { color: rgba(15,18,35,0.60) !important; }
+
+        /* ── CSS variable overrides ── */
+        body.light-theme {
+            --canvas-base:          var(--lt-bg);
+            --glass-fill:           var(--lt-surface);
+            --glass-border:         var(--lt-border-muted);
+            --glass-outer-shadow:   var(--lt-shadow-md);
+            --text-primary:         var(--lt-text-1);
+            --text-secondary:       var(--lt-text-2);
+            --text-muted:           var(--lt-text-3);
+            --active-glow:          0 0 20px rgba(99,102,241,0.20);
+            --signal-positive:      #16a34a;
+            --signal-negative:      #dc2626;
         }
     `;
     document.head.appendChild(s);
 })();
+
 
 function setTheme(theme) {
     const isLight = theme === 'light';
@@ -9956,7 +10241,7 @@ function setTheme(theme) {
                 if (src) {
                     const patched = src.replace(/rgba\(255\s*,\s*255\s*,\s*255\s*,\s*(0?\.0[0-9]*)\)/g, (_, a) => {
                         const n = parseFloat(a);
-                        return `rgba(0,0,0,${Math.min(n * 3, 0.08).toFixed(2)})`;
+                        return `rgba(0, 0, 0, ${Math.min(n * 3, 0.08).toFixed(2)})`;
                     });
                     if (el.style.background) el.style.background = patched;
                     else el.style.backgroundColor = patched;
@@ -9989,6 +10274,16 @@ function setTheme(theme) {
         lightBtn.style.borderColor = isLight ? 'rgba(102,126,234,0.5)' : 'rgba(255,255,255,0.08)';
         const lbl = lightBtn.querySelector('span:last-child');
         if (lbl) lbl.style.color = isLight ? '#a5b4fc' : 'rgba(255,255,255,0.45)';
+    }
+    // After switching to light: re-run the full-body inline-style patcher
+    // This handles elements already in the DOM when the user clicks "Light theme"
+    if (isLight && typeof window._patchSubtreeForLight === 'function') {
+        try { window._patchSubtreeForLight(document.body); } catch (_) { }
+    }
+
+    // Re-render all existing Chart.js instances so colours update immediately
+    if (typeof window._updateAllCharts === 'function') {
+        try { window._updateAllCharts(); } catch (_) { }
     }
     _showSettingsToast(isLight ? '☀️ Light theme applied' : '🌙 Dark theme applied');
 }
@@ -10091,7 +10386,7 @@ function setRefreshInterval(val) {
         btn.style.color = isActive ? '#a5b4fc' : 'rgba(255,255,255,0.45)';
     });
     const label = document.getElementById('refreshStatusLabel');
-    if (label) label.textContent = val === 'off' ? 'off' : `every ${val} minute${val === '1' ? '' : 's'}`;
+    if (label) label.textContent = val === 'off' ? 'off' : `every ${val} minute${val === '1' ? '' : 's'} `;
     // Clear previous timer
     if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
     if (val !== 'off') {
@@ -10100,7 +10395,7 @@ function setRefreshInterval(val) {
             if (typeof fetchAllData === 'function') fetchAllData();
             else if (typeof loadDashboardData === 'function') loadDashboardData();
         }, ms);
-        _showSettingsToast(`Auto-refresh every ${val} min`);
+        _showSettingsToast(`Auto - refresh every ${val} min`);
     } else {
         _showSettingsToast('Auto-refresh disabled');
     }
@@ -10199,3 +10494,190 @@ window.openProfileDrawer = function () {
     if (typeof _origOpenDrawerForSnap === 'function') _origOpenDrawerForSnap();
     setTimeout(_snapshotSettings, 80);   // after _populateSettingsState runs
 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  LIGHT-THEME AUTO-PATCHER (MutationObserver)
+//
+//  When the user is in light mode, every new DOM subtree injected by any
+//  module render function has its inline rgba(255,255,255,…) color and
+//  near-transparent white background patched to dark/visible equivalents.
+//
+//  This is the PERMANENT fix so no module page ever shows invisible content
+//  in light mode — regardless of how or when elements are created.
+// ═══════════════════════════════════════════════════════════════════════════
+(function _initLightThemePatcher() {
+    const WHITE_COLOR_RE = /rgba\(255\s*,\s*255\s*,\s*255\s*,\s*([\d.]+)\)/g;
+    const WHITE_HEX_RE = /#(?:fff|ffffff)\b/gi;
+    const SKIP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'SVG', 'CANVAS', 'PATH',
+        'RECT', 'CIRCLE', 'G', 'LINE', 'POLYLINE', 'POLYGON']);
+
+    /** Convert a white-rgba alpha value to an appropriate dark rgba string */
+    function darkAlpha(a) {
+        const n = parseFloat(a);
+        if (n >= 0.8) return 'rgba(0,0,0,0.87)';
+        if (n >= 0.65) return 'rgba(0,0,0,0.70)';
+        if (n >= 0.5) return 'rgba(0,0,0,0.55)';
+        if (n >= 0.35) return 'rgba(0,0,0,0.40)';
+        if (n >= 0.2) return 'rgba(0,0,0,0.30)';
+        return 'rgba(0,0,0,0.20)';
+    }
+
+    /** Patch a single element's inline color / background */
+    function patchEl(el) {
+        if (SKIP.has(el.tagName)) return;
+        // Skip explicit signal-colour ancestors
+        try {
+            if (el.closest('[class*="text-green"],[class*="text-red"],.text-positive,.text-negative')) return;
+        } catch (_) { return; }
+
+        // Patch inline text colour
+        if (el.style.color) {
+            el.style.color = el.style.color
+                .replace(WHITE_COLOR_RE, (_, a) => darkAlpha(a))
+                .replace(WHITE_HEX_RE, 'rgba(0,0,0,0.87)');
+        }
+
+        // Patch very-transparent white backgrounds only (< 0.10 alpha)
+        const src = el.style.background || el.style.backgroundColor;
+        if (src) {
+            const patched = src.replace(
+                /rgba\(255\s*,\s*255\s*,\s*255\s*,\s*(0?\.0[0-9]*)\)/g,
+                (_, a) => {
+                    const n = parseFloat(a);
+                    return `rgba(0,0,0,${Math.min(n * 3, 0.08).toFixed(2)})`;
+                }
+            );
+            if (el.style.background) el.style.background = patched;
+            else el.style.backgroundColor = patched;
+        }
+    }
+
+    /** Walk a subtree and patch every styled element */
+    function patchSubtree(root) {
+        if (!document.body.classList.contains('light-theme')) return;
+        if (root.nodeType !== 1) return;                        // element nodes only
+        // Patch the root itself if it has inline style
+        if (root.hasAttribute && root.hasAttribute('style')) patchEl(root);
+        // Patch all styled descendants
+        root.querySelectorAll('[style]').forEach(patchEl);
+    }
+
+    // Observe the entire body for any new child additions
+    const observer = new MutationObserver(mutations => {
+        if (!document.body.classList.contains('light-theme')) return;
+        mutations.forEach(m => {
+            m.addedNodes.forEach(node => patchSubtree(node));
+        });
+    });
+
+    function startObserver() {
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startObserver);
+    } else {
+        startObserver();
+    }
+
+    // Expose so setTheme can call it after toggling
+    window._patchSubtreeForLight = patchSubtree;
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  GLOBAL CHART.JS LIGHT THEME PLUGIN
+//
+//  Intercepts every Chart before each update and replaces white/near-white
+//  dataset colors with a premium palette when body.light-theme is active.
+//  Saves originals so dark mode is fully restored on toggle.
+// ═══════════════════════════════════════════════════════════════════════════
+(function _registerLightChartPlugin() {
+    if (typeof Chart === 'undefined') return;
+
+    // Rich palette for light mode (indigo / teal / amber / emerald / rose / violet / sky / orange)
+    const LT_PALETTE = [
+        '#6366f1', '#14b8a6', '#f59e0b', '#10b981',
+        '#f43f5e', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16'
+    ];
+
+    /** Returns true for ANY white / near-white colour value */
+    const WHITE_RE = /rgba?\s*\(\s*25[45]\s*[, ]/;
+    function isWhite(c) {
+        if (!c || typeof c !== 'string') return false;
+        return WHITE_RE.test(c) || /^#fff/i.test(c);
+    }
+
+    Chart.register({
+        id: 'lightThemePalette',
+
+        beforeUpdate(chart) {
+            const lt = document.body.classList.contains('light-theme');
+
+            // ── 1. Dataset colours ───────────────────────────────────────
+            chart.data.datasets.forEach((ds, i) => {
+                // Save originals ONCE
+                if (ds._ltOrigBg === undefined) ds._ltOrigBg = ds.backgroundColor;
+                if (ds._ltOrigBd === undefined) ds._ltOrigBd = ds.borderColor;
+                if (ds._ltOrigHover === undefined) ds._ltOrigHover = ds.hoverBackgroundColor;
+                if (ds._ltOrigPtBg === undefined) ds._ltOrigPtBg = ds.pointBackgroundColor;
+                if (ds._ltOrigPtHov === undefined) ds._ltOrigPtHov = ds.pointHoverBackgroundColor;
+
+                if (lt) {
+                    // backgroundColor (array for doughnuts, string for bars/lines)
+                    if (Array.isArray(ds._ltOrigBg) && ds._ltOrigBg.some(isWhite)) {
+                        ds.backgroundColor = LT_PALETTE.slice(0, ds._ltOrigBg.length);
+                    } else if (isWhite(ds._ltOrigBg)) {
+                        ds.backgroundColor = LT_PALETTE[i % LT_PALETTE.length];
+                    }
+                    // borderColor
+                    if (isWhite(ds._ltOrigBd)) ds.borderColor = LT_PALETTE[i % LT_PALETTE.length];
+                    // hover / point colours
+                    if (isWhite(ds._ltOrigHover)) ds.hoverBackgroundColor = LT_PALETTE[(i + 1) % LT_PALETTE.length];
+                    if (isWhite(ds._ltOrigPtBg)) ds.pointBackgroundColor = LT_PALETTE[i % LT_PALETTE.length];
+                    if (isWhite(ds._ltOrigPtHov)) ds.pointHoverBackgroundColor = LT_PALETTE[i % LT_PALETTE.length];
+                } else {
+                    // Restore originals in dark mode
+                    ds.backgroundColor = ds._ltOrigBg;
+                    ds.borderColor = ds._ltOrigBd;
+                    ds.hoverBackgroundColor = ds._ltOrigHover;
+                    ds.pointBackgroundColor = ds._ltOrigPtBg;
+                    ds.pointHoverBackgroundColor = ds._ltOrigPtHov;
+                }
+            });
+
+            // ── 2. Axis tick / grid colours ──────────────────────────────
+            const scales = chart.options.scales || {};
+            ['x', 'y', 'r'].forEach(axis => {
+                const sc = scales[axis];
+                if (!sc) return;
+                if (!sc.ticks) sc.ticks = {};
+                if (!sc.grid) sc.grid = {};
+                if (sc.ticks._ltOrig === undefined) sc.ticks._ltOrig = sc.ticks.color;
+                if (sc.grid._ltOrig === undefined) sc.grid._ltOrig = sc.grid.color;
+
+                sc.ticks.color = lt
+                    ? (isWhite(sc.ticks._ltOrig) ? 'rgba(0,0,0,0.55)' : (sc.ticks._ltOrig || 'rgba(0,0,0,0.55)'))
+                    : (sc.ticks._ltOrig || 'rgba(255,255,255,0.4)');
+                sc.grid.color = lt
+                    ? (isWhite(sc.grid._ltOrig) ? 'rgba(0,0,0,0.06)' : (sc.grid._ltOrig || 'rgba(0,0,0,0.06)'))
+                    : (sc.grid._ltOrig || 'rgba(255,255,255,0.05)');
+            });
+
+            // ── 3. Legend label colour ────────────────────────────────────
+            const legendLabels = chart.options.plugins?.legend?.labels;
+            if (legendLabels) {
+                if (legendLabels._ltOrig === undefined) legendLabels._ltOrig = legendLabels.color;
+                legendLabels.color = lt
+                    ? (isWhite(legendLabels._ltOrig) ? 'rgba(0,0,0,0.65)' : (legendLabels._ltOrig || 'rgba(0,0,0,0.65)'))
+                    : (legendLabels._ltOrig || 'rgba(255,255,255,0.7)');
+            }
+        }
+    });
+
+    // Expose a helper to trigger all existing charts to re-render
+    window._updateAllCharts = function () {
+        try {
+            Object.values(Chart.instances).forEach(c => c.update('none'));
+        } catch (_) { }
+    };
+})();

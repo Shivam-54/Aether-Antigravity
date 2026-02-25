@@ -3,6 +3,7 @@ Shares AI Lab - ML API Routes
 Isolated endpoints for stock predictions, risk analysis, and insights
 """
 
+import asyncio
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 from typing import Optional, List
@@ -42,9 +43,9 @@ async def get_price_prediction(
         )
     
     try:
-        # Initialize and run predictor
+        # Initialize and run predictor — wrapped in thread so event loop stays free
         predictor = PricePredictor(ticker=ticker, horizon_days=horizon)
-        results = predictor.run_full_prediction()
+        results = await asyncio.to_thread(predictor.run_full_prediction)
         
         return {
             "status": "success",
@@ -95,13 +96,13 @@ async def get_risk_analysis(
         else:
             weight_list = None
         
-        # Initialize and run risk analyzer
+        # Initialize and run risk analyzer — thread so Monte Carlo doesn't block event loop
         analyzer = RiskAnalyzer(
             tickers=ticker_list,
             weights=weight_list,
             investment_amount=investment_amount
         )
-        results = analyzer.analyze_risk(num_simulations=simulations)
+        results = await asyncio.to_thread(analyzer.analyze_risk, simulations)
         
         return {
             "status": "success",
@@ -140,9 +141,10 @@ async def get_portfolio_insights(
         ticker_list = [t.strip().upper() for t in tickers.split(',')]
         
         generator = InsightsGenerator()
-        results = generator.generate_insights(
-            tickers=ticker_list,
-            portfolio_value=portfolio_value
+        results = await asyncio.to_thread(
+            generator.generate_insights,
+            ticker_list,
+            portfolio_value
         )
         
         return {
@@ -177,7 +179,7 @@ async def get_stock_sentiment(
         Sentiment score, classification, breakdown, headlines, social buzz
     """
     try:
-        result = stock_sentiment_analyzer.analyze(ticker)
+        result = await asyncio.to_thread(stock_sentiment_analyzer.analyze, ticker)
         return {"status": "success", "data": result}
     except Exception as e:
         raise HTTPException(
@@ -196,7 +198,7 @@ async def get_stock_sentiment_history(
     Historical sentiment scores for charting.
     """
     try:
-        history = stock_sentiment_analyzer.get_history(ticker, days)
+        history = await asyncio.to_thread(stock_sentiment_analyzer.get_history, ticker, days)
         return {
             "status": "success",
             "data": {
@@ -229,7 +231,7 @@ async def get_anomaly_detection(
     try:
         ticker_list = [t.strip().upper() for t in tickers.split(',')]
         detector = AnomalyDetector()
-        results = detector.detect(ticker_list)
+        results = await asyncio.to_thread(detector.detect, ticker_list)
         return {"status": "success", "data": results}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"Invalid input: {str(e)}")
@@ -254,7 +256,7 @@ async def get_correlation_analysis(
     try:
         ticker_list = [t.strip().upper() for t in tickers.split(',')]
         analyzer = CorrelationAnalyzer()
-        results = analyzer.analyze(ticker_list)
+        results = await asyncio.to_thread(analyzer.analyze, ticker_list)
         return {"status": "success", "data": results}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"Invalid input: {str(e)}")

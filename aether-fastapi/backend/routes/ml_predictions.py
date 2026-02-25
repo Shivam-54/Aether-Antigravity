@@ -45,6 +45,11 @@ def _cache_set(key, data):
 # Helper — run one property prediction in a thread (uses its own forecaster
 # instance so parallel calls don't share mutable model state)
 # ---------------------------------------------------------------------------
+# ── Concurrency guard for Prophet / cmdstanpy: run at most 2 at a time ──
+# Running all properties simultaneously spawns N*cmdstanpy processes and
+# exhausts CPU/file handles, causing the server to hang.
+_ML_SEM = asyncio.Semaphore(2)
+
 async def _predict_one(property_data: dict, days_ahead: int) -> dict:
     forecaster = PropertyPriceForecaster()
     return await asyncio.to_thread(forecaster.predict, property_data, days_ahead)
@@ -193,10 +198,11 @@ async def predict_all_properties(
         }
         eligible.append((prop, property_data))
 
-    # --- Run all predictions IN PARALLEL ---
+    # --- Run predictions with concurrency limit (max 2 simultaneous Prophet models) ---
     async def _safe_predict(prop, pdata):
         try:
-            result = await _predict_one(pdata, days_ahead)
+            async with _ML_SEM:          # throttle to 2 concurrent Prophet fits
+                result = await asyncio.wait_for(_predict_one(pdata, days_ahead), timeout=45)
             result["property_id"] = str(prop.id)
             result["property_name"] = prop.name
             result["location"] = prop.location
@@ -258,7 +264,9 @@ async def get_portfolio_forecast(
 
     async def _safe_portfolio_predict(prop, pdata):
         try:
-            return await _predict_one(pdata, days_ahead), prop
+            async with _ML_SEM:
+                pred = await asyncio.wait_for(_predict_one(pdata, days_ahead), timeout=45)
+            return pred, prop
         except Exception:
             return None, prop
 
