@@ -1340,3 +1340,84 @@ tr:hover .row-action {
     background: rgba(99, 102, 241, 0.06) !important;
     box-shadow: 0 0 12px rgba(129, 140, 248, 0.08);
 }
+/* ═══════════════════════════════════════════════════════
+   LIGHT THEME OVERRIDES FOR AI LAB & MODULE TABS
+   ═══════════════════════════════════════════════════════ */
+[data-theme="light"] {
+    /* Main AI Lab Tabs Container */
+    .ai-lab-tab {
+        background: #ffffff !important;
+        border-color: rgba(0, 0, 0, 0.08) !important;
+        color: var(--text-primary);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    }
+
+    [data-theme="light"] .ai-lab-tab .tab-title {
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    [data-theme="light"] .ai-lab-tab .tab-desc {
+        color: var(--text-secondary);
+    }
+
+    [data-theme="light"] .ai-lab-tab .tab-icon-wrap {
+        background: rgba(0, 0, 0, 0.03);
+        border-color: rgba(0, 0, 0, 0.06);
+    }
+
+    [data-theme="light"] .ai-lab-tab:hover {
+        background: #fafafa !important;
+        border-color: rgba(0, 0, 0, 0.15) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    [data-theme="light"] .ai-lab-tab.active {
+        background: #ffffff !important;
+        border-color: var(--accent-primary) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    [data-theme="light"] .ai-lab-tab.active::after {
+        background: var(--accent-primary);
+        box-shadow: none;
+    }
+
+    [data-theme="light"] .ai-lab-tab.active .tab-icon-wrap {
+        background: rgba(var(--accent-primary-rgb), 0.1);
+        border-color: rgba(var(--accent-primary-rgb), 0.2);
+    }
+    
+    [data-theme="light"] .ai-lab-tab.active .tab-title,
+    [data-theme="light"] .ai-lab-tab.active .tab-desc {
+        color: var(--text-primary);
+    }
+
+    /* Modal / Form Inputs within AI Lab */
+    [data-theme="light"] .modal-glass-input,
+    [data-theme="light"] .form-select-sm {
+        background: #ffffff !important;
+        border-color: rgba(0, 0, 0, 0.1) !important;
+        color: var(--text-primary) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+    }
+
+    [data-theme="light"] .modal-glass-input:focus,
+    [data-theme="light"] .form-select-sm:focus {
+        background: #ffffff !important;
+        border-color: var(--accent-primary) !important;
+        box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.1) !important;
+    }
+    
+    [data-theme="light"] .text-white-70,
+    [data-theme="light"] .text-white-80,
+    [data-theme="light"] .text-white-90 {
+        color: var(--text-primary) !important;
+    }
+    
+    [data-theme="light"] .glass-card {
+        background: #ffffff;
+        border-color: rgba(0, 0, 0, 0.06);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+}

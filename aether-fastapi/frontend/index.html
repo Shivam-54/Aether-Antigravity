@@ -1444,12 +1444,20 @@
                             body: formData,
                             signal: controller.signal
                         })
-                            .then(response => {
+                            .then(async response => {
                                 clearTimeout(timeoutId);
                                 if (!response.ok) {
-                                    return response.json().then(err => {
-                                        throw new Error(err.detail || 'Authentication failed');
-                                    });
+                                    // Server may return JSON detail or a plain-text/HTML 500
+                                    let errMsg = 'Authentication failed. Please check your credentials.';
+                                    if (response.status === 500) {
+                                        errMsg = 'Server error — please try again in a moment.';
+                                    } else if (response.status === 401 || response.status === 422) {
+                                        try {
+                                            const err = await response.json();
+                                            errMsg = err.detail || errMsg;
+                                        } catch (_) { /* non-JSON body, use default */ }
+                                    }
+                                    throw new Error(errMsg);
                                 }
                                 return response.json();
                             })

@@ -1360,8 +1360,7 @@ async function fetchRealEstateData() {
             renderRealEstateTransactions(); // Populate transaction history
         } else {
             if (response.status === 401) {
-                console.warn('Unauthorized - logging out');
-                logout();
+                console.warn('[Auth] 401 on background fetch — silently skipping.');
                 return;
             }
             console.error('Failed to fetch properties');
@@ -2504,8 +2503,7 @@ async function submitAddProperty(event) {
             fetchRealEstateData(); // Reload data
         } else {
             if (response.status === 401) {
-                console.warn('Unauthorized - logging out');
-                logout();
+                console.warn('[Auth] 401 on background fetch — silently skipping.');
                 return;
             }
             const error = await response.json();
@@ -2758,7 +2756,7 @@ async function confirmRentProperty() {
             fetchRealEstateData(); // Reload data
         } else {
             if (response.status === 401) {
-                logout();
+                console.warn('[Auth] 401 on background fetch — silently skipping.');
                 return;
             }
             const error = await response.json();
@@ -2813,7 +2811,7 @@ async function confirmSellProperty() {
             fetchRealEstateData(); // Reload data
         } else {
             if (response.status === 401) {
-                logout();
+                console.warn('[Auth] 401 on background fetch — silently skipping.');
                 return;
             }
             const error = await response.json();
@@ -3011,7 +3009,7 @@ async function confirmRemoveProperty() {
             fetchRealEstateData(); // Reload data
         } else {
             if (response.status === 401) {
-                logout();
+                console.warn('[Auth] 401 on background fetch — silently skipping.');
                 return;
             }
             const error = await response.json();
@@ -4003,7 +4001,7 @@ async function saveValuationToBackend(propertyId, valuation, isEdit = false) {
 
         if (!response || !response.ok) {
             if (response && response.status === 401) {
-                logout();
+                console.warn('[Auth] 401 on background fetch — silently skipping.');
                 return null;
             }
             const errorText = await response.text();
@@ -4036,7 +4034,7 @@ async function updatePropertyCurrentValue(propertyId, newValue) {
 
         if (!response.ok) {
             if (response.status === 401) {
-                logout();
+                console.warn('[Auth] 401 on background fetch — silently skipping.');
                 return false;
             }
             throw new Error('Failed to update current value');
@@ -4128,7 +4126,7 @@ async function confirmDeleteValuation(isFallback = false) {
 
         if (!response.ok) {
             if (response.status === 401) {
-                logout();
+                console.warn('[Auth] 401 on background fetch — silently skipping.');
                 return;
             }
             throw new Error('Failed to delete valuation');
@@ -5980,7 +5978,7 @@ async function fetchBondsData() {
                 yieldToMaturity: bond.yield_to_maturity
             }));
         } else if (response.status === 401) {
-            logout();
+            console.warn('[Auth] 401 on background fetch — silently skipping.');
             return;
         }
     } catch (error) {
@@ -6655,7 +6653,7 @@ async function fetchBusinessData() {
             }));
             console.log('Business data fetched successfully:', BUSINESS_DATA.length);
         } else if (bizResponse.status === 401) {
-            logout();
+            console.warn('[Auth] 401 on background fetch — silently skipping.');
             return;
         } else {
             console.error('Failed to fetch business ventures');
@@ -9629,9 +9627,9 @@ window.setAccentColor = setAccentColor;
             --lt-surface-2:    #f5f6fa;
             --lt-border:       rgba(99,102,241,0.12);
             --lt-border-muted: rgba(0,0,0,0.07);
-            --lt-shadow-sm:    0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
-            --lt-shadow-md:    0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.05);
-            --lt-shadow-lg:    0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+            --lt-shadow-sm:    0 0 14px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.09);
+            --lt-shadow-md:    0 0 28px rgba(0,0,0,0.18), 0 4px 14px rgba(0,0,0,0.10);
+            --lt-shadow-lg:    0 0 48px rgba(0,0,0,0.22), 0 8px 28px rgba(0,0,0,0.14);
             --lt-accent:       #6366f1;
             --lt-accent-soft:  rgba(99,102,241,0.10);
             --lt-text-1:       rgba(15,18,35,0.90);
@@ -10189,6 +10187,146 @@ window.setAccentColor = setAccentColor;
             --active-glow:          0 0 20px rgba(99,102,241,0.20);
             --signal-positive:      #16a34a;
             --signal-negative:      #dc2626;
+        }
+
+        /* ════════════════════════════════════════════════════════
+           ⬛  BLACK GLOW SYSTEM — Light Mode
+           Mirrors the white-glow + border treatment used in dark
+           mode. Applied to every surface: cards, sidebar, topbar,
+           breadcrumb, module tabs, feature tabs, user pill, modals.
+           ════════════════════════════════════════════════════════ */
+
+        /* ── Universal card/panel glow ─────────────────────── */
+        body.light-theme .glass-card,
+        body.light-theme .glass-panel,
+        body.light-theme .glass,
+        body.light-theme .metric-card,
+        body.light-theme .card,
+        body.light-theme .rounded-4[style*="backdrop-filter"],
+        body.light-theme .rounded-3[style*="backdrop-filter"] {
+            border: 1px solid rgba(0,0,0,0.13) !important;
+            box-shadow:
+                0 0 0 1px rgba(0,0,0,0.06),
+                0 0 28px rgba(0,0,0,0.16),
+                0 4px 14px rgba(0,0,0,0.10),
+                inset 0 1px 0 rgba(255,255,255,0.80) !important;
+        }
+        body.light-theme .glass-card:hover,
+        body.light-theme .glass-panel:hover,
+        body.light-theme .metric-card:hover {
+            border-color: rgba(0,0,0,0.20) !important;
+            box-shadow:
+                0 0 0 1px rgba(0,0,0,0.10),
+                0 0 40px rgba(0,0,0,0.20),
+                0 8px 24px rgba(0,0,0,0.13),
+                inset 0 1px 0 rgba(255,255,255,0.90) !important;
+        }
+
+        /* ── Sidebar ──────────────────────────────────────── */
+        body.light-theme #sidebar,
+        body.light-theme [id="mainSidebar"],
+        body.light-theme .sidebar,
+        body.light-theme aside {
+            border-right: 1px solid rgba(0,0,0,0.13) !important;
+            box-shadow:
+                0 0 36px rgba(0,0,0,0.14),
+                4px 0 20px rgba(0,0,0,0.10) !important;
+        }
+
+        /* ── Top-bar ────────────────────────────────────── */
+        body.light-theme .top-bar {
+            border-bottom: 1px solid rgba(0,0,0,0.13) !important;
+            box-shadow:
+                0 0 24px rgba(0,0,0,0.14),
+                0 4px 12px rgba(0,0,0,0.08) !important;
+        }
+
+        /* ── Breadcrumb capsule ────────────────────────── */
+        body.light-theme .breadcrumb-capsule {
+            border: 1px solid rgba(0,0,0,0.13) !important;
+            box-shadow:
+                0 0 18px rgba(0,0,0,0.15),
+                0 2px 6px rgba(0,0,0,0.09) !important;
+        }
+
+        /* ── Module tabs row ───────────────────────────── */
+        body.light-theme .module-tabs {
+            border: 1px solid rgba(0,0,0,0.13) !important;
+            box-shadow:
+                0 0 20px rgba(0,0,0,0.15),
+                0 2px 8px rgba(0,0,0,0.09) !important;
+        }
+
+        /* ── Active module tab ─────────────────────────── */
+        body.light-theme .module-tab.active {
+            box-shadow:
+                0 2px 10px rgba(0,0,0,0.25),
+                0 0 16px rgba(0,0,0,0.15) !important;
+        }
+
+        /* ── User pill ─────────────────────────────────── */
+        body.light-theme .user-section {
+            border: 1px solid rgba(0,0,0,0.13) !important;
+            box-shadow:
+                0 0 18px rgba(0,0,0,0.15),
+                0 2px 6px rgba(0,0,0,0.09) !important;
+        }
+
+        /* ── Feature-selector rows (AI Lab, etc.) ─────── */
+        body.light-theme [class*="feature-tab"],
+        body.light-theme [class*="lab-feature"],
+        body.light-theme [class*="feature-selector"],
+        body.light-theme [class*="tab-card"],
+        body.light-theme [class*="selector-card"] {
+            border: 1px solid rgba(0,0,0,0.13) !important;
+            box-shadow:
+                0 0 20px rgba(0,0,0,0.15),
+                0 2px 8px rgba(0,0,0,0.09) !important;
+        }
+
+        /* ── Profile drawer ────────────────────────────── */
+        body.light-theme #profileDrawer {
+            border-left: 1px solid rgba(0,0,0,0.13) !important;
+            box-shadow:
+                0 0 40px rgba(0,0,0,0.18),
+                -4px 0 24px rgba(0,0,0,0.12) !important;
+        }
+
+        /* ── Glass button / capsule ────────────────────── */
+        body.light-theme .glass-button,
+        body.light-theme .glass-capsule {
+            border: 1px solid rgba(0,0,0,0.13) !important;
+            box-shadow:
+                0 0 14px rgba(0,0,0,0.13),
+                0 2px 4px rgba(0,0,0,0.07) !important;
+        }
+        body.light-theme .glass-button:hover,
+        body.light-theme .glass-capsule:hover {
+            box-shadow:
+                0 0 22px rgba(0,0,0,0.18),
+                0 4px 10px rgba(0,0,0,0.10) !important;
+        }
+
+        /* ── Modals ─────────────────────────────────────── */
+        body.light-theme .glass-modal,
+        body.light-theme .modal-glass,
+        body.light-theme .modal-glass-inner,
+        body.light-theme .glass-premium {
+            border: 1px solid rgba(0,0,0,0.15) !important;
+            box-shadow:
+                0 0 60px rgba(0,0,0,0.22),
+                0 24px 64px rgba(0,0,0,0.16),
+                0 4px 16px rgba(0,0,0,0.10) !important;
+        }
+
+        /* ── Inputs — clear focus glow ─────────────────── */
+        body.light-theme .form-control:focus,
+        body.light-theme .glass-input:focus,
+        body.light-theme .modal-glass-input:focus {
+            box-shadow:
+                0 0 0 3px rgba(0,0,0,0.08),
+                0 0 16px rgba(0,0,0,0.10) !important;
+            border-color: rgba(0,0,0,0.30) !important;
         }
     `;
     document.head.appendChild(s);
