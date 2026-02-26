@@ -22,9 +22,9 @@ async function fetchCryptoData() {
         console.log('Fetching Crypto Data...');
 
         // Fetch holdings
-        const holdingsResponse = await fetch(`${API_BASE_URL}/crypto/holdings`, {
+        const holdingsResponse = await withTimeout(fetch(`${API_BASE_URL}/crypto/holdings`, {
             headers: getAuthHeaders()
-        });
+        }));
 
         if (holdingsResponse.ok) {
             CRYPTO_DATA.holdings = await holdingsResponse.json();
@@ -35,9 +35,9 @@ async function fetchCryptoData() {
         }
 
         // Fetch metrics
-        const metricsResponse = await fetch(`${API_BASE_URL}/crypto/metrics`, {
+        const metricsResponse = await withTimeout(fetch(`${API_BASE_URL}/crypto/metrics`, {
             headers: getAuthHeaders()
-        });
+        }));
 
         if (metricsResponse.ok) {
             CRYPTO_DATA.metrics = await metricsResponse.json();

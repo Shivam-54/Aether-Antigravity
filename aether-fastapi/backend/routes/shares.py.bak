@@ -85,7 +85,7 @@ class StockSearchResult(BaseModel):
 # --- Holdings Routes ---
 
 @router.get("/holdings", response_model=List[ShareResponse])
-def get_holdings(
+async def get_holdings(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -124,7 +124,7 @@ def get_holdings(
 
 
 @router.post("/holdings", response_model=ShareResponse, status_code=status.HTTP_201_CREATED)
-def create_holding(
+async def create_holding(
     holding_data: ShareCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -168,7 +168,7 @@ def create_holding(
 
 
 @router.put("/holdings/{holding_id}", response_model=ShareResponse)
-def update_holding(
+async def update_holding(
     holding_id: UUID,
     holding_update: ShareUpdate,
     current_user: User = Depends(get_current_user),
@@ -217,7 +217,7 @@ def update_holding(
 
 
 @router.delete("/holdings/{holding_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_holding(
+async def delete_holding(
     holding_id: UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -237,7 +237,7 @@ def delete_holding(
 
 
 @router.post("/holdings/{holding_id}/sell", response_model=ShareResponse)
-def sell_holding(
+async def sell_holding(
     holding_id: UUID,
     sell_data: SellShareRequest,
     current_user: User = Depends(get_current_user),
@@ -296,7 +296,7 @@ def sell_holding(
 # --- Metrics Route ---
 
 @router.get("/metrics", response_model=ShareMetrics)
-def get_metrics(
+async def get_metrics(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -331,7 +331,7 @@ def get_metrics(
 # --- Stock Search & Price Routes ---
 
 @router.get("/stock-search", response_model=List[StockSearchResult])
-def search_stocks(
+async def search_stocks(
     q: str,
     current_user: User = Depends(get_current_user)
 ):
@@ -389,7 +389,7 @@ def search_stocks(
 
 
 @router.get("/stock-price/{symbol}")
-def get_stock_price(
+async def get_stock_price(
     symbol: str,
     current_user: User = Depends(get_current_user)
 ):
@@ -426,7 +426,7 @@ def get_stock_price(
 # ---Real-Time Price Refresh & Charts ---
 
 @router.post("/refresh-prices")
-def refresh_all_prices(
+async def refresh_all_prices(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -482,7 +482,7 @@ def refresh_all_prices(
 
 
 @router.get("/chart/{symbol}")
-def get_stock_chart(
+async def get_stock_chart(
     symbol: str,
     period: str = "1mo",
     current_user: User = Depends(get_current_user)
@@ -517,7 +517,7 @@ def get_stock_chart(
 
 
 @router.get("/portfolio-chart")
-def get_portfolio_chart(
+async def get_portfolio_chart(
     period: str = "1mo",
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)

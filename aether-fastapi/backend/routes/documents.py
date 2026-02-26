@@ -133,7 +133,7 @@ async def upload_document(
     return document
 
 @router.get("/", response_model=List[DocumentResponse])
-async def get_documents(
+def get_documents(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):

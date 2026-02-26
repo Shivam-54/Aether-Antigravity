@@ -10,7 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 
     <!-- Fonts: Geist (exact match from old website) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3104,21 +3104,21 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <!-- Core & Modules -->
-    <script src="js/modules/crypto/crypto-overview.js"></script>
-    <script src="js/modules/crypto/crypto-transactions.js"></script>
-    <script src="js/modules/crypto/crypto-insights.js"></script>
+    <script src="js/modules/crypto/crypto-overview.js" defer></script>
+    <script src="js/modules/crypto/crypto-transactions.js" defer></script>
+    <script src="js/modules/crypto/crypto-insights.js" defer></script>
 
     <!-- Main Dashboard Logic -->
-    <script src="js/real-estate-ai.js?v=12"></script>
-    <script src="js/dashboard.js?v=206"></script>
-    <script src="js/share-transactions.js?v=1"></script>
-    <script src="js/modules/crypto/crypto-wallets.js"></script>
-    <script src="js/analytics-utils.js"></script> <!-- NEW: Analytics Logic -->
-    <script src="js/shares-module.js?v=12"></script>
-    <script src="js/shares-performance.js?v=1"></script>
-    <script src="js/shares-ai.js?v=9"></script> <!-- NEW: AI Lab price predictions -->
+    <script src="js/real-estate-ai.js?v=12" defer></script>
+    <script src="js/dashboard.js?v=223" defer></script>
+    <script src="js/share-transactions.js?v=1" defer></script>
+    <script src="js/modules/crypto/crypto-wallets.js" defer></script>
+    <script src="js/analytics-utils.js" defer></script> <!-- NEW: Analytics Logic -->
+    <script src="js/shares-module.js?v=12" defer></script>
+    <script src="js/shares-performance.js?v=1" defer></script>
+    <script src="js/shares-ai.js?v=9" defer></script> <!-- NEW: AI Lab price predictions -->
 
 
     <!-- Add Property Modal -->
@@ -5215,9 +5215,9 @@
         </div>
     </div>
 
-    <script src="js/modules/crypto/crypto-simulator.js"></script>
-    <script src="js/modules/crypto/crypto-insights.js"></script>
-    <script src="js/modules/crypto/crypto-ai-lab.js?v=insights-v2"></script>
+    <script src="js/modules/crypto/crypto-simulator.js" defer></script>
+    <!-- crypto-insights.js loaded once above (line ~3111) -->
+    <script src="js/modules/crypto/crypto-ai-lab.js?v=insights-v2" defer></script>
 
     <!-- Model Comparison Modal -->
     <div id="modelComparisonModal" class="modal fade" tabindex="-1" style="display: none;">
@@ -5677,9 +5677,88 @@
                     <div
                         style="color:rgba(255,255,255,0.3);font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;">
                         Appearance</div>
-        </div>
 
-    </div>
+                    <!-- Accent Color Presets -->
+                    <div style="margin-bottom:20px;">
+                        <div style="color:rgba(255,255,255,0.55);font-size:0.78rem;font-weight:500;margin-bottom:12px;">
+                            Accent Color</div>
+                        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;" id="accent-swatches">
+
+                            <!-- Ice Blue -->
+                            <button onclick="setAccentColor('#cceeff','#99ddff');_markAccent(this)" title="Ice Blue"
+                                style="all:unset;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:8px 4px;border-radius:10px;transition:background 0.2s;">
+                                <div
+                                    style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#cceeff,#99ddff);border:2px solid rgba(204,238,255,0.3);box-shadow:0 0 10px rgba(204,238,255,0.40);">
+                                </div>
+                                <span style="color:rgba(255,255,255,0.45);font-size:0.62rem;text-align:center;">Ice
+                                    Blue</span>
+                            </button>
+
+                            <!-- Red -->
+                            <button onclick="setAccentColor('#cc0000','#990000');_markAccent(this)" title="Red"
+                                style="all:unset;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:8px 4px;border-radius:10px;transition:background 0.2s;">
+                                <div
+                                    style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#cc0000,#990000);border:2px solid rgba(204,0,0,0.4);box-shadow:0 0 10px rgba(204,0,0,0.40);">
+                                </div>
+                                <span
+                                    style="color:rgba(255,255,255,0.45);font-size:0.62rem;text-align:center;">Red</span>
+                            </button>
+
+                            <!-- Pink -->
+                            <button onclick="setAccentColor('#ff677d','#e8394f');_markAccent(this)" title="Pink"
+                                style="all:unset;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:8px 4px;border-radius:10px;transition:background 0.2s;">
+                                <div
+                                    style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff677d,#e8394f);border:2px solid rgba(255,103,125,0.35);box-shadow:0 0 10px rgba(255,103,125,0.40);">
+                                </div>
+                                <span
+                                    style="color:rgba(255,255,255,0.45);font-size:0.62rem;text-align:center;">Pink</span>
+                            </button>
+
+                            <!-- Forest Green -->
+                            <button onclick="setAccentColor('#106b3e','#0a4f2d');_markAccent(this)" title="Forest Green"
+                                style="all:unset;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:8px 4px;border-radius:10px;transition:background 0.2s;">
+                                <div
+                                    style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#106b3e,#0a4f2d);border:2px solid rgba(16,107,62,0.4);box-shadow:0 0 10px rgba(16,107,62,0.35);">
+                                </div>
+                                <span
+                                    style="color:rgba(255,255,255,0.45);font-size:0.62rem;text-align:center;">Green</span>
+                            </button>
+
+                            <!-- Yellow -->
+                            <button onclick="setAccentColor('#f4d17b','#e6b84a');_markAccent(this)" title="Yellow"
+                                style="all:unset;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:8px 4px;border-radius:10px;transition:background 0.2s;">
+                                <div
+                                    style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#f4d17b,#e6b84a);border:2px solid rgba(244,209,123,0.35);box-shadow:0 0 10px rgba(244,209,123,0.35);">
+                                </div>
+                                <span
+                                    style="color:rgba(255,255,255,0.45);font-size:0.62rem;text-align:center;">Yellow</span>
+                            </button>
+
+                            <!-- Purple -->
+                            <button onclick="setAccentColor('#6d3a94','#4e2470');_markAccent(this)" title="Purple"
+                                style="all:unset;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:8px 4px;border-radius:10px;transition:background 0.2s;">
+                                <div
+                                    style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6d3a94,#4e2470);border:2px solid rgba(109,58,148,0.4);box-shadow:0 0 10px rgba(109,58,148,0.40);">
+                                </div>
+                                <span
+                                    style="color:rgba(255,255,255,0.45);font-size:0.62rem;text-align:center;">Purple</span>
+                            </button>
+
+                            <!-- White -->
+                            <button onclick="setAccentColor('#e8e8f0','#b0b0c8');_markAccent(this)" title="White"
+                                style="all:unset;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:8px 4px;border-radius:10px;transition:background 0.2s;">
+                                <div
+                                    style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#e8e8f0,#b0b0c8);border:2px solid rgba(255,255,255,0.20);box-shadow:0 0 10px rgba(232,232,240,0.30);">
+                                </div>
+                                <span
+                                    style="color:rgba(255,255,255,0.45);font-size:0.62rem;text-align:center;">White</span>
+                            </button>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
 
 </body>
 

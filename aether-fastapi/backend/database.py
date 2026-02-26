@@ -30,11 +30,11 @@ engine = create_engine(
     # pool_size=2 + max_overflow=1 → max 3 connections per worker → 6 total.
     # Switch DATABASE_URL port 5432 → 6543 (Transaction Mode) for even lower
     # connection counts per request.
-    pool_size=2,
-    max_overflow=1,
+    pool_size=10,
+    max_overflow=20,
     pool_pre_ping=True,    # drop stale connections before reuse
     pool_recycle=300,      # recycle connections every 5 minutes
-    pool_timeout=10,       # raise error after 10 s instead of queuing
+    pool_timeout=30,       # raise error after 30 s instead of queuing
     connect_args=connect_args
 )
 

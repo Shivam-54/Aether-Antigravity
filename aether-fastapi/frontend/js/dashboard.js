@@ -3,6 +3,20 @@
 
 // 🔧 DEV MODE: Set to true to disable auth redirects during UI testing
 const DEV_MODE = false;
+
+// ==================== FETCH TIMEOUT UTILITY ====================
+/**
+ * Race a fetch promise against an 8-second timeout.
+ * Prevents the page from hanging when the backend is slow or offline.
+ * The caller's existing catch block handles the resulting error gracefully.
+ */
+function withTimeout(promise, ms = 8000) {
+    const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`Request timed out after ${ms}ms`)), ms)
+    );
+    return Promise.race([promise, timeout]);
+}
+// ===============================================================
 // ==================== SAFE EVENT HANDLER UTILITIES ====================
 /**
  * Safely generate onclick handler with quoted parameters
@@ -477,6 +491,30 @@ const SUPABASE_URL = 'https://dxymgwcybdlzskdwdlzb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4eW1nd2N5YmRsenNrZHdkbHpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4MTYxMjYsImV4cCI6MjA4MzM5MjEyNn0.0RnHD3v5dok7BP5SNUXmy_WDJFexI5Y2bGi18lLxgBk';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+/**
+ * Synchronously decode a JWT payload without verification.
+ * Returns the payload object or null if the token is malformed.
+ */
+function _decodeJWTPayload(token) {
+    try {
+        const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(atob(base64));
+    } catch (_) {
+        return null;
+    }
+}
+
+/**
+ * Returns true if the stored JWT has already expired (client-side check).
+ * This avoids firing any fetch when we know the token is dead.
+ */
+function _isTokenExpired(token) {
+    if (!token) return true;
+    const payload = _decodeJWTPayload(token);
+    if (!payload || !payload.exp) return false; // no exp claim — assume valid
+    return Date.now() >= payload.exp * 1000;
+}
+
 function getAuthHeaders() {
     const token = localStorage.getItem('access_token');
     return {
@@ -865,8 +903,8 @@ function initHomeCharts(metrics) {
                 datasets: [{
                     data: counts,
                     backgroundColor: piePalette,
-                    borderWidth: lt ? 2 : 0,
-                    borderColor: lt ? '#f0f4f8' : 'transparent',
+                    borderWidth: 0,
+                    borderColor: 'transparent',
                     hoverOffset: 10
                 }]
             },
@@ -877,9 +915,7 @@ function initHomeCharts(metrics) {
     // 2. BAR CHART (Asset Values)
     const ctxBar = document.getElementById('homeBarChart');
     if (ctxBar) {
-        const barColors = lt
-            ? ['#6366f1', '#14b8a6', '#f59e0b', '#22c55e', '#f43f5e']
-            : 'rgba(255,255,255,0.8)';
+        const barColors = 'rgba(255,255,255,0.8)';
         new Chart(ctxBar, {
             type: 'bar',
             data: {
@@ -920,13 +956,64 @@ const SOURCE_NAMES = {
     business: 'Business'
 };
 
-// Auth check
+// Auth check — instant redirect if no token exists or if the JWT has already expired.
+// Background validation runs BEFORE data fetching to prevent 401 bursts.
 function requireAuth() {
-    if (DEV_MODE) return; // Skip auth in dev mode
+    if (DEV_MODE) return;
     const token = localStorage.getItem('access_token');
     if (!token) {
         window.location.href = 'index.html';
+        return;
     }
+    // Client-side expiry check — immediate redirect without a network call
+    if (_isTokenExpired(token)) {
+        console.warn('[Auth] JWT expired (client-side check). Redirecting to login.');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user_email');
+        window.location.href = 'index.html';
+    }
+}
+
+/**
+ * Validate the token against the server and resolve to true/false.
+ * Called BEFORE any data fetch runs so expired tokens don't cause a 401 burst.
+ */
+async function _validateToken() {
+    if (DEV_MODE) return true;
+    const token = localStorage.getItem('access_token');
+    if (!token) return false;
+
+    try {
+        const res = await withTimeout(fetch(`${API_BASE_URL}/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        }), 5000);
+
+        if (res.ok) {
+            // Optionally refresh the stored email from the server response
+            try {
+                const me = await res.json();
+                if (me && me.email) localStorage.setItem('user_email', me.email);
+            } catch (_) { }
+            return true;
+        }
+
+        // 401/403 → expired or revoked
+        console.warn('[Auth] Server rejected token. Redirecting to login.');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user_email');
+        showToast('Session expired. Please log in again.', 'error', 2500);
+        setTimeout(() => { window.location.href = 'index.html'; }, 2500);
+        return false;
+    } catch (err) {
+        // Network/timeout — allow dashboard to load, don't force logout
+        console.warn('[Auth] Token validation timed out:', err.message);
+        return true;
+    }
+}
+
+// Keep the old name as an alias for any code that still calls it
+async function _validateTokenInBackground() {
+    await _validateToken();
 }
 
 // ── AUTH HANDLER (Custom JWT) ─────────────────────────────────────────────
@@ -1305,9 +1392,9 @@ let REAL_ESTATE_DATA = {
 
 async function fetchRealEstateData() {
     try {
-        const response = await fetch(`${API_BASE_URL}/realestate/`, {
+        const response = await withTimeout(fetch(`${API_BASE_URL}/realestate/`, {
             headers: getAuthHeaders()
-        });
+        }));
 
         if (response.ok) {
             const properties = await response.json();
@@ -3012,26 +3099,32 @@ async function confirmRemoveProperty() {
 
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // ── STEP 1: Synchronous check (no token / client-side expired) ────────
     requireAuth();
+    // requireAuth() may have already redirected; if so, stop here.
+    if (!localStorage.getItem('access_token')) return;
 
-    // Set user email (hidden, used by drawer) and display name in navbar
+    // ── STEP 2: Set display name from cached email immediately ───────────
     const userEmail = localStorage.getItem('user_email') || 'user@example.com';
-    // Store full email in hidden span for drawer to read
     document.getElementById('userEmail').textContent = userEmail;
-    // Derive display name from email prefix and show it
     const namePart = userEmail.split('@')[0] || 'User';
     const displayName = namePart.replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     const userDisplayEl = document.getElementById('userDisplayName');
     if (userDisplayEl) userDisplayEl.textContent = displayName;
-    // Set initials avatar
     const initial = displayName[0]?.toUpperCase() || 'U';
     const navAvatar = document.getElementById('userAvatarInitials');
     if (navAvatar) navAvatar.textContent = initial;
 
-    // Apply saved default page (falls back to home)
+    // ── STEP 3: Validate token against server BEFORE firing any data fetches
+    //    This prevents the burst of 401s that happen when an expired token
+    //    is in localStorage and every module fires its fetch simultaneously.
+    const tokenValid = await _validateToken();
+    if (!tokenValid) return; // _validateToken() already handles redirect
+
+    // ── STEP 4: Token confirmed — now safe to load data ─────────────────
     const _savedDefault = localStorage.getItem('aether_default_page') || 'home';
-    switchSource(_savedDefault); // This will update breadcrumb, sidebar, and show the right module
+    switchSource(_savedDefault);
 
     // Re-apply privacy mode AFTER data renders (DOM scan needs actual content)
     const _privacySaved = localStorage.getItem('aether_privacy_mode') === '1';
@@ -3039,11 +3132,25 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => togglePrivacyMode(true), 1200);
     }
 
-    // Hook up buttons
-    // Note: We need to use event delegation or direct onclicks in HTML. 
-    // Since I added the HTML as strings in previous steps, I should update the onclick handlers in those strings or use valid selectors here. 
-    // The previous HTML edit had hardcoded onclicks? No, some didn't.
-    // Let's attach safely based on selectors for the MAIN buttons in the containers
+    // ── Restore accent + watch for async re-renders ───────────────────────
+    try {
+        const _savedAcc = JSON.parse(localStorage.getItem('aether_accent') || 'null');
+        if (_savedAcc) {
+            setAccentColor(_savedAcc[0], _savedAcc[1]); // sets CSS var + _accentRGB
+
+            let _glowDebounce = null;
+            const _glowObserver = new MutationObserver(() => {
+                if (!_accentRGB) return;
+                clearTimeout(_glowDebounce);
+                _glowDebounce = setTimeout(() => {
+                    _glowObserver.disconnect();
+                    try { _reglowInlineElements(_accentRGB[0], _accentRGB[1], _accentRGB[2]); } catch (_) { }
+                    _glowObserver.observe(document.body, { childList: true, subtree: true });
+                }, 120);
+            });
+            _glowObserver.observe(document.body, { childList: true, subtree: true });
+        }
+    } catch (_) { }
 
     const addPropBtn = document.querySelector('#realestate-section-properties button.glass-button');
     if (addPropBtn) addPropBtn.onclick = handleAddProperty;
@@ -5943,9 +6050,9 @@ let BUSINESS_AI_INSIGHTS = [];
 // Bonds Data Fetcher - Fetches from real API
 async function fetchBondsData() {
     try {
-        const response = await fetch(`${API_BASE_URL}/bonds/`, {
+        const response = await withTimeout(fetch(`${API_BASE_URL}/bonds/`, {
             headers: getAuthHeaders()
-        });
+        }));
 
         if (response.ok) {
             const bonds = await response.json();
@@ -6612,8 +6719,8 @@ async function fetchBusinessData() {
     try {
         // Fetch business ventures and transactions in parallel for performance
         const [bizResponse, txResponse] = await Promise.all([
-            fetch(`${API_BASE_URL}/business/`, { headers: getAuthHeaders() }),
-            fetch(`${API_BASE_URL}/business/transactions/all`, { headers: getAuthHeaders() })
+            withTimeout(fetch(`${API_BASE_URL}/business/`, { headers: getAuthHeaders() })),
+            withTimeout(fetch(`${API_BASE_URL}/business/transactions/all`, { headers: getAuthHeaders() }))
         ]);
 
         // Process Business Data
@@ -9574,25 +9681,372 @@ window.toggleNotifications = toggleNotifications;
 window.exportPortfolioCSV = exportPortfolioCSV;
 
 // ==========================================
-// APPEARANCE — accent color & AMOLED mode
-// ==========================================
+// ── Helper: hex → "R G B" for CSS rgb(var(--accent-rgb) / alpha) ──
+// Global accent rgb tracker (set by setAccentColor, used by MutationObserver)
+let _accentRGB = null;
+
+function _hexToRgbStr(hex) {
+    const h = hex.replace('#', '');
+    const full = h.length === 3
+        ? h.split('').map(c => c + c).join('')
+        : h;
+    const r = parseInt(full.slice(0, 2), 16);
+    const g = parseInt(full.slice(2, 4), 16);
+    const b = parseInt(full.slice(4, 6), 16);
+    return `${r} ${g} ${b}`;
+}
+
+// ── Helper: is a color string white-ish / colorless? ── 
+function _isWhitish(color) {
+    if (!color || typeof color !== 'string') return false;
+    const c = color.replace(/\s/g, '').toLowerCase();
+    return (
+        c === '#fff' || c === '#ffffff' || c === 'white' || c === 'rgb(255,255,255)' ||
+        c.startsWith('rgba(255,255,255') ||
+        c.startsWith('rgba(255, 255, 255') ||
+        // also near-white greys used in dark-mode pie palettes
+        c.startsWith('rgba(200,200,200') || c.startsWith('rgba(180,180,180')
+    );
+}
+
+// ── Replace a white-ish color with muted accent (55% of original alpha, max 0.65) ──
+function _recolorWhite(color, r, g, b) {
+    if (!_isWhitish(color)) return color;
+    const c = color.replace(/\s/g, '');
+    // Fully opaque white (#fff, #ffffff)
+    if (c === '#fff' || c === '#ffffff' || c === 'white') {
+        return `rgba(${r},${g},${b},0.65)`;
+    }
+    const match = c.match(/rgba\(\d+,\d+,\d+,([\d.]+)\)/);
+    const origAlpha = match ? parseFloat(match[1]) : 0.65;
+    // Scale to ~55% — keeps the visual hierarchy (bright vs dark slices) but muted
+    const newAlpha = Math.max(0.06, Math.min(0.65, origAlpha * 0.70));
+    return `rgba(${r},${g},${b},${newAlpha.toFixed(2)})`;
+}
+
+// ── Cache of original chart dataset colors (keyed by Chart instance id) ──
+const _chartOriginalColors = new Map();
+
+// ── Recolor all live Chart.js instances with the new accent ──
+function _updateChartsWithAccent(r, g, b, c1) {
+    if (typeof Chart === 'undefined') return;
+    Object.values(Chart.instances || {}).forEach(chart => {
+        if (!chart || !chart.data) return;
+
+        // ── Cache ORIGINAL colors on first encounter ─────────────────────
+        if (!_chartOriginalColors.has(chart.id)) {
+            _chartOriginalColors.set(chart.id, chart.data.datasets.map(ds => ({
+                bg: Array.isArray(ds.backgroundColor) ? [...ds.backgroundColor] : ds.backgroundColor,
+                border: ds.borderColor,
+                hoverBg: Array.isArray(ds.hoverBackgroundColor) ? [...ds.hoverBackgroundColor] : ds.hoverBackgroundColor,
+                pointBg: ds.pointBackgroundColor,
+                pointHoverBg: ds.pointHoverBackgroundColor
+            })));
+        }
+
+        const origDatasets = _chartOriginalColors.get(chart.id);
+
+        chart.data.datasets.forEach((ds, i) => {
+            const orig = origDatasets[i];
+            if (!orig) return;
+
+            // Always recolor from the ORIGINAL (cached) white values
+            if (orig.bg !== undefined && orig.bg !== null) {
+                if (Array.isArray(orig.bg)) {
+                    ds.backgroundColor = orig.bg.map(c => _recolorWhite(c, r, g, b));
+                } else {
+                    ds.backgroundColor = _recolorWhite(orig.bg, r, g, b);
+                }
+            }
+            if (orig.border && typeof orig.border === 'string') {
+                ds.borderColor = _recolorWhite(orig.border, r, g, b);
+            }
+            if (orig.hoverBg !== undefined && orig.hoverBg !== null) {
+                if (Array.isArray(orig.hoverBg)) {
+                    ds.hoverBackgroundColor = orig.hoverBg.map(c => _recolorWhite(c, r, g, b));
+                } else {
+                    ds.hoverBackgroundColor = _recolorWhite(orig.hoverBg, r, g, b);
+                }
+            }
+            if (orig.pointBg && _isWhitish(orig.pointBg)) ds.pointBackgroundColor = c1;
+            if (orig.pointHoverBg && _isWhitish(orig.pointHoverBg)) ds.pointHoverBackgroundColor = c1;
+        });
+
+        // Subtle grid line tint
+        try {
+            if (chart.options?.scales) {
+                Object.values(chart.options.scales).forEach(scale => {
+                    if (scale.grid && scale.grid.display !== false) {
+                        scale.grid.color = `rgba(${r},${g},${b},0.07)`;
+                    }
+                });
+            }
+        } catch (_) { }
+        try { chart.update('none'); } catch (_) { }
+    });
+}
+
+// ── Patch inline box-shadow / border rgba-white → accent tint ──
+// Only targets elements whose style attr actually contains white rgba (fast)
+function _reglowInlineElements(r, g, b) {
+    const WHITE_RGBA = /rgba\(\s*255\s*,\s*255\s*,\s*255\s*,\s*([\d.]+)\s*\)/g;
+    // Boost alpha ×3 (capped at 0.32) so subtle 0.08 borders become ~0.24 — visible but not harsh
+    const repl = (orig) => orig.replace(WHITE_RGBA, (_, a) => {
+        const boosted = Math.min(0.32, parseFloat(a) * 3);
+        return `rgba(${r},${g},${b},${boosted.toFixed(2)})`;
+    });
+
+    // CSS attribute selector: only matches elements whose style contains '255, 255, 255'
+    // Drastically reduces DOM walk vs querySelectorAll('[style]')
+    const candidates = document.querySelectorAll(
+        '[style*="255, 255, 255"],[style*="255,255,255"],[data-orig-box-shadow],[data-orig-border]'
+    );
+
+    candidates.forEach(el => {
+        const s = el.style;
+        const d = el.dataset;
+
+        // box-shadow
+        const origShadow = d.origBoxShadow ?? (s.boxShadow && s.boxShadow.includes('255') ? s.boxShadow : null);
+        if (origShadow) {
+            if (!d.origBoxShadow) d.origBoxShadow = origShadow;
+            s.boxShadow = repl(origShadow);
+        }
+        // border shorthand
+        const origBorder = d.origBorder ?? (s.border && s.border.includes('255') ? s.border : null);
+        if (origBorder) {
+            if (!d.origBorder) d.origBorder = origBorder;
+            s.border = repl(origBorder);
+        }
+        // border-color
+        const origBC = d.origBorderColor ?? (s.borderColor && s.borderColor.includes('255') ? s.borderColor : null);
+        if (origBC) {
+            if (!d.origBorderColor) d.origBorderColor = origBC;
+            s.borderColor = repl(origBC);
+        }
+    });
+}
+
 function setAccentColor(c1, c2) {
+    // ── 1. CSS variable setup ──────────────────────────────────────────────
     document.documentElement.style.setProperty('--accent-1', c1);
     document.documentElement.style.setProperty('--accent-2', c2);
-    // update all gradient elements that use the CSS var pattern where possible
+    const rgb = _hexToRgbStr(c1);
+    document.documentElement.style.setProperty('--accent-rgb', rgb);
+
+    // ── 2. Get/create the injected style tag ───────────────────────────────
     const style = document.getElementById('_accentStyle') || (() => {
-        const s = document.createElement('style'); s.id = '_accentStyle'; document.head.appendChild(s); return s;
+        const s = document.createElement('style');
+        s.id = '_accentStyle';
+        document.head.appendChild(s);
+        return s;
     })();
+
+    // ── 3. Comprehensive glow system ───────────────────────────────────────
+    //    Rule: only border-color & box-shadow change.
+    //    background / backdrop-filter / color are NEVER touched.
+    //    rgb(var(--accent-rgb) / alpha) is valid CSS4 supported in Chrome 90+
     style.textContent = `
-        .user-avatar-initials, #drawerInitials { background: linear-gradient(135deg, ${c1}, ${c2}) !important; }
-        .snav-btn[style*="border-left:2px solid #667eea"] { border-left-color: ${c1} !important; box-shadow: inset 0 0 10px rgba(255,255,255,0.02), 0 0 10px ${c1}40 !important; }
-        button[style*="border-left: 2px solid #667eea"] { border-left-color: ${c1} !important; }
+        /* ── Avatar gradient ── */
+        .user-avatar-initials,
+        #drawerInitials {
+            background: linear-gradient(135deg, ${c1}, ${c2}) !important;
+        }
+
+        /* ── Glass cards & panels ── */
+        .glass-card,
+        .glass-panel,
+        .glass,
+        .metric-card {
+            border-color: rgb(var(--accent-rgb) / 0.22) !important;
+            box-shadow:
+                0 0 0 1px rgb(var(--accent-rgb) / 0.08),
+                0 0 28px rgb(var(--accent-rgb) / 0.18),
+                0 4px 16px rgba(0,0,0,0.20),
+                inset 0 1px 0 rgba(255,255,255,0.06) !important;
+        }
+        .glass-card:hover,
+        .glass-panel:hover,
+        .metric-card:hover {
+            border-color: rgb(var(--accent-rgb) / 0.40) !important;
+            box-shadow:
+                0 0 0 1px rgb(var(--accent-rgb) / 0.15),
+                0 0 44px rgb(var(--accent-rgb) / 0.28),
+                0 8px 28px rgba(0,0,0,0.25),
+                inset 0 1px 0 rgba(255,255,255,0.08) !important;
+        }
+
+        /* ── Sidebar container — soft ambient glow (no right-edge divider) ── */
+        .sidebar-container {
+            border-color: rgb(var(--accent-rgb) / 0.22) !important;
+            box-shadow:
+                0 0 28px rgb(var(--accent-rgb) / 0.14),
+                inset 0 0 14px rgb(var(--accent-rgb) / 0.04) !important;
+        }
+
+        /* Sidebar brand bottom border */
+        .sidebar-brand {
+            border-bottom-color: rgb(var(--accent-rgb) / 0.18) !important;
+            color: rgb(var(--accent-rgb) / 0.90) !important;
+        }
+
+        /* Active sidebar item */
+        .sidebar-item.active {
+            background: linear-gradient(90deg,
+                rgb(var(--accent-rgb) / 0.14) 0%,
+                rgb(var(--accent-rgb) / 0.05) 100%) !important;
+            border-color: rgb(var(--accent-rgb) / 0.28) !important;
+            box-shadow: 0 0 20px rgb(var(--accent-rgb) / 0.14) !important;
+        }
+        .sidebar-item.active::before {
+            background: ${c1} !important;
+            box-shadow: 0 0 10px rgb(var(--accent-rgb) / 0.60) !important;
+        }
+        .sidebar-item.active svg {
+            color: ${c1} !important;
+        }
+
+        /* ── Top-bar ─ no bottom glow (avoids visible dividing line) ── */
+        /* border-bottom and outer box-shadow intentionally omitted */
+
+        /* ── Breadcrumb capsule ── */
+        .breadcrumb-capsule {
+            border-color: rgb(var(--accent-rgb) / 0.28) !important;
+            box-shadow:
+                0 0 22px rgb(var(--accent-rgb) / 0.22),
+                0 2px 8px rgba(0,0,0,0.15) !important;
+        }
+
+        /* ── Module tabs row ── */
+        .module-tabs {
+            border-color: rgb(var(--accent-rgb) / 0.22) !important;
+            box-shadow:
+                0 0 24px rgb(var(--accent-rgb) / 0.18),
+                0 2px 10px rgba(0,0,0,0.15) !important;
+        }
+
+        /* Active module tab pill */
+        .module-tab.active {
+            box-shadow:
+                0 2px 12px rgb(var(--accent-rgb) / 0.40),
+                0 0 22px rgb(var(--accent-rgb) / 0.25) !important;
+        }
+
+        /* ── User pill (top-right) ── */
+        .user-section {
+            border-color: rgb(var(--accent-rgb) / 0.28) !important;
+            box-shadow:
+                0 0 22px rgb(var(--accent-rgb) / 0.20),
+                0 2px 8px rgba(0,0,0,0.15) !important;
+        }
+
+        /* ── Glass capsule (section selectors in topbar) ── */
+        .glass-capsule {
+            border-color: rgb(var(--accent-rgb) / 0.28) !important;
+            box-shadow:
+                0 0 18px rgb(var(--accent-rgb) / 0.18),
+                0 2px 6px rgba(0,0,0,0.12) !important;
+        }
+
+        /* ── Glass buttons ── */
+        .glass-button {
+            border-color: rgb(var(--accent-rgb) / 0.25) !important;
+            box-shadow:
+                0 0 14px rgb(var(--accent-rgb) / 0.16),
+                0 2px 4px rgba(0,0,0,0.12) !important;
+        }
+        .glass-button:hover {
+            border-color: rgb(var(--accent-rgb) / 0.45) !important;
+            box-shadow:
+                0 0 24px rgb(var(--accent-rgb) / 0.28),
+                0 4px 10px rgba(0,0,0,0.18) !important;
+        }
+        .glass-button.selected {
+            border-color: rgb(var(--accent-rgb) / 0.50) !important;
+            color: ${c1} !important;
+        }
+
+        /* ── Modals ── */
+        .glass-modal,
+        .modal-glass,
+        .modal-glass-inner,
+        .glass-premium {
+            border-color: rgb(var(--accent-rgb) / 0.28) !important;
+            box-shadow:
+                0 0 60px rgb(var(--accent-rgb) / 0.20),
+                0 24px 64px rgba(0,0,0,0.35),
+                0 4px 16px rgba(0,0,0,0.20) !important;
+        }
+
+        /* ── Profile / settings drawer ── */
+        #profileDrawer {
+            border-left-color: rgb(var(--accent-rgb) / 0.28) !important;
+            box-shadow:
+                0 0 50px rgb(var(--accent-rgb) / 0.18),
+                -4px 0 28px rgb(var(--accent-rgb) / 0.10) !important;
+        }
+
+        /* ── AI Lab feature tabs ── */
+        .ai-lab-tab {
+            border-color: rgb(var(--accent-rgb) / 0.22) !important;
+            box-shadow:
+                0 0 18px rgb(var(--accent-rgb) / 0.16),
+                0 2px 6px rgba(0,0,0,0.12) !important;
+        }
+        .ai-lab-tab.active,
+        .ai-lab-tab:hover {
+            border-color: rgb(var(--accent-rgb) / 0.45) !important;
+            box-shadow:
+                0 0 28px rgb(var(--accent-rgb) / 0.30),
+                0 4px 12px rgba(0,0,0,0.18) !important;
+        }
+
+        /* ── Input focus ring ── */
+        .form-control:focus,
+        .glass-input:focus,
+        .modal-glass-input:focus {
+            border-color: rgb(var(--accent-rgb) / 0.55) !important;
+            box-shadow:
+                0 0 0 3px rgb(var(--accent-rgb) / 0.18),
+                0 0 20px rgb(var(--accent-rgb) / 0.15) !important;
+        }
+
+        /* ── Active nav highlight line ── */
+        .snav-btn[style*="border-left"] {
+            border-left-color: ${c1} !important;
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.02),
+                0 0 10px rgb(var(--accent-rgb) / 0.25) !important;
+        }
     `;
+
+    const [r, g, b] = rgb.split(' ').map(Number);
+    _accentRGB = [r, g, b]; // Store for MutationObserver re-runs
+    _reglowInlineElements(r, g, b);
+
     localStorage.setItem('aether_accent', JSON.stringify([c1, c2]));
     _showSettingsToast('Accent color updated');
 }
 window.setAccentColor = setAccentColor;
 
+
+/** Highlight the clicked swatch and reset the others */
+function _markAccent(btn) {
+    const grid = document.getElementById('accent-swatches');
+    if (!grid) return;
+    grid.querySelectorAll('button').forEach(b => {
+        b.style.background = '';
+        const lbl = b.querySelector('span');
+        if (lbl) lbl.style.color = 'rgba(255,255,255,0.45)';
+        const circle = b.querySelector('div');
+        if (circle) circle.style.outline = '';
+    });
+    btn.style.background = 'rgba(255,255,255,0.06)';
+    const lbl = btn.querySelector('span');
+    if (lbl) lbl.style.color = 'rgba(255,255,255,0.85)';
+    const circle = btn.querySelector('div');
+    if (circle) circle.style.outline = '2px solid rgba(255,255,255,0.7)';
+}
+window._markAccent = _markAccent;
 
 
 

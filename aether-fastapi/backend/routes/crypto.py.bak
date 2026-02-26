@@ -96,7 +96,7 @@ class CryptoMetrics(BaseModel):
 # --- Holdings Routes ---
 
 @router.get("/holdings", response_model=List[CryptoHoldingResponse])
-def get_holdings(
+async def get_holdings(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -105,7 +105,7 @@ def get_holdings(
     return holdings
 
 @router.post("/holdings", response_model=CryptoHoldingResponse, status_code=status.HTTP_201_CREATED)
-def create_holding(
+async def create_holding(
     holding_data: CryptoHoldingCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -122,7 +122,7 @@ def create_holding(
     return new_holding
 
 @router.put("/holdings/{holding_id}", response_model=CryptoHoldingResponse)
-def update_holding(
+async def update_holding(
     holding_id: UUID,
     holding_update: CryptoHoldingUpdate,
     current_user: User = Depends(get_current_user),
@@ -147,7 +147,7 @@ def update_holding(
     return holding
 
 @router.delete("/holdings/{holding_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_holding(
+async def delete_holding(
     holding_id: UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -166,7 +166,7 @@ def delete_holding(
     return None
 
 @router.post("/holdings/{holding_id}/sell", response_model=CryptoHoldingResponse)
-def sell_holding(
+async def sell_holding(
     holding_id: UUID,
     sell_data: SellCryptoRequest,
     current_user: User = Depends(get_current_user),
@@ -204,7 +204,7 @@ def sell_holding(
 # --- Transactions Routes ---
 
 @router.get("/transactions", response_model=List[CryptoTransactionResponse])
-def get_transactions(
+async def get_transactions(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -217,7 +217,7 @@ def get_transactions(
 # --- Wallets Routes ---
 
 @router.get("/wallets", response_model=List[CryptoWalletResponse])
-def get_wallets(
+async def get_wallets(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -231,7 +231,7 @@ class CryptoWalletCreate(BaseModel):
     address: Optional[str] = None
 
 @router.post("/wallets", response_model=CryptoWalletResponse, status_code=status.HTTP_201_CREATED)
-def create_wallet(
+async def create_wallet(
     wallet_data: CryptoWalletCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -251,7 +251,7 @@ def create_wallet(
     return new_wallet
 
 @router.delete("/wallets/{wallet_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_wallet(
+async def delete_wallet(
     wallet_id: UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -273,7 +273,7 @@ def delete_wallet(
 # --- Metrics Route ---
 
 @router.get("/metrics", response_model=CryptoMetrics)
-def get_metrics(
+async def get_metrics(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):

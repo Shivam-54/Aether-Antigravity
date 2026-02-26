@@ -307,10 +307,6 @@ function copyToClipboard(text) {
         showToast('Failed to copy address', 'error');
     });
 }
-// Initialize on load
-document.addEventListener('DOMContentLoaded', () => {
-    // Check if we are on the page with wallet grid
-    if (document.getElementById('crypto-wallets-grid')) {
-        renderWallets();
-    }
-});
+// Note: renderWallets() is called by the main navigation when the user
+// switches to the crypto → wallets section. No auto-fetch on page load
+// to avoid spurious 401s before the auth token has been validated.

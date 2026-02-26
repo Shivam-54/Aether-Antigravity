@@ -9,6 +9,8 @@ from pydantic import BaseModel, EmailStr
 from datetime import timedelta
 from typing import Optional
 from uuid import UUID
+import uuid
+from sqlalchemy.exc import SQLAlchemyError
 
 from database import get_db
 from models.user import User
@@ -43,7 +45,7 @@ class TokenData(BaseModel):
     email: Optional[str] = None
 
 # Helper function to get current user from token
-async def get_current_user(
+def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ) -> User:
@@ -60,11 +62,22 @@ async def get_current_user(
         raise credentials_exception
     
     try:
-        # Query user by ID instead of email
-        user = db.query(User).filter(User.id == user_id).first()
-    except Exception:
-        # If user_id is not a valid UUID (e.g. old token with email), treat as invalid credentials
+        # Ensure user_id is a valid UUID before querying
+        user_uuid = uuid.UUID(str(user_id))
+    except ValueError:
         raise credentials_exception
+
+    try:
+        # Query user by ID
+        user = db.query(User).filter(User.id == user_uuid).first()
+    except SQLAlchemyError as e:
+        # Do not swallow database timeouts or errors as 401s!
+        print(f"Database error in get_current_user: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication service temporarily overloaded"
+        )
+        
     if user is None:
         raise credentials_exception
     
@@ -132,14 +145,14 @@ def login(
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user_info(current_user: User = Depends(get_current_user)):
+def get_current_user_info(current_user: User = Depends(get_current_user)):
     """
     Get current logged-in user information
     """
     return current_user
 
 @router.post("/logout")
-async def logout():
+def logout():
     """
     Logout (client should delete token)
     """
