@@ -9857,7 +9857,9 @@ function setAccentColor(c1, c2) {
         .glass-card,
         .glass-panel,
         .glass,
-        .metric-card {
+        .metric-card,
+        .breadcrumb-capsule,
+        .module-tabs {
             border-color: rgb(var(--accent-rgb) / 0.22) !important;
             box-shadow:
                 0 0 0 1px rgb(var(--accent-rgb) / 0.08),
@@ -9867,7 +9869,9 @@ function setAccentColor(c1, c2) {
         }
         .glass-card:hover,
         .glass-panel:hover,
-        .metric-card:hover {
+        .metric-card:hover,
+        .breadcrumb-capsule:hover,
+        .module-tabs:hover {
             border-color: rgb(var(--accent-rgb) / 0.40) !important;
             box-shadow:
                 0 0 0 1px rgb(var(--accent-rgb) / 0.15),
@@ -10022,6 +10026,7 @@ function setAccentColor(c1, c2) {
     const [r, g, b] = rgb.split(' ').map(Number);
     _accentRGB = [r, g, b]; // Store for MutationObserver re-runs
     _reglowInlineElements(r, g, b);
+    _updateChartsWithAccent(r, g, b, c1);
 
     localStorage.setItem('aether_accent', JSON.stringify([c1, c2]));
     _showSettingsToast('Accent color updated');
