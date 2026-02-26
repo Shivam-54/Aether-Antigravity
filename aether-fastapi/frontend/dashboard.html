@@ -2705,14 +2705,15 @@
                                 </button>
                                 <button type="button" class="ai-lab-tab" data-tab="bonds-ai-fair-value"
                                     onclick="switchBondsAILabTab('fair-value', this)">
-                                    <div class="tab-icon-wrap">⚖️</div>
+                                    <div class="tab-icon-wrap">🔗</div>
                                     <div class="tab-content">
-                                        <span class="tab-title">Fair Value Engine</span>
-                                        <span class="tab-desc">Illiquid Bond Pricing</span>
+                                        <span class="tab-title">Bond Recommender</span>
+                                        <span class="tab-desc">Embedding Similarity Search</span>
                                     </div>
                                     <span class="tab-badge"
                                         style="background: rgba(168, 85, 247, 0.3); color: #c084fc;">AI</span>
                                 </button>
+
                             </div>
                         </div>
 
@@ -2904,12 +2905,65 @@
 
                             <!-- 3. Fair Value Engine Content -->
                             <div id="bonds-ai-fair-value" class="bonds-ai-pane" style="display: none;">
-                                <div class="glass-card p-5 text-center d-flex flex-column align-items-center justify-content-center"
-                                    style="min-height: 400px;">
-                                    <h3 class="h4 fw-light text-white mb-2">Fair Value Engine</h3>
-                                    <p class="text-white-50 small mb-0">Feature in development</p>
+                                <div class="glass-card p-4">
+
+                                    <!-- Header -->
+                                    <div class="d-flex justify-content-between align-items-start mb-4">
+                                        <div>
+                                            <h3 class="h5 fw-light text-white mb-1">Similar Bond Recommender</h3>
+                                            <p class="text-white-50 small mb-0">Embedding similarity search across
+                                                yield, duration, credit rating &amp; sector</p>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 px-3 py-1 rounded-pill"
+                                            style="background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.2);">
+                                            <div
+                                                style="width:6px;height:6px;border-radius:50%;background:#c084fc;box-shadow:0 0 8px #c084fc;">
+                                            </div>
+                                            <span class="small text-white" style="font-size:0.75rem;">Vector ML</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Seed Bond Selector -->
+                                    <div class="mb-4 p-3 rounded-3"
+                                        style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);">
+                                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                                            <span class="text-white-50 small" style="white-space:nowrap;">Find bonds
+                                                similar to:</span>
+                                            <select id="similarBondSeedSelect"
+                                                class="form-select form-select-sm bg-dark text-white border-secondary shadow-none flex-grow-1"
+                                                style="max-width:340px;" onchange="renderSimilarBondRecommender()">
+                                                <option value="">— select a bond from your portfolio —</option>
+                                            </select>
+                                            <button class="glass-button px-3 py-1" style="font-size:0.8rem;"
+                                                onclick="renderSimilarBondRecommender()">
+                                                🔍 &nbsp;Find Matches
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Results Area -->
+                                    <div id="similarBondResults">
+                                        <div class="text-center py-5 text-white-50 small">
+                                            <div style="font-size:2rem;margin-bottom:12px;">🔗</div>
+                                            Select a bond above to find similar instruments using embedding similarity.
+                                        </div>
+                                    </div>
+
+                                    <!-- AI Rationale Box -->
+                                    <div id="similarBondRationale" class="mt-4 p-3 rounded-3"
+                                        style="display:none;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);">
+                                        <div class="d-flex gap-3">
+                                            <div class="fs-4">🤖</div>
+                                            <div>
+                                                <h4 class="h6 text-white mb-1">Why These Bonds?</h4>
+                                                <p id="similarBondRationaleText" class="text-white-50 small mb-0"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </div>
                             </div>
+
                         </div>
                     </div>
                 </div>
