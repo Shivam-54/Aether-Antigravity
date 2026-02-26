@@ -6,11 +6,11 @@ const DEV_MODE = false;
 
 // ==================== FETCH TIMEOUT UTILITY ====================
 /**
- * Race a fetch promise against an 8-second timeout.
+ * Race a fetch promise against a 20-second timeout.
  * Prevents the page from hanging when the backend is slow or offline.
  * The caller's existing catch block handles the resulting error gracefully.
  */
-function withTimeout(promise, ms = 8000) {
+function withTimeout(promise, ms = 20000) {
     const timeout = new Promise((_, reject) =>
         setTimeout(() => reject(new Error(`Request timed out after ${ms}ms`)), ms)
     );
@@ -1317,7 +1317,7 @@ function navigateToSection(sectionId, sectionName, btn) {
         if (targetSection) {
             targetSection.style.display = 'block';
 
-            if (sectionId === 'dashboard') renderBusinessDashboard();
+            if (sectionId === 'overview') renderBusinessDashboard();
             if (sectionId === 'ventures') renderBusinessVentures();
             if (sectionId === 'cash-flow') renderBusinessCashFlow();
             if (sectionId === 'statements') renderBusinessStatements();
@@ -1326,8 +1326,8 @@ function navigateToSection(sectionId, sectionName, btn) {
 
         } else {
             console.warn(`Section business-section-${sectionId} not found`);
-            // Fallback to dashboard
-            const dashboard = document.getElementById('business-section-dashboard');
+            // Fallback to overview
+            const dashboard = document.getElementById('business-section-overview');
             if (dashboard) {
                 dashboard.style.display = 'block';
                 renderBusinessDashboard();
