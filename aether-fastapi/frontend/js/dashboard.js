@@ -9659,18 +9659,18 @@ function switchSettingsPanel(panel) {
         btn.style.webkitBackdropFilter = '';
         btn.style.boxShadow = '';
         const label = btn.querySelector('span:last-child');
-        if (label) { label.style.color = 'rgba(255,255,255,0.42)'; label.style.fontWeight = 'normal'; }
+        if (label) { label.style.color = 'rgba(255,255,255,0.6)'; label.style.fontWeight = '500'; label.style.letterSpacing = 'normal'; }
     });
     const activeBtn = document.getElementById('snav-' + panel);
     if (activeBtn) {
-        activeBtn.style.background = 'rgba(255,255,255,0.04)';
-        activeBtn.style.border = '1px solid rgba(255,255,255,0.09)';
-        activeBtn.style.borderLeft = '2px solid #667eea';
+        activeBtn.style.background = 'linear-gradient(90deg, rgb(var(--accent-rgb)/0.14) 0%, transparent 100%)';
+        activeBtn.style.border = '1px solid rgba(255,255,255,0.05)';
+        activeBtn.style.borderLeft = '2px solid var(--accent-1)';
         activeBtn.style.backdropFilter = 'blur(8px)';
         activeBtn.style.webkitBackdropFilter = 'blur(8px)';
-        activeBtn.style.boxShadow = 'inset 0 0 10px rgba(255,255,255,0.02), 0 0 10px rgba(102,126,234,0.15)';
+        activeBtn.style.boxShadow = 'inset 0 0 10px rgba(255,255,255,0.02), 0 0 10px rgb(var(--accent-rgb)/0.25)';
         const label = activeBtn.querySelector('span:last-child');
-        if (label) { label.style.color = '#fff'; label.style.fontWeight = '500'; }
+        if (label) { label.style.color = '#fff'; label.style.fontWeight = '600'; label.style.letterSpacing = '0.03em'; }
     }
 }
 window.switchSettingsPanel = switchSettingsPanel;
@@ -9750,24 +9750,9 @@ function _updateChartsWithAccent(r, g, b, c1) {
             const orig = origDatasets[i];
             if (!orig) return;
 
-            // Always recolor from the ORIGINAL (cached) white values
-            if (orig.bg !== undefined && orig.bg !== null) {
-                if (Array.isArray(orig.bg)) {
-                    ds.backgroundColor = orig.bg.map(c => _recolorWhite(c, r, g, b));
-                } else {
-                    ds.backgroundColor = _recolorWhite(orig.bg, r, g, b);
-                }
-            }
-            if (orig.border && typeof orig.border === 'string') {
-                ds.borderColor = _recolorWhite(orig.border, r, g, b);
-            }
-            if (orig.hoverBg !== undefined && orig.hoverBg !== null) {
-                if (Array.isArray(orig.hoverBg)) {
-                    ds.hoverBackgroundColor = orig.hoverBg.map(c => _recolorWhite(c, r, g, b));
-                } else {
-                    ds.hoverBackgroundColor = _recolorWhite(orig.hoverBg, r, g, b);
-                }
-            }
+            // Intentionally skip recoloring the main dataset colors (bars, pie slices)
+            // so they retain their original designated colors.
+            // Only update hover/point colors if they were white-ish.
             if (orig.pointBg && _isWhitish(orig.pointBg)) ds.pointBackgroundColor = c1;
             if (orig.pointHoverBg && _isWhitish(orig.pointHoverBg)) ds.pointHoverBackgroundColor = c1;
         });
