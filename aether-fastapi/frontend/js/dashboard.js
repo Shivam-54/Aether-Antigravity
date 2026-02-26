@@ -9772,45 +9772,54 @@ function _updateChartsWithAccent(r, g, b, c1) {
 }
 
 // ── Patch inline box-shadow / border rgba-white → accent tint ──
-// Only targets elements whose style attr actually contains white rgba (fast)
+// Fixes: after first run, inline styles contain the old accent colour, not 255,255,255.
+// Solution: we permanently store the ORIGINAL white values in data-orig-* on first encounter
+// and always re-apply from those originals, so every subsequent accent change works correctly.
 function _reglowInlineElements(r, g, b) {
     const WHITE_RGBA = /rgba\(\s*255\s*,\s*255\s*,\s*255\s*,\s*([\d.]+)\s*\)/g;
-    // Boost alpha ×3 (capped at 0.32) so subtle 0.08 borders become ~0.24 — visible but not harsh
+
+    // Replace white rgba with boosted accent tint (alpha × 3, capped at 0.32)
     const repl = (orig) => orig.replace(WHITE_RGBA, (_, a) => {
         const boosted = Math.min(0.32, parseFloat(a) * 3);
         return `rgba(${r},${g},${b},${boosted.toFixed(2)})`;
     });
 
-    // CSS attribute selector: only matches elements whose style contains '255, 255, 255'
-    // Drastically reduces DOM walk vs querySelectorAll('[style]')
+    // Broad query:
+    //  1. Elements still bearing literal white (first-time)
+    //  2. Elements already catalogued from a previous accent change (data-orig-*)
+    // This ensures subsequent accent changes work without a page refresh.
     const candidates = document.querySelectorAll(
-        '[style*="255, 255, 255"],[style*="255,255,255"],[data-orig-box-shadow],[data-orig-border]'
+        '[style*="255, 255, 255"],[style*="255,255,255"],' +
+        '[data-orig-box-shadow],[data-orig-border],[data-orig-border-color]'
     );
 
     candidates.forEach(el => {
+        // Skip canvas and chart containers — they have their own accent handling
+        if (el.tagName === 'CANVAS' || el.classList.contains('chart-container')) return;
+
         const s = el.style;
         const d = el.dataset;
 
-        // box-shadow
-        const origShadow = d.origBoxShadow ?? (s.boxShadow && s.boxShadow.includes('255') ? s.boxShadow : null);
-        if (origShadow) {
-            if (!d.origBoxShadow) d.origBoxShadow = origShadow;
-            s.boxShadow = repl(origShadow);
+        // box-shadow — snapshot original white value once, reapply from snapshot every time
+        if (!d.origBoxShadow && s.boxShadow && s.boxShadow.includes('255')) {
+            d.origBoxShadow = s.boxShadow;
         }
+        if (d.origBoxShadow) s.boxShadow = repl(d.origBoxShadow);
+
         // border shorthand
-        const origBorder = d.origBorder ?? (s.border && s.border.includes('255') ? s.border : null);
-        if (origBorder) {
-            if (!d.origBorder) d.origBorder = origBorder;
-            s.border = repl(origBorder);
+        if (!d.origBorder && s.border && s.border.includes('255')) {
+            d.origBorder = s.border;
         }
+        if (d.origBorder) s.border = repl(d.origBorder);
+
         // border-color
-        const origBC = d.origBorderColor ?? (s.borderColor && s.borderColor.includes('255') ? s.borderColor : null);
-        if (origBC) {
-            if (!d.origBorderColor) d.origBorderColor = origBC;
-            s.borderColor = repl(origBC);
+        if (!d.origBorderColor && s.borderColor && s.borderColor.includes('255')) {
+            d.origBorderColor = s.borderColor;
         }
+        if (d.origBorderColor) s.borderColor = repl(d.origBorderColor);
     });
 }
+
 
 function setAccentColor(c1, c2) {
     // ── 1. CSS variable setup ──────────────────────────────────────────────
@@ -10013,10 +10022,53 @@ function setAccentColor(c1, c2) {
     _reglowInlineElements(r, g, b);
     _updateChartsWithAccent(r, g, b, c1);
 
+    // ── Clear hover preview snapshot so mouseleave doesn't revert this click ──
+    // Without this, _restoreAccent fires on mouseleave and undoes the accent change.
+    delete document.documentElement.dataset.accentSnapshot;
+
     localStorage.setItem('aether_accent', JSON.stringify([c1, c2]));
     _showSettingsToast('Accent color updated');
 }
+
 window.setAccentColor = setAccentColor;
+
+/**
+ * Lightweight hover preview — only swaps the three CSS vars,
+ * no localStorage write, no chart updates, no style tag injection.
+ * Safe to call on mouseenter.
+ */
+function _previewAccent(c1, c2) {
+    try {
+        const root = document.documentElement;
+        // snapshot current values so we can restore
+        root.dataset.accentSnapshot = JSON.stringify([
+            root.style.getPropertyValue('--accent-1'),
+            root.style.getPropertyValue('--accent-2'),
+            root.style.getPropertyValue('--accent-rgb'),
+        ]);
+        root.style.setProperty('--accent-1', c1);
+        root.style.setProperty('--accent-2', c2);
+        root.style.setProperty('--accent-rgb', _hexToRgbStr(c1));
+    } catch (e) { /* silent — never break the page */ }
+}
+window._previewAccent = _previewAccent;
+
+/**
+ * Restore CSS vars to their pre-preview state. Call on mouseleave.
+ */
+function _restoreAccent() {
+    try {
+        const root = document.documentElement;
+        if (!root.dataset.accentSnapshot) return;
+        const [c1, c2, rgb] = JSON.parse(root.dataset.accentSnapshot);
+        if (c1 !== undefined) root.style.setProperty('--accent-1', c1);
+        if (c2 !== undefined) root.style.setProperty('--accent-2', c2);
+        if (rgb !== undefined) root.style.setProperty('--accent-rgb', rgb);
+        delete root.dataset.accentSnapshot;
+    } catch (e) { /* silent */ }
+}
+window._restoreAccent = _restoreAccent;
+
 
 
 /** Highlight the clicked swatch and reset the others */

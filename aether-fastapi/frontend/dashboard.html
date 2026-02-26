@@ -600,15 +600,52 @@
             background: rgba(255, 255, 255, 0.12);
             border-color: rgba(255, 255, 255, 0.3);
             color: white;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.12);
+            box-shadow:
+                0 0 10px rgb(var(--accent-rgb) / 0.30),
+                0 0 22px rgb(var(--accent-rgb) / 0.18),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-button:active {
+            box-shadow:
+                0 0 14px rgb(var(--accent-rgb) / 0.45),
+                0 0 32px rgb(var(--accent-rgb) / 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
         }
 
         .glass-button.selected {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.10);
+            border-color: rgb(var(--accent-rgb) / 0.45);
             color: rgba(255, 255, 255, 1);
-            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+            box-shadow:
+                0 0 12px rgb(var(--accent-rgb) / 0.35),
+                0 0 24px rgb(var(--accent-rgb) / 0.20),
+                0 0 0 1px rgb(var(--accent-rgb) / 0.20);
         }
+
+        /* Palette strip hover glow */
+        .accent-strip-btn:hover {
+            box-shadow:
+                0 0 10px rgb(var(--accent-rgb) / 0.28),
+                0 0 22px rgb(var(--accent-rgb) / 0.16) !important;
+        }
+
+        /* Sidebar active item — stronger glow on hover */
+        .sidebar-item.active:hover {
+            box-shadow:
+                0 0 14px rgb(var(--accent-rgb) / 0.40),
+                0 0 30px rgb(var(--accent-rgb) / 0.22) !important;
+        }
+
+        /* Metric cards — accent glow on hover */
+        .metric-card:hover {
+            box-shadow:
+                0 0 12px rgb(var(--accent-rgb) / 0.32),
+                0 0 28px rgb(var(--accent-rgb) / 0.18),
+                0 4px 16px rgba(0, 0, 0, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+        }
+
 
 
         /* 🔒 GLASS CAPSULE — LOCKED */
@@ -5544,7 +5581,8 @@
                     <div
                         style="color:rgba(255,255,255,0.3);font-size:0.75rem;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);">
                         <span style="color:var(--accent-1);margin-right:6px;">&#x2728;</span> Hover over any blurred
-                        value to temporarily reveal it.</div>
+                        value to temporarily reveal it.
+                    </div>
                 </div>
 
                 <!-- Currency -->
@@ -5645,7 +5683,8 @@
                     <div
                         style="color:rgba(255,255,255,0.3);font-size:0.75rem;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);">
                         <span style="color:var(--accent-1);margin-right:6px;">&#x2728;</span> Alerts appear as banners
-                        when important events occur.</div>
+                        when important events occur.
+                    </div>
                 </div>
 
                 <!-- Export -->
@@ -5666,7 +5705,8 @@
                     <div
                         style="color:rgba(255,255,255,0.3);font-size:0.75rem;padding-top:16px;margin-top:20px;border-top:1px solid rgba(255,255,255,0.06);">
                         <span style="margin-right:6px;">&#128193;</span> File will be saved as
-                        <em>aether-portfolio-YYYY-MM-DD.csv</em></div>
+                        <em>aether-portfolio-YYYY-MM-DD.csv</em>
+                    </div>
                 </div>
 
                 <!-- Security -->
@@ -5716,98 +5756,313 @@
                         style="color:var(--accent-1);font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:20px;font-weight:600;">
                         Visual Appearance</div>
 
-                    <!-- Accent Color Presets -->
-                    <div>
-                        <div style="color:#fff;font-size:0.95rem;font-weight:500;margin-bottom:6px;">Accent Color
-                            Profile</div>
-                        <div style="color:rgba(255,255,255,0.4);font-size:0.8rem;line-height:1.5;margin-bottom:24px;">
-                            Select an ambient glow to personalize your dashboard interface. Colors adapt dynamically
-                            across charts and cards.</div>
-                        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;" id="accent-swatches">
+                    <!-- Section title -->
+                    <div style="color:#fff;font-size:0.95rem;font-weight:500;margin-bottom:4px;">Accent Color</div>
+                    <div style="color:rgba(255,255,255,0.4);font-size:0.8rem;line-height:1.5;margin-bottom:28px;">Hover
+                        to preview · Click to apply. Colors cascade dynamically across the entire interface.</div>
 
-                            <!-- Ice Blue -->
-                            <button onclick="setAccentColor('#cceeff','#99ddff');_markAccent(this)" title="Ice Blue"
-                                class="glass-button"
-                                style="width:70px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:0;">
-                                <div
-                                    style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#cceeff,#99ddff);border:2px solid rgba(204,238,255,0.3);box-shadow:0 0 10px rgba(204,238,255,0.40);">
-                                </div>
-                                <span
-                                    style="color:rgba(255,255,255,0.6);font-size:0.65rem;text-align:center;font-weight:500;">Ice
-                                    Blue</span>
-                            </button>
+                    <!-- id="accent-swatches" is kept for _markAccent compatibility -->
+                    <div id="accent-swatches" style="display:flex;flex-direction:column;gap:20px;">
 
-                            <!-- Sapphire Night (Replaces Red) -->
-                            <button onclick="setAccentColor('#1e3a8a','#172554');_markAccent(this)"
-                                title="Sapphire Night" class="glass-button"
-                                style="width:70px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:0;">
-                                <div
-                                    style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#1e3a8a,#172554);border:2px solid rgba(30,58,138,0.4);box-shadow:0 0 10px rgba(30,58,138,0.40);">
-                                </div>
-                                <span
-                                    style="color:rgba(255,255,255,0.6);font-size:0.65rem;text-align:center;font-weight:500;">Sapphire</span>
-                            </button>
+                        <!-- ❄️ COLD group -->
+                        <div>
+                            <div
+                                style="color:rgba(255,255,255,0.25);font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:10px;padding-left:2px;">
+                                ❄️ &nbsp;Cold</div>
+                            <div style="display:flex;flex-direction:column;gap:8px;">
 
-                            <!-- Pink -->
-                            <button onclick="setAccentColor('#ff677d','#e8394f');_markAccent(this)" title="Pink"
-                                class="glass-button"
-                                style="width:70px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:0;">
-                                <div
-                                    style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#ff677d,#e8394f);border:2px solid rgba(255,103,125,0.35);box-shadow:0 0 10px rgba(255,103,125,0.40);">
-                                </div>
-                                <span
-                                    style="color:rgba(255,255,255,0.6);font-size:0.65rem;text-align:center;font-weight:500;">Pink</span>
-                            </button>
+                                <!-- Arctic -->
+                                <button class="accent-strip-btn"
+                                    onclick="setAccentColor('#cceeff','#99ddff');_markAccent(this)"
+                                    onmouseenter="_previewAccent('#cceeff','#99ddff')" onmouseleave="_restoreAccent()"
+                                    data-c1="#cceeff" data-c2="#99ddff"
+                                    style="all:unset;display:flex;align-items:center;gap:0;cursor:pointer;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:border-color 0.2s,box-shadow 0.2s;"
+                                    onmouseover="this.style.borderColor='rgba(204,238,255,0.3)';this.style.boxShadow='0 0 18px rgba(204,238,255,0.18)'"
+                                    onmouseout="this.style.borderColor='rgba(255,255,255,0.06)';this.style.boxShadow='none'">
+                                    <div
+                                        style="width:52px;height:52px;background:linear-gradient(135deg,#cceeff,#99ddff);flex-shrink:0;">
+                                    </div>
+                                    <div style="flex:1;padding:10px 14px;background:rgba(204,238,255,0.04);">
+                                        <div
+                                            style="color:#fff;font-size:0.82rem;font-weight:600;margin-bottom:2px;letter-spacing:0.02em;">
+                                            Arctic</div>
+                                        <div
+                                            style="color:rgba(255,255,255,0.35);font-size:0.7rem;font-family:monospace;">
+                                            #CCEEFF</div>
+                                    </div>
+                                </button>
 
-                            <!-- Forest Green -->
-                            <button onclick="setAccentColor('#106b3e','#0a4f2d');_markAccent(this)" title="Forest Green"
-                                class="glass-button"
-                                style="width:70px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:0;">
-                                <div
-                                    style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#106b3e,#0a4f2d);border:2px solid rgba(16,107,62,0.4);box-shadow:0 0 10px rgba(16,107,62,0.35);">
-                                </div>
-                                <span
-                                    style="color:rgba(255,255,255,0.6);font-size:0.65rem;text-align:center;font-weight:500;">Green</span>
-                            </button>
+                                <!-- Obsidian Night -->
+                                <button class="accent-strip-btn"
+                                    onclick="setAccentColor('#1e3a8a','#172554');_markAccent(this)"
+                                    onmouseenter="_previewAccent('#1e3a8a','#172554')" onmouseleave="_restoreAccent()"
+                                    data-c1="#1e3a8a" data-c2="#172554"
+                                    style="all:unset;display:flex;align-items:center;gap:0;cursor:pointer;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:border-color 0.2s,box-shadow 0.2s;"
+                                    onmouseover="this.style.borderColor='rgba(30,58,138,0.5)';this.style.boxShadow='0 0 18px rgba(30,58,138,0.25)'"
+                                    onmouseout="this.style.borderColor='rgba(255,255,255,0.06)';this.style.boxShadow='none'">
+                                    <div
+                                        style="width:52px;height:52px;background:linear-gradient(135deg,#1e3a8a,#172554);flex-shrink:0;">
+                                    </div>
+                                    <div style="flex:1;padding:10px 14px;background:rgba(30,58,138,0.06);">
+                                        <div
+                                            style="color:#fff;font-size:0.82rem;font-weight:600;margin-bottom:2px;letter-spacing:0.02em;">
+                                            Obsidian Night</div>
+                                        <div
+                                            style="color:rgba(255,255,255,0.35);font-size:0.7rem;font-family:monospace;">
+                                            #1E3A8A</div>
+                                    </div>
+                                </button>
 
-                            <!-- Yellow -->
-                            <button onclick="setAccentColor('#f4d17b','#e6b84a');_markAccent(this)" title="Yellow"
-                                class="glass-button"
-                                style="width:70px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:0;">
-                                <div
-                                    style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#f4d17b,#e6b84a);border:2px solid rgba(244,209,123,0.35);box-shadow:0 0 10px rgba(244,209,123,0.35);">
-                                </div>
-                                <span
-                                    style="color:rgba(255,255,255,0.6);font-size:0.65rem;text-align:center;font-weight:500;">Yellow</span>
-                            </button>
+                                <!-- Titanium -->
+                                <button class="accent-strip-btn"
+                                    onclick="setAccentColor('#94a3b8','#64748b');_markAccent(this)"
+                                    onmouseenter="_previewAccent('#94a3b8','#64748b')" onmouseleave="_restoreAccent()"
+                                    data-c1="#94a3b8" data-c2="#64748b"
+                                    style="all:unset;display:flex;align-items:center;gap:0;cursor:pointer;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:border-color 0.2s,box-shadow 0.2s;"
+                                    onmouseover="this.style.borderColor='rgba(148,163,184,0.4)';this.style.boxShadow='0 0 18px rgba(148,163,184,0.18)'"
+                                    onmouseout="this.style.borderColor='rgba(255,255,255,0.06)';this.style.boxShadow='none'">
+                                    <div
+                                        style="width:52px;height:52px;background:linear-gradient(135deg,#94a3b8,#64748b);flex-shrink:0;">
+                                    </div>
+                                    <div style="flex:1;padding:10px 14px;background:rgba(148,163,184,0.04);">
+                                        <div
+                                            style="color:#fff;font-size:0.82rem;font-weight:600;margin-bottom:2px;letter-spacing:0.02em;">
+                                            Titanium</div>
+                                        <div
+                                            style="color:rgba(255,255,255,0.35);font-size:0.7rem;font-family:monospace;">
+                                            #94A3B8</div>
+                                    </div>
+                                </button>
 
-                            <!-- Silver Frost (Replaces Purple) -->
-                            <button onclick="setAccentColor('#94a3b8','#64748b');_markAccent(this)" title="Silver Frost"
-                                class="glass-button"
-                                style="width:70px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:0;">
-                                <div
-                                    style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#94a3b8,#64748b);border:2px solid rgba(148,163,184,0.4);box-shadow:0 0 10px rgba(148,163,184,0.40);">
-                                </div>
-                                <span
-                                    style="color:rgba(255,255,255,0.6);font-size:0.65rem;text-align:center;font-weight:500;">Silver</span>
-                            </button>
+                                <!-- Ivory -->
+                                <button class="accent-strip-btn"
+                                    onclick="setAccentColor('#e8e8f0','#b0b0c8');_markAccent(this)"
+                                    onmouseenter="_previewAccent('#e8e8f0','#b0b0c8')" onmouseleave="_restoreAccent()"
+                                    data-c1="#e8e8f0" data-c2="#b0b0c8"
+                                    style="all:unset;display:flex;align-items:center;gap:0;cursor:pointer;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:border-color 0.2s,box-shadow 0.2s;"
+                                    onmouseover="this.style.borderColor='rgba(232,232,240,0.35)';this.style.boxShadow='0 0 18px rgba(232,232,240,0.12)'"
+                                    onmouseout="this.style.borderColor='rgba(255,255,255,0.06)';this.style.boxShadow='none'">
+                                    <div
+                                        style="width:52px;height:52px;background:linear-gradient(135deg,#e8e8f0,#b0b0c8);flex-shrink:0;">
+                                    </div>
+                                    <div style="flex:1;padding:10px 14px;background:rgba(232,232,240,0.03);">
+                                        <div
+                                            style="color:#fff;font-size:0.82rem;font-weight:600;margin-bottom:2px;letter-spacing:0.02em;">
+                                            Ivory</div>
+                                        <div
+                                            style="color:rgba(255,255,255,0.35);font-size:0.7rem;font-family:monospace;">
+                                            #E8E8F0</div>
+                                    </div>
+                                </button>
 
-                            <!-- White -->
-                            <button onclick="setAccentColor('#e8e8f0','#b0b0c8');_markAccent(this)" title="White"
-                                class="glass-button"
-                                style="width:70px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:0;">
-                                <div
-                                    style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#e8e8f0,#b0b0c8);border:2px solid rgba(255,255,255,0.20);box-shadow:0 0 10px rgba(232,232,240,0.30);">
-                                </div>
-                                <span
-                                    style="color:rgba(255,255,255,0.6);font-size:0.65rem;text-align:center;font-weight:500;">White</span>
-                            </button>
+                                <!-- Midnight Indigo -->
+                                <button class="accent-strip-btn"
+                                    onclick="setAccentColor('#1e0e51','#0e0728');_markAccent(this)"
+                                    onmouseenter="_previewAccent('#1e0e51','#0e0728')" onmouseleave="_restoreAccent()"
+                                    data-c1="#1e0e51" data-c2="#0e0728"
+                                    style="all:unset;display:flex;align-items:center;gap:0;cursor:pointer;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:border-color 0.2s,box-shadow 0.2s;"
+                                    onmouseover="this.style.borderColor='rgba(30,14,81,0.6)';this.style.boxShadow='0 0 18px rgba(30,14,81,0.35)'"
+                                    onmouseout="this.style.borderColor='rgba(255,255,255,0.06)';this.style.boxShadow='none'">
+                                    <div
+                                        style="width:52px;height:52px;background:linear-gradient(135deg,#1e0e51,#0e0728);flex-shrink:0;">
+                                    </div>
+                                    <div style="flex:1;padding:10px 14px;background:rgba(30,14,81,0.06);">
+                                        <div
+                                            style="color:#fff;font-size:0.82rem;font-weight:600;margin-bottom:2px;letter-spacing:0.02em;">
+                                            Midnight Indigo</div>
+                                        <div
+                                            style="color:rgba(255,255,255,0.35);font-size:0.7rem;font-family:monospace;">
+                                            #1E0E51</div>
+                                    </div>
+                                </button>
 
+                            </div>
                         </div>
-                    </div>
+
+                        <!-- 🌸 VIVID group -->
+                        <div>
+                            <div
+                                style="color:rgba(255,255,255,0.25);font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:10px;padding-left:2px;">
+                                🌸 &nbsp;Vivid</div>
+                            <div style="display:flex;flex-direction:column;gap:8px;">
+
+                                <!-- Crimson Dusk -->
+                                <button class="accent-strip-btn"
+                                    onclick="setAccentColor('#ff677d','#e8394f');_markAccent(this)"
+                                    onmouseenter="_previewAccent('#ff677d','#e8394f')" onmouseleave="_restoreAccent()"
+                                    data-c1="#ff677d" data-c2="#e8394f"
+                                    style="all:unset;display:flex;align-items:center;gap:0;cursor:pointer;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:border-color 0.2s,box-shadow 0.2s;"
+                                    onmouseover="this.style.borderColor='rgba(255,103,125,0.4)';this.style.boxShadow='0 0 18px rgba(255,103,125,0.22)'"
+                                    onmouseout="this.style.borderColor='rgba(255,255,255,0.06)';this.style.boxShadow='none'">
+                                    <div
+                                        style="width:52px;height:52px;background:linear-gradient(135deg,#ff677d,#e8394f);flex-shrink:0;">
+                                    </div>
+                                    <div style="flex:1;padding:10px 14px;background:rgba(255,103,125,0.04);">
+                                        <div
+                                            style="color:#fff;font-size:0.82rem;font-weight:600;margin-bottom:2px;letter-spacing:0.02em;">
+                                            Crimson Dusk</div>
+                                        <div
+                                            style="color:rgba(255,255,255,0.35);font-size:0.7rem;font-family:monospace;">
+                                            #FF677D</div>
+                                    </div>
+                                </button>
+
+                                <!-- Wisteria -->
+                                <button class="accent-strip-btn"
+                                    onclick="setAccentColor('#c084fc','#9333ea');_markAccent(this)"
+                                    onmouseenter="_previewAccent('#c084fc','#9333ea')" onmouseleave="_restoreAccent()"
+                                    data-c1="#c084fc" data-c2="#9333ea"
+                                    style="all:unset;display:flex;align-items:center;gap:0;cursor:pointer;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:border-color 0.2s,box-shadow 0.2s;"
+                                    onmouseover="this.style.borderColor='rgba(192,132,252,0.4)';this.style.boxShadow='0 0 18px rgba(192,132,252,0.22)'"
+                                    onmouseout="this.style.borderColor='rgba(255,255,255,0.06)';this.style.boxShadow='none'">
+                                    <div
+                                        style="width:52px;height:52px;background:linear-gradient(135deg,#c084fc,#9333ea);flex-shrink:0;">
+                                    </div>
+                                    <div style="flex:1;padding:10px 14px;background:rgba(192,132,252,0.04);">
+                                        <div
+                                            style="color:#fff;font-size:0.82rem;font-weight:600;margin-bottom:2px;letter-spacing:0.02em;">
+                                            Wisteria</div>
+                                        <div
+                                            style="color:rgba(255,255,255,0.35);font-size:0.7rem;font-family:monospace;">
+                                            #C084FC</div>
+                                    </div>
+                                </button>
+
+                                <!-- Peach Cloud -->
+                                <button class="accent-strip-btn"
+                                    onclick="setAccentColor('#fdba74','#f97316');_markAccent(this)"
+                                    onmouseenter="_previewAccent('#fdba74','#f97316')" onmouseleave="_restoreAccent()"
+                                    data-c1="#fdba74" data-c2="#f97316"
+                                    style="all:unset;display:flex;align-items:center;gap:0;cursor:pointer;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:border-color 0.2s,box-shadow 0.2s;"
+                                    onmouseover="this.style.borderColor='rgba(253,186,116,0.4)';this.style.boxShadow='0 0 18px rgba(253,186,116,0.22)'"
+                                    onmouseout="this.style.borderColor='rgba(255,255,255,0.06)';this.style.boxShadow='none'">
+                                    <div
+                                        style="width:52px;height:52px;background:linear-gradient(135deg,#fdba74,#f97316);flex-shrink:0;">
+                                    </div>
+                                    <div style="flex:1;padding:10px 14px;background:rgba(253,186,116,0.04);">
+                                        <div
+                                            style="color:#fff;font-size:0.82rem;font-weight:600;margin-bottom:2px;letter-spacing:0.02em;">
+                                            Peach Cloud</div>
+                                        <div
+                                            style="color:rgba(255,255,255,0.35);font-size:0.7rem;font-family:monospace;">
+                                            #FDBA74</div>
+                                    </div>
+                                </button>
+
+                                <!-- Ocean Teal -->
+                                <button class="accent-strip-btn"
+                                    onclick="setAccentColor('#14b8a6','#0f766e');_markAccent(this)"
+                                    onmouseenter="_previewAccent('#14b8a6','#0f766e')" onmouseleave="_restoreAccent()"
+                                    data-c1="#14b8a6" data-c2="#0f766e"
+                                    style="all:unset;display:flex;align-items:center;gap:0;cursor:pointer;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:border-color 0.2s,box-shadow 0.2s;"
+                                    onmouseover="this.style.borderColor='rgba(20,184,166,0.4)';this.style.boxShadow='0 0 18px rgba(20,184,166,0.22)'"
+                                    onmouseout="this.style.borderColor='rgba(255,255,255,0.06)';this.style.boxShadow='none'">
+                                    <div
+                                        style="width:52px;height:52px;background:linear-gradient(135deg,#14b8a6,#0f766e);flex-shrink:0;">
+                                    </div>
+                                    <div style="flex:1;padding:10px 14px;background:rgba(20,184,166,0.04);">
+                                        <div
+                                            style="color:#fff;font-size:0.82rem;font-weight:600;margin-bottom:2px;letter-spacing:0.02em;">
+                                            Ocean Teal</div>
+                                        <div
+                                            style="color:rgba(255,255,255,0.35);font-size:0.7rem;font-family:monospace;">
+                                            #14B8A6</div>
+                                    </div>
+                                </button>
+
+                            </div>
+                        </div>
+
+                        <!-- 🌿 EARTHY group -->
+                        <div>
+                            <div
+                                style="color:rgba(255,255,255,0.25);font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:10px;padding-left:2px;">
+                                🌿 &nbsp;Earthy</div>
+                            <div style="display:flex;flex-direction:column;gap:8px;">
+
+                                <!-- Malachite -->
+                                <button class="accent-strip-btn"
+                                    onclick="setAccentColor('#106b3e','#0a4f2d');_markAccent(this)"
+                                    onmouseenter="_previewAccent('#106b3e','#0a4f2d')" onmouseleave="_restoreAccent()"
+                                    data-c1="#106b3e" data-c2="#0a4f2d"
+                                    style="all:unset;display:flex;align-items:center;gap:0;cursor:pointer;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:border-color 0.2s,box-shadow 0.2s;"
+                                    onmouseover="this.style.borderColor='rgba(16,107,62,0.5)';this.style.boxShadow='0 0 18px rgba(16,107,62,0.22)'"
+                                    onmouseout="this.style.borderColor='rgba(255,255,255,0.06)';this.style.boxShadow='none'">
+                                    <div
+                                        style="width:52px;height:52px;background:linear-gradient(135deg,#106b3e,#0a4f2d);flex-shrink:0;">
+                                    </div>
+                                    <div style="flex:1;padding:10px 14px;background:rgba(16,107,62,0.05);">
+                                        <div
+                                            style="color:#fff;font-size:0.82rem;font-weight:600;margin-bottom:2px;letter-spacing:0.02em;">
+                                            Malachite</div>
+                                        <div
+                                            style="color:rgba(255,255,255,0.35);font-size:0.7rem;font-family:monospace;">
+                                            #106B3E</div>
+                                    </div>
+                                </button>
+
+                                <!-- Espresso -->
+                                <button class="accent-strip-btn"
+                                    onclick="setAccentColor('#492201','#2d1300');_markAccent(this)"
+                                    onmouseenter="_previewAccent('#492201','#2d1300')" onmouseleave="_restoreAccent()"
+                                    data-c1="#492201" data-c2="#2d1300"
+                                    style="all:unset;display:flex;align-items:center;gap:0;cursor:pointer;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:border-color 0.2s,box-shadow 0.2s;"
+                                    onmouseover="this.style.borderColor='rgba(73,34,1,0.6)';this.style.boxShadow='0 0 18px rgba(73,34,1,0.30)'"
+                                    onmouseout="this.style.borderColor='rgba(255,255,255,0.06)';this.style.boxShadow='none'">
+                                    <div
+                                        style="width:52px;height:52px;background:linear-gradient(135deg,#492201,#2d1300);flex-shrink:0;">
+                                    </div>
+                                    <div style="flex:1;padding:10px 14px;background:rgba(73,34,1,0.06);">
+                                        <div
+                                            style="color:#fff;font-size:0.82rem;font-weight:600;margin-bottom:2px;letter-spacing:0.02em;">
+                                            Espresso</div>
+                                        <div
+                                            style="color:rgba(255,255,255,0.35);font-size:0.7rem;font-family:monospace;">
+                                            #492201</div>
+                                    </div>
+                                </button>
+
+                            </div>
+                        </div>
+
+                        <!-- ⚡ METALLIC group -->
+                        <div>
+                            <div
+                                style="color:rgba(255,255,255,0.25);font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:10px;padding-left:2px;">
+                                ⚡ &nbsp;Metallic</div>
+                            <div style="display:flex;flex-direction:column;gap:8px;">
+
+                                <!-- Amber Protocol -->
+                                <button class="accent-strip-btn"
+                                    onclick="setAccentColor('#f4d17b','#e6b84a');_markAccent(this)"
+                                    onmouseenter="_previewAccent('#f4d17b','#e6b84a')" onmouseleave="_restoreAccent()"
+                                    data-c1="#f4d17b" data-c2="#e6b84a"
+                                    style="all:unset;display:flex;align-items:center;gap:0;cursor:pointer;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:border-color 0.2s,box-shadow 0.2s;"
+                                    onmouseover="this.style.borderColor='rgba(244,209,123,0.4)';this.style.boxShadow='0 0 18px rgba(244,209,123,0.18)'"
+                                    onmouseout="this.style.borderColor='rgba(255,255,255,0.06)';this.style.boxShadow='none'">
+                                    <div
+                                        style="width:52px;height:52px;background:linear-gradient(135deg,#f4d17b,#e6b84a);flex-shrink:0;">
+                                    </div>
+                                    <div style="flex:1;padding:10px 14px;background:rgba(244,209,123,0.04);">
+                                        <div
+                                            style="color:#fff;font-size:0.82rem;font-weight:600;margin-bottom:2px;letter-spacing:0.02em;">
+                                            Amber Protocol</div>
+                                        <div
+                                            style="color:rgba(255,255,255,0.35);font-size:0.7rem;font-family:monospace;">
+                                            #F4D17B</div>
+                                    </div>
+                                </button>
+
+                            </div>
+                        </div>
+
+                    </div><!-- /accent-swatches -->
                 </div>
 
             </div>
+        </div>
+    </div>
+
 
 </body>
 
