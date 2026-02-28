@@ -127,8 +127,16 @@ async function renderWallets() {
     // Render existing wallets
     wallets.forEach(wallet => {
         // Calculate REAL wallet statistics
-        // Filter holdings that belong to this wallet (using UUID now!)
-        const walletHoldings = holdings.filter(h => h.wallet_id === wallet.id);
+        // Primary match: by wallet_id UUID
+        // Fallback match: by network name (e.g., Ethereum wallet → ETH holdings)
+        const walletNetwork = (wallet.network || '').toLowerCase();
+        const walletHoldings = holdings.filter(h => {
+            // Primary: exact wallet_id match
+            if (h.wallet_id && h.wallet_id === wallet.id) return true;
+            // Fallback: match by network name (used if wallet_id was not set when adding holdings)
+            const holdingNetwork = (h.network || '').toLowerCase();
+            return !h.wallet_id && holdingNetwork === walletNetwork;
+        });
         const assetCount = walletHoldings.length;
 
         // Calculate total value: sum of (quantity × current_price) for all holdings
@@ -162,10 +170,13 @@ async function renderWallets() {
                             <div>
                                 <h3 class="h6 text-white fw-medium mb-0">${wallet.name}</h3>
                                 <div class="d-flex align-items-center gap-2 mt-1">
-                                    <span class="text-white-30" style="font-size: 0.75rem; font-family: monospace;">${wallet.address.substring(0, 6)}....${wallet.address.substring(wallet.address.length - 4)}</span>
-                                    <button class="btn btn-link p-0 text-white-30 hover-white" onclick="copyToClipboard('${wallet.address}')" style="line-height:1;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                    </button>
+                                    ${wallet.address
+                ? `<span class="text-white-30" style="font-size: 0.75rem; font-family: monospace;">${wallet.address.substring(0, 6)}....${wallet.address.substring(wallet.address.length - 4)}</span>
+                                           <button class="btn btn-link p-0 text-white-30 hover-white" onclick="copyToClipboard('${wallet.address}')" style="line-height:1;">
+                                               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                           </button>`
+                : `<span class="text-white-20" style="font-size: 0.75rem; font-family: monospace;">No address set</span>`
+            }
                                 </div>
                             </div>
                         </div>

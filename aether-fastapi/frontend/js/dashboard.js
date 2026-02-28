@@ -1245,6 +1245,13 @@ function navigateToSection(sectionId, sectionName, btn) {
                     initializeAILab();
                 }
             }
+
+            // If navigating to Wallets section, render the wallets
+            if (sectionId === 'wallets') {
+                if (typeof renderWallets === 'function') {
+                    renderWallets();
+                }
+            }
         } else {
             console.warn(`Section crypto-section-${sectionId} not found`);
             // Fallback to overview
