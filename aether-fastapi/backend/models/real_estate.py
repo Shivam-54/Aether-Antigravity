@@ -46,6 +46,7 @@ class Property(Base):
     # Relationships
     owner = relationship("User", backref="properties")
     valuations = relationship("PropertyValuation", back_populates="property", cascade="all, delete-orphan", order_by="PropertyValuation.valuation_date.desc()")
+    documents = relationship("Document", back_populates="property", cascade="all, delete-orphan")
 
 
     def __repr__(self):

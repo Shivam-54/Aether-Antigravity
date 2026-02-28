@@ -179,7 +179,8 @@ async def predict_all_properties(
         return cached
 
     properties = db.query(Property).filter(
-        Property.user_id == current_user.id
+        Property.user_id == current_user.id,
+        Property.status != "Sold"
     ).all()
     
     if not properties:
@@ -254,7 +255,8 @@ async def get_portfolio_forecast(
     Get aggregated portfolio value forecast — runs in parallel.
     """
     properties = db.query(Property).filter(
-        Property.user_id == current_user.id
+        Property.user_id == current_user.id,
+        Property.status != "Sold"
     ).all()
 
     if not properties:

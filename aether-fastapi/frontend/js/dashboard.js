@@ -3083,6 +3083,7 @@ async function confirmRemoveProperty() {
             closeRemovePropertyModal();
             closePropertyModal(); // Ensure parent is closed
             fetchRealEstateData(); // Reload data
+            showToast("Property removed successfully.", "success");
         } else {
             if (response.status === 401) {
                 console.warn('[Auth] 401 on background fetch — silently skipping.');

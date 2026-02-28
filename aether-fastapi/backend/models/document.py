@@ -25,7 +25,7 @@ class Document(Base):
     
     # Relationships
     owner = relationship("User", backref="documents")
-    property = relationship("Property", backref="documents")
+    property = relationship("Property", back_populates="documents")
 
     def __repr__(self):
         return f"<Document(id={self.id}, type='{self.document_type}', property_id={self.property_id})>"
