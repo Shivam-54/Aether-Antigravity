@@ -72,7 +72,7 @@ async function loadSharesForPrediction() {
     try {
         const userId = localStorage.getItem('userId');
         if (userId) {
-            const response = await fetch(`/api/shares?user_id=${userId}`);
+            const response = await fetch(`${API_BASE_URL}/shares?user_id=${userId}`);
             if (response.ok) {
                 const shares = await response.json();
                 if (shares && shares.length > 0) {
@@ -117,7 +117,7 @@ async function loadPricePrediction(ticker, horizon = 30) {
     try {
         showPredictionLoading();
 
-        const response = await fetch(`/api/shares/ml/price-prediction?ticker=${ticker}&horizon=${horizon}`);
+        const response = await fetch(`${API_BASE_URL}/shares/ml/price-prediction?ticker=${ticker}&horizon=${horizon}`);
 
         if (!response.ok) {
             throw new Error(`Failed to fetch predictions: ${response.statusText}`);
@@ -376,7 +376,7 @@ async function loadPortfolioRiskAnalysis() {
 
         // Call risk analysis API
         const riskResponse = await fetch(
-            `/api/shares/ml/risk-analysis?tickers=${tickers}&investment_amount=${totalValue}&simulations=1000`
+            `${API_BASE_URL}/shares/ml/risk-analysis?tickers=${tickers}&investment_amount=${totalValue}&simulations=1000`
         );
 
         if (!riskResponse.ok) {
@@ -724,7 +724,7 @@ async function loadAIInsights() {
         const totalValue = shares.reduce((sum, s) => sum + (s.quantity * s.avg_buy_price), 0);
 
         const insightsResponse = await fetch(
-            `/api/shares/ml/insights?tickers=${tickers}&portfolio_value=${totalValue}`
+            `${API_BASE_URL}/shares/ml/insights?tickers=${tickers}&portfolio_value=${totalValue}`
         );
 
         if (!insightsResponse.ok) throw new Error('Insights generation failed');
@@ -853,7 +853,7 @@ async function loadSentimentAnalysis(ticker) {
 
     try {
         // Fetch sentiment data (no auth needed)
-        const response = await fetch(`/api/shares/ml/sentiment?ticker=${ticker}`);
+        const response = await fetch(`${API_BASE_URL}/shares/ml/sentiment?ticker=${ticker}`);
         if (!response.ok) throw new Error('Sentiment API error (status ' + response.status + ')');
         const result = await response.json();
         const data = result.data;
@@ -871,7 +871,7 @@ async function loadSentimentAnalysis(ticker) {
         renderSocialBuzz(data.social_buzz);
 
         // Fetch and render history chart
-        const histResp = await fetch(`/api/shares/ml/sentiment/history?ticker=${ticker}&days=30`);
+        const histResp = await fetch(`${API_BASE_URL}/shares/ml/sentiment/history?ticker=${ticker}&days=30`);
         if (histResp.ok) {
             const histResult = await histResp.json();
             renderSentimentHistoryChart(histResult.data.history);
@@ -1127,7 +1127,7 @@ async function loadAnomalyDetection() {
         }
 
         const tickerStr = tickers.join(',');
-        const response = await fetch(`/api/shares/ml/anomaly-detection?tickers=${tickerStr}`);
+        const response = await fetch(`${API_BASE_URL}/shares/ml/anomaly-detection?tickers=${tickerStr}`);
         const result = await response.json();
 
         if (result.status !== 'success') throw new Error('Anomaly detection failed');
@@ -1227,7 +1227,7 @@ async function loadCorrelationAnalysis() {
         }
 
         const tickerStr = tickers.join(',');
-        const response = await fetch(`/api/shares/ml/correlation?tickers=${tickerStr}`);
+        const response = await fetch(`${API_BASE_URL}/shares/ml/correlation?tickers=${tickerStr}`);
         const result = await response.json();
 
         if (result.status !== 'success') throw new Error('Correlation analysis failed');

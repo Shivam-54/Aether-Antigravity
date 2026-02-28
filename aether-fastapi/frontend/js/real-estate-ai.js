@@ -75,7 +75,7 @@ async function fetchAndRenderPortfolioSummary() {
 
     try {
         const token = localStorage.getItem('access_token');
-        const res = await fetch('/api/realestate/ai/summary', {
+        const res = await fetch(`${API_BASE_URL}/realestate/ai/summary`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -158,7 +158,7 @@ async function fetchAndRenderDiversificationScore() {
 
     try {
         const token = localStorage.getItem('access_token');
-        const res = await fetch('/api/realestate/ai/diversification', {
+        const res = await fetch(`${API_BASE_URL}/realestate/ai/diversification`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -249,7 +249,7 @@ async function fetchAndRenderRebalancingAdvisor() {
 
     try {
         const token = localStorage.getItem('access_token');
-        const res = await fetch('/api/realestate/ai/rebalancing', {
+        const res = await fetch(`${API_BASE_URL}/realestate/ai/rebalancing`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -320,7 +320,7 @@ async function fetchAndRenderRentalYield() {
 
     try {
         const token = localStorage.getItem('access_token');
-        const res = await fetch('/api/realestate/ai/rental-yield', {
+        const res = await fetch(`${API_BASE_URL}/realestate/ai/rental-yield`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);

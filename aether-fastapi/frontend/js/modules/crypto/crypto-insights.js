@@ -61,7 +61,7 @@ async function fetchAIInsights(daysAhead = 30) {
     }
 
     try {
-        const response = await fetch(`/api/crypto/ml/insights?days_ahead=${daysAhead}`, {
+        const response = await fetch(`${API_BASE_URL}/crypto/ml/insights?days_ahead=${daysAhead}`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
@@ -90,7 +90,7 @@ async function fetchPricePrediction(symbol, daysAhead = 30) {
     if (!token) return null;
 
     try {
-        const response = await fetch(`/api/crypto/ml/predict/${symbol}?days_ahead=${daysAhead}`, {
+        const response = await fetch(`${API_BASE_URL}/crypto/ml/predict/${symbol}?days_ahead=${daysAhead}`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
@@ -225,7 +225,7 @@ async function fetchPortfolioForecast(daysAhead = 30) {
     if (!token) return null;
 
     try {
-        const response = await fetch(`/api/crypto/ml/predict-portfolio?days_ahead=${daysAhead}`, {
+        const response = await fetch(`${API_BASE_URL}/crypto/ml/predict-portfolio?days_ahead=${daysAhead}`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
