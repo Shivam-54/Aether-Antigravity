@@ -333,49 +333,59 @@ def get_metrics(
 @router.get("/stock-search", response_model=List[StockSearchResult])
 def search_stocks(
     q: str,
+    sector: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
     """Search for stocks by symbol or company name"""
     try:
+        from services.indian_stocks import search_indian_stocks
         import yfinance as yf
         
-        # Use yfinance search (this is a simplified version - may need enhancement)
-        # For a production app, consider using a dedicated stock API like Twelve Data or Alpha Vantage
-        
-        # Create a ticker object to search
-        # Note: yfinance doesn't have a built-in search, so we'll use a workaround
-        # Try to get info for the query as a symbol
         results = []
         
-        # Try as symbol
-        try:
-            ticker = yf.Ticker(q.upper())
-            info = ticker.info
-            if info and 'symbol' in info:
-                results.append({
-                    "symbol": info.get('symbol', q.upper()),
-                    "name": info.get('longName', info.get('shortName', 'Unknown')),
-                    "exchange": info.get('exchange', 'Unknown'),
-                    "type": info.get('quoteType', 'EQUITY')
-                })
-        except:
-            pass
-        
-        # For Indian stocks, try with .NS (NSE) and .BO (BSE) suffixes
-        if q.upper() and not any(q.upper().endswith(suffix) for suffix in ['.NS', '.BO', '.BSE']):
-            for suffix in ['.NS', '.BO']:
-                try:
-                    ticker = yf.Ticker(f"{q.upper()}{suffix}")
-                    info = ticker.info
-                    if info and 'symbol' in info:
+        # 1. Search local dictionary first (very fast, helps with Indian names -> symbols)
+        local_results = search_indian_stocks(q, sector)
+        if local_results:
+            results.extend(local_results)
+            
+        # 2. If no local results or user is typing an exact symbol, try yfinance
+        # Only try yfinance if we don't have enough local results
+        if len(results) < 5:
+            # Try as exact symbol
+            try:
+                ticker = yf.Ticker(q.upper())
+                info = ticker.info
+                if info and 'symbol' in info:
+                    # Avoid duplicates
+                    if not any(r['symbol'] == info.get('symbol', q.upper()) for r in results):
                         results.append({
-                            "symbol": info.get('symbol', f"{q.upper()}{suffix}"),
+                            "symbol": info.get('symbol', q.upper()),
                             "name": info.get('longName', info.get('shortName', 'Unknown')),
-                            "exchange": info.get('exchange', 'NSE' if suffix == '.NS' else 'BSE'),
+                            "exchange": info.get('exchange', 'Unknown'),
                             "type": info.get('quoteType', 'EQUITY')
                         })
-                except:
-                    continue
+            except:
+                pass
+            
+            # For Indian stocks, try with .NS (NSE) and .BO (BSE) suffixes
+            if q.upper() and not any(q.upper().endswith(suffix) for suffix in ['.NS', '.BO', '.BSE']):
+                for suffix in ['.NS', '.BO']:
+                    try:
+                        search_sym = f"{q.upper()}{suffix}"
+                        if any(r['symbol'] == search_sym for r in results):
+                            continue
+                            
+                        ticker = yf.Ticker(search_sym)
+                        info = ticker.info
+                        if info and 'symbol' in info:
+                            results.append({
+                                "symbol": info.get('symbol', search_sym),
+                                "name": info.get('longName', info.get('shortName', 'Unknown')),
+                                "exchange": info.get('exchange', 'NSE' if suffix == '.NS' else 'BSE'),
+                                "type": info.get('quoteType', 'EQUITY')
+                            })
+                    except:
+                        continue
         
         return results
     
