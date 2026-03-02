@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime, date
 from uuid import UUID
+import requests
+import os
 
 from database import get_db
 from models.crypto import CryptoHolding, CryptoTransaction, CryptoWallet
@@ -102,6 +104,59 @@ def get_holdings(
 ):
     """Get all crypto holdings for the current user"""
     holdings = db.query(CryptoHolding).filter(CryptoHolding.user_id == current_user.id).all()
+    return holdings
+
+@router.post("/holdings/refresh", response_model=List[CryptoHoldingResponse])
+def refresh_holdings(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Fetch live prices for all holdings using CoinMarketCap and update them"""
+    holdings = db.query(CryptoHolding).filter(CryptoHolding.user_id == current_user.id).all()
+    if not holdings:
+        return []
+    
+    # Extract unique symbols
+    symbols = list(set([h.symbol.upper() for h in holdings]))
+    symbol_str = ",".join(symbols)
+    
+    api_key = os.environ.get("COINMARKETCAP_API_KEY", "")
+    if not api_key:
+        print("Warning: COINMARKETCAP_API_KEY not found in environment.")
+        return holdings
+        
+    url = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest"
+    headers = {
+        'Accepts': 'application/json',
+        'X-CMC_PRO_API_KEY': api_key
+    }
+    params = {
+        'symbol': symbol_str,
+        'convert': 'INR'
+    }
+    
+    try:
+        response = requests.get(url, headers=headers, params=params, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            # cmc returns data['data'][SYMBOL]['quote']['INR']['price']
+            quotes = data.get("data", {})
+            
+            for holding in holdings:
+                symbol = holding.symbol.upper()
+                if symbol in quotes:
+                    price = quotes[symbol].get("quote", {}).get("INR", {}).get("price")
+                    if price and price > 0:
+                        holding.current_price = float(price)
+            
+            db.commit()
+            for h in holdings:
+                db.refresh(h)
+        else:
+            print(f"Failed to fetch prices from CMC: Status {response.status_code}")
+    except Exception as e:
+        print(f"Error fetching live crypto prices: {e}")
+        
     return holdings
 
 @router.post("/holdings", response_model=CryptoHoldingResponse, status_code=status.HTTP_201_CREATED)

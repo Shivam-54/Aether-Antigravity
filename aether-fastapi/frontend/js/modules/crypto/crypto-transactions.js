@@ -373,23 +373,73 @@ function saveCryptoTransactionDate() {
     console.log('✅ Crypto transaction date updated');
 }
 
-// Delete a crypto transaction
+// Show confirmation modal to delete a crypto transaction
 function deleteCryptoTransaction() {
     const transactionId = window.currentEditCryptoTransactionId;
     if (!transactionId) return;
 
-    if (!confirm('Are you sure you want to delete this crypto transaction?')) {
-        return;
-    }
+    // Create confirmation modal HTML
+    const modalHtml = `
+        <div id="delete-crypto-transaction-modal" class="modal-overlay" style="display: flex; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; align-items: center; justify-content: center;">
+            <div class="glass-panel p-4 text-center" style="max-width: 400px; width: 90%;">
+                <div class="mb-4">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 60px; height: 60px; background: rgba(239, 68, 68, 0.15);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18"></path>
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                    </div>
+                    <h5 class="text-white fw-light mb-2">Delete Transaction</h5>
+                    <p class="text-white-50 small mb-0">Are you sure you want to delete this crypto transaction? This action cannot be undone.</p>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <button onclick="closeDeleteCryptoTransactionModal()" class="btn glass-button flex-grow-1">
+                        Cancel
+                    </button>
+                    <button onclick="executeDeleteCryptoTransaction()" class="btn glass-button-danger flex-grow-1">
+                        Yes, Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if any
+    const existingModal = document.getElementById('delete-crypto-transaction-modal');
+    if (existingModal) existingModal.remove();
+
+    // Add to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+// Close delete confirmation modal
+function closeDeleteCryptoTransactionModal() {
+    const modal = document.getElementById('delete-crypto-transaction-modal');
+    if (modal) modal.remove();
+}
+
+// Execute the actual deletion
+function executeDeleteCryptoTransaction() {
+    const transactionId = window.currentEditCryptoTransactionId;
+    if (!transactionId) return;
 
     const transactions = getCryptoTransactions();
     const filtered = transactions.filter(t => t.id !== transactionId);
 
     saveCryptoTransactions(filtered);
     renderCryptoTransactions();
+
+    closeDeleteCryptoTransactionModal();
     closeEditCryptoTransactionModal();
 
     console.log('🗑️ Crypto transaction deleted');
+    if (typeof showToast === 'function') {
+        showToast('Transaction deleted successfully', 'success');
+    }
 }
 
 // Make globally accessible
@@ -399,3 +449,5 @@ window.openEditCryptoTransactionModal = openEditCryptoTransactionModal;
 window.closeEditCryptoTransactionModal = closeEditCryptoTransactionModal;
 window.saveCryptoTransactionDate = saveCryptoTransactionDate;
 window.deleteCryptoTransaction = deleteCryptoTransaction;
+window.closeDeleteCryptoTransactionModal = closeDeleteCryptoTransactionModal;
+window.executeDeleteCryptoTransaction = executeDeleteCryptoTransaction;

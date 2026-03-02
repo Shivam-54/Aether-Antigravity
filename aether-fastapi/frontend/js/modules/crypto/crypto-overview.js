@@ -83,6 +83,44 @@ async function fetchCryptoData() {
     }
 }
 
+async function refreshCryptoPrices() {
+    const btn = document.getElementById('cryptoRefreshBtn');
+    const icon = document.getElementById('cryptoRefreshIcon');
+
+    if (btn) btn.disabled = true;
+    if (icon) icon.classList.add('spin-animation');
+
+    try {
+        console.log('Refreshing live crypto prices via CoinMarketCap...');
+        const response = await withTimeout(fetch(`${API_BASE_URL}/crypto/holdings/refresh`, {
+            method: 'POST',
+            headers: getAuthHeaders()
+        }));
+
+        if (response.ok) {
+            CRYPTO_DATA.holdings = await response.json();
+
+            // Re-render the holdings and overview without fetching everything again
+            renderCryptoOverview();
+            renderCryptoHoldings();
+
+            if (typeof showToast === 'function') {
+                showToast('Prices updated successfully', 'success');
+            }
+        } else {
+            throw new Error('Failed to refresh prices');
+        }
+    } catch (error) {
+        console.error('Error refreshing crypto prices:', error);
+        if (typeof showToast === 'function') {
+            showToast('Failed to refresh live prices', 'error');
+        }
+    } finally {
+        if (btn) btn.disabled = false;
+        if (icon) icon.classList.remove('spin-animation');
+    }
+}
+
 function calculateCryptoMetrics() {
     const { holdings } = CRYPTO_DATA;
 
@@ -508,5 +546,6 @@ function renderCryptoHoldings() {
 
 // Export functions to global scope
 window.fetchCryptoData = fetchCryptoData;
+window.refreshCryptoPrices = refreshCryptoPrices;
 window.renderCryptoOverview = renderCryptoOverview;
 window.renderCryptoHoldings = renderCryptoHoldings;

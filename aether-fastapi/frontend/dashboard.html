@@ -1476,10 +1476,11 @@
                             </div>
                             <div class="d-flex align-items-center gap-3">
                                 <!-- Refresh Button -->
-                                <button onclick="fetchCryptoData()"
+                                <button onclick="refreshCryptoPrices()" id="cryptoRefreshBtn"
                                     class="btn px-3 py-2 d-flex align-items-center gap-2"
                                     style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: rgba(255,255,255,0.7);">
-                                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg id="cryptoRefreshIcon" width="14" height="14" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
                                         </path>
@@ -3197,12 +3198,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <!-- Core & Modules -->
-    <script src="js/modules/crypto/crypto-overview.js" defer></script>
-    <script src="js/modules/crypto/crypto-transactions.js" defer></script>
+    <script src="js/modules/crypto/crypto-overview.js?v=2" defer></script>
+    <script src="js/modules/crypto/crypto-transactions.js?v=2" defer></script>
     <script src="js/modules/crypto/crypto-insights.js" defer></script>
 
     <!-- Main Dashboard Logic -->
-    <script src="js/dashboard.js?v=226" defer></script>
+    <script src="js/dashboard.js?v=227" defer></script>
     <script src="js/real-estate-ai.js?v=13" defer></script>
     <script src="js/share-transactions.js?v=1" defer></script>
     <script src="js/modules/crypto/crypto-wallets.js?v=4" defer></script>
