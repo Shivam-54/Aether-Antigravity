@@ -5863,11 +5863,18 @@ function openSellCryptoModal(holdingId) {
     if (!holding) return;
 
     currentSellCryptoId = holdingId;
-    currentSellCryptoAvgBuyPrice = holding.avg_buy_price || 0;
+    // Backend returns purchase_price_avg, not avg_buy_price
+    currentSellCryptoAvgBuyPrice = holding.purchase_price_avg || 0;
 
     document.getElementById('sell-crypto-id').value = holdingId;
     document.getElementById('sell-crypto-name').textContent = `${holding.name} (${holding.symbol})`;
     document.getElementById('sell-crypto-max-qty').textContent = holding.quantity;
+
+    // Populate price reference info so the user can make an informed decision
+    const avgBuyEl = document.getElementById('sell-crypto-avg-buy-price');
+    const currPriceEl = document.getElementById('sell-crypto-curr-price');
+    if (avgBuyEl) avgBuyEl.textContent = formatCurrency(currentSellCryptoAvgBuyPrice);
+    if (currPriceEl) currPriceEl.textContent = formatCurrency(holding.current_price || 0);
 
     const qtyInput = document.getElementById('sell-crypto-quantity');
     qtyInput.max = holding.quantity;

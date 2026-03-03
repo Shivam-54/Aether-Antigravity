@@ -3199,14 +3199,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <!-- Core & Modules -->
     <script src="js/modules/crypto/crypto-overview.js?v=2" defer></script>
-    <script src="js/modules/crypto/crypto-transactions.js?v=2" defer></script>
+    <script src="js/modules/crypto/crypto-transactions.js?v=3" defer></script>
     <script src="js/modules/crypto/crypto-insights.js" defer></script>
 
     <!-- Main Dashboard Logic -->
-    <script src="js/dashboard.js?v=227" defer></script>
+    <script src="js/dashboard.js?v=228" defer></script>
     <script src="js/real-estate-ai.js?v=13" defer></script>
     <script src="js/share-transactions.js?v=1" defer></script>
-    <script src="js/modules/crypto/crypto-wallets.js?v=4" defer></script>
+    <script src="js/modules/crypto/crypto-wallets.js?v=5" defer></script>
     <script src="js/analytics-utils.js" defer></script> <!-- NEW: Analytics Logic -->
     <script src="js/shares-module.js?v=12" defer></script>
     <script src="js/shares-performance.js?v=1" defer></script>
@@ -3641,6 +3641,26 @@
                                 onclick="selectWalletNetwork('Arbitrum')">Arbitrum</button>
                             <button type="button" class="modal-network-btn"
                                 onclick="selectWalletNetwork('Optimism')">Optimism</button>
+                            <button type="button" class="modal-network-btn"
+                                onclick="selectWalletNetwork('Avalanche')">Avalanche</button>
+                            <button type="button" class="modal-network-btn"
+                                onclick="selectWalletNetwork('BNB Chain')">BNB Chain</button>
+                            <button type="button" class="modal-network-btn"
+                                onclick="selectWalletNetwork('Tron')">Tron</button>
+                            <button type="button" class="modal-network-btn"
+                                onclick="selectWalletNetwork('Cosmos')">Cosmos</button>
+                            <button type="button" class="modal-network-btn"
+                                onclick="selectWalletNetwork('Near')">Near</button>
+                            <button type="button" class="modal-network-btn"
+                                onclick="selectWalletNetwork('Fantom')">Fantom</button>
+                            <button type="button" class="modal-network-btn"
+                                onclick="selectWalletNetwork('Algorand')">Algorand</button>
+                            <button type="button" class="modal-network-btn"
+                                onclick="selectWalletNetwork('Tezos')">Tezos</button>
+                            <button type="button" class="modal-network-btn"
+                                onclick="selectWalletNetwork('Aptos')">Aptos</button>
+                            <button type="button" class="modal-network-btn"
+                                onclick="selectWalletNetwork('Base')">Base</button>
                         </div>
                     </div>
 
@@ -4630,7 +4650,17 @@
                     </div>
 
                     <div class="glass-card p-3 mb-4" id="sell-crypto-preview">
-                        <div class="small text-white-50 mb-2">Sale Summary</div>
+                        <div class="small text-white-50 mb-3">Price Reference</div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-white-50 small">Avg Buy Price:</span>
+                            <span class="text-white small" id="sell-crypto-avg-buy-price">₹0</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="text-white-50 small">Current Market Price:</span>
+                            <span class="text-white small" id="sell-crypto-curr-price">₹0</span>
+                        </div>
+                        <div class="small text-white-50 mb-2 pt-2 border-top"
+                            style="border-color: rgba(255,255,255,0.1) !important;">Sale Summary</div>
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-white-50 small">Total Sale Value:</span>
                             <span class="text-white small" id="sell-crypto-total-value">₹0</span>

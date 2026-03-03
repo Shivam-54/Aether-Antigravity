@@ -156,8 +156,8 @@ async function renderWallets() {
         }
 
         html += `
-            <div class="col-md-6 col-lg-4">
-                <div class="glass-panel p-4 h-100 position-relative" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; transition: all 0.3s ease;">
+            <div class="col-md-6 col-lg-4" onclick="openWalletSettingsModal(${JSON.stringify(wallet).replace(/"/g, '&quot;')})">
+                <div class="glass-panel p-4 h-100 position-relative" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; transition: all 0.3s ease; cursor: pointer;" onmouseover="this.style.borderColor='rgba(255,255,255,0.18)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
                     <!-- Header -->
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <div class="d-flex align-items-center gap-3">
@@ -181,12 +181,13 @@ async function renderWallets() {
                             </div>
                         </div>
                         <div class="d-flex align-items-center gap-2">
-                            <span class="badge rounded-pill d-flex align-items-center gap-1" style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-weight: 500; font-size: 0.7rem; padding: 0.35rem 0.75rem; border: 1px solid rgba(16, 185, 129, 0.2);">
+                            <!-- Dynamic status badge based on connection state -->
+                            <span id="status-badge-${wallet.id}" class="badge rounded-pill d-flex align-items-center gap-1" style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-weight: 500; font-size: 0.7rem; padding: 0.35rem 0.75rem; border: 1px solid rgba(16, 185, 129, 0.2);">
                                 <span style="width: 6px; height: 6px; background: #10b981; border-radius: 50%;"></span>
                                 Connected
                             </span>
-                            <!-- Delete Button (Moved to prevent overlap) -->
-                            <button onclick="deleteWallet('${wallet.id}')" class="delete-wallet-btn p-2 text-white-30 hover-danger rounded-circle" style="background: transparent; border: none; opacity: 0; transition: all 0.2s;">
+                            <!-- Delete Button -->
+                            <button onclick="event.stopPropagation(); deleteWallet('${wallet.id}')" class="delete-wallet-btn p-2 text-white-30 hover-danger rounded-circle" style="background: transparent; border: none; opacity: 0; transition: all 0.2s;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                             </button>
                         </div>
@@ -321,3 +322,156 @@ function copyToClipboard(text) {
 // Note: renderWallets() is called by the main navigation when the user
 // switches to the crypto → wallets section. No auto-fetch on page load
 // to avoid spurious 401s before the auth token has been validated.
+
+// ─────────────────────────────────────────────
+// WALLET SETTINGS MODAL
+// ─────────────────────────────────────────────
+
+let _currentWalletSettings = null;
+
+function openWalletSettingsModal(wallet) {
+    _currentWalletSettings = wallet;
+    const isConnected = getWalletConnectionStatus(wallet.id);
+
+    // Remove existing if any
+    const existing = document.getElementById('wallet-settings-modal');
+    if (existing) existing.remove();
+
+    const shortAddr = wallet.address
+        ? `${wallet.address.substring(0, 10)}...${wallet.address.substring(wallet.address.length - 6)}`
+        : 'No address set';
+
+    const connectedStyle = isConnected
+        ? `background: rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.3);`
+        : `background: rgba(239,68,68,0.12); color:#ef4444; border:1px solid rgba(239,68,68,0.3);`;
+    const connDot = isConnected ? '#10b981' : '#ef4444';
+    const connText = isConnected ? 'Connected' : 'Disconnected';
+    const btnLabel = isConnected ? 'Disconnect Wallet' : 'Connect Wallet';
+    const btnStyle = isConnected
+        ? `background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#ef4444;`
+        : `background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#10b981;`;
+
+    const modal = document.createElement('div');
+    modal.id = 'wallet-settings-modal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.72);backdrop-filter:blur(12px);';
+    modal.innerHTML = `
+        <div class="glass-panel p-5" style="max-width:480px;width:90%;border-radius:20px;position:relative;">
+            <!-- Close -->
+            <button onclick="closeWalletSettingsModal()" style="position:absolute;top:18px;right:18px;background:transparent;border:none;color:rgba(255,255,255,0.4);font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
+
+            <!-- Header -->
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
+                        <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
+                    </svg>
+                </div>
+                <div>
+                    <h5 class="text-white fw-light mb-0">${wallet.name}</h5>
+                    <span class="badge rounded-pill mt-1 d-inline-flex align-items-center gap-1" style="${connectedStyle} font-size:0.7rem; padding:0.3rem 0.7rem;">
+                        <span style="width:6px;height:6px;border-radius:50%;background:${connDot};"></span>
+                        ${connText}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Info rows -->
+            <div class="mb-3">
+                <label style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.35);display:block;margin-bottom:6px;">Network</label>
+                <div class="form-control glass-input" style="background:rgba(255,255,255,0.02);border-color:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);cursor:not-allowed;">${wallet.network || '—'}</div>
+            </div>
+
+            <div class="mb-4">
+                <label style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.35);display:block;margin-bottom:6px;">Wallet Address</label>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="form-control glass-input flex-grow-1" style="background:rgba(255,255,255,0.02);border-color:rgba(255,255,255,0.06);color:rgba(255,255,255,0.45);font-family:monospace;font-size:0.8rem;cursor:not-allowed;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${wallet.address || ''}">${wallet.address || 'No address set'}</div>
+                    ${wallet.address ? `<button onclick="copyToClipboard('${wallet.address}')" class="btn btn-sm" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);flex-shrink:0;" title="Copy address">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>` : ''}
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="d-flex gap-3 pt-3 border-top" style="border-color:rgba(255,255,255,0.08)!important;">
+                <button onclick="closeWalletSettingsModal()" class="btn flex-grow-1" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);">Close</button>
+                <button onclick="toggleWalletConnection('${wallet.id}')" class="btn flex-grow-1" style="${btnStyle}" id="wallet-toggle-btn">${btnLabel}</button>
+            </div>
+        </div>
+    `;
+
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeWalletSettingsModal(); });
+    document.body.appendChild(modal);
+
+    // Update status badges immediately based on stored status
+    _syncWalletBadge(wallet.id, isConnected);
+}
+
+function closeWalletSettingsModal() {
+    const m = document.getElementById('wallet-settings-modal');
+    if (m) m.remove();
+    _currentWalletSettings = null;
+}
+
+function getWalletConnectionStatus(walletId) {
+    const disconnected = JSON.parse(localStorage.getItem('aether_disconnected_wallets') || '[]');
+    return !disconnected.includes(walletId);
+}
+
+function toggleWalletConnection(walletId) {
+    const disconnected = JSON.parse(localStorage.getItem('aether_disconnected_wallets') || '[]');
+    const isCurrentlyConnected = !disconnected.includes(walletId);
+
+    if (isCurrentlyConnected) {
+        // Disconnect it
+        disconnected.push(walletId);
+        localStorage.setItem('aether_disconnected_wallets', JSON.stringify(disconnected));
+        showToast('Wallet disconnected', 'info');
+    } else {
+        // Reconnect it
+        const updated = disconnected.filter(id => id !== walletId);
+        localStorage.setItem('aether_disconnected_wallets', JSON.stringify(updated));
+        showToast('Wallet connected', 'success');
+    }
+
+    const nowConnected = !isCurrentlyConnected;
+    _syncWalletBadge(walletId, nowConnected);
+
+    // Update the modal button and status badge in real time
+    const btn = document.getElementById('wallet-toggle-btn');
+    if (btn) {
+        btn.textContent = nowConnected ? 'Disconnect Wallet' : 'Connect Wallet';
+        btn.style.cssText = nowConnected
+            ? `background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;`
+            : `background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#10b981;`;
+    }
+
+    // Update the header badge inside the modal
+    const headerBadge = document.querySelector('#wallet-settings-modal .badge');
+    if (headerBadge) {
+        const dot = headerBadge.querySelector('span');
+        const color = nowConnected ? '#10b981' : '#ef4444';
+        if (dot) dot.style.background = color;
+        headerBadge.lastChild.textContent = ' ' + (nowConnected ? 'Connected' : 'Disconnected');
+        headerBadge.style.cssText = nowConnected
+            ? `background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.3);font-size:0.7rem;padding:0.3rem 0.7rem;`
+            : `background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);font-size:0.7rem;padding:0.3rem 0.7rem;`;
+    }
+}
+
+function _syncWalletBadge(walletId, isConnected) {
+    const badge = document.getElementById(`status-badge-${walletId}`);
+    if (!badge) return;
+    const dot = badge.querySelector('span');
+    const color = isConnected ? '#10b981' : '#ef4444';
+    badge.style.background = isConnected ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)';
+    badge.style.color = color;
+    badge.style.borderColor = isConnected ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)';
+    if (dot) dot.style.background = color;
+    badge.lastChild.textContent = ' ' + (isConnected ? 'Connected' : 'Disconnected');
+}
+
+window.openWalletSettingsModal = openWalletSettingsModal;
+window.closeWalletSettingsModal = closeWalletSettingsModal;
+window.toggleWalletConnection = toggleWalletConnection;

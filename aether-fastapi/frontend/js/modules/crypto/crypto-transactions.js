@@ -91,9 +91,12 @@ function renderCryptoTransactions() {
     const container = document.getElementById('crypto-transactions-list');
     if (!container) return;
 
-    const transactions = getCryptoTransactions();
+    // Fetch and sort transactions chronologically (newest first)
+    const transactions = getCryptoTransactions().sort((a, b) => {
+        return new Date(b.timestamp) - new Date(a.timestamp);
+    });
 
-    console.log('📊 Rendering', transactions.length, 'transactions:', transactions);
+    console.log('📊 Rendering', transactions.length, 'transactions (Sorted):', transactions);
 
     if (transactions.length === 0) {
         container.innerHTML = `
