@@ -7457,21 +7457,6 @@ function renderBusinessVentures() {
     }).join('');
 }
 
-/**
- * Smart INR formatter for the Business module.
- * Auto-switches between Lakh and Crore:
- *   >= ₹1 Crore (10,000,000) → "₹X.XXCr"
- *   >= ₹1 Lakh  (100,000)    → "₹X.XXL"
- *   else                      → "₹X,XX,XXX"
- * Pass a sign prefix ('+'/'-') as second arg if needed.
- */
-function fmtINR(v, sign = '') {
-    const abs = Math.abs(v);
-    if (abs >= 10_000_000) return `${sign}₹${(abs / 10_000_000).toFixed(2)}Cr`;
-    if (abs >= 100_000) return `${sign}₹${(abs / 100_000).toFixed(2)}L`;
-    return `${sign}₹${abs.toLocaleString('en-IN')}`;
-}
-
 function renderBusinessCashFlow() {
     console.log('Rendering Business Cash Flow...');
 
@@ -7517,19 +7502,19 @@ function renderBusinessCashFlow() {
             <div class="col-md-4">
                 <div class="glass-card p-4 h-100 d-flex flex-column justify-content-center align-items-center text-center">
                     <span class="small text-white-40 text-uppercase tracking-wider mb-2">Net Cash Flow</span>
-                    <h3 class="fw-light mb-0" style="color: ${netFlow >= 0 ? '#10b981' : '#ef4444'};">${fmtINR(Math.abs(netFlow), netFlow >= 0 ? '+' : '-')}</h3>
+                    <h3 class="fw-light mb-0" style="color: ${netFlow >= 0 ? '#10b981' : '#ef4444'};">${netFlow >= 0 ? '+' : '-'}${formatCurrency(Math.abs(netFlow))}</h3>
                 </div>
             </div>
             <div class="col-6 col-md-4">
                 <div class="glass-card p-4 h-100 d-flex flex-column justify-content-center align-items-center text-center">
                     <span class="text-green-400 small text-uppercase tracking-wider mb-2">Total In</span>
-                    <h4 class="text-white fw-light mb-0">${fmtINR(totalIncome)}</h4>
+                    <h4 class="text-white fw-light mb-0">${formatCurrency(totalIncome)}</h4>
                 </div>
             </div>
             <div class="col-6 col-md-4">
                 <div class="glass-card p-4 h-100 d-flex flex-column justify-content-center align-items-center text-center">
                     <span class="text-red-400 small text-uppercase tracking-wider mb-2">Total Out</span>
-                    <h4 class="text-white fw-light mb-0">${fmtINR(totalExpense)}</h4>
+                    <h4 class="text-white fw-light mb-0">${formatCurrency(totalExpense)}</h4>
                 </div>
             </div>
         </div>
@@ -7594,7 +7579,7 @@ function renderBusinessCashFlow() {
                         </div>
                     </div>
                     <div class="text-end ps-3 flex-shrink-0">
-                        <div class="fw-medium" style="color:${color};font-size:0.95rem;">${fmtINR(Math.abs(tx.amount), isIn ? '+' : '-')}</div>
+                        <div class="fw-medium" style="color:${color};font-size:0.95rem;">${isIn ? '+' : '-'}${formatCurrency(Math.abs(tx.amount))}</div>
                         <div class="text-white-30 text-uppercase" style="font-size:0.65rem;">${isIn ? 'Income' : 'Expense'}</div>
                     </div>
                 </div>`;
@@ -7634,15 +7619,15 @@ function renderBusinessCashFlow() {
                 <div class="d-flex align-items-center gap-4">
                     <div class="text-center d-none d-md-block">
                         <div class="text-white-30 text-uppercase mb-1" style="font-size:0.6rem;letter-spacing:.05em;">Income</div>
-                        <div class="text-green-400 fw-medium" style="font-size:0.9rem;">${fmtINR(group.income, '+')}</div>
+                        <div class="text-green-400 fw-medium" style="font-size:0.9rem;">+${formatCurrency(group.income)}</div>
                     </div>
                     <div class="text-center d-none d-md-block">
                         <div class="text-white-30 text-uppercase mb-1" style="font-size:0.6rem;letter-spacing:.05em;">Expenses</div>
-                        <div class="text-red-400 fw-medium" style="font-size:0.9rem;">${fmtINR(group.expense, '-')}</div>
+                        <div class="text-red-400 fw-medium" style="font-size:0.9rem;">-${formatCurrency(group.expense)}</div>
                     </div>
                     <div class="text-center">
                         <div class="text-white-30 text-uppercase mb-1" style="font-size:0.6rem;letter-spacing:.05em;">Net</div>
-                        <div class="fw-medium" style="color:${netColor};font-size:0.9rem;">${fmtINR(Math.abs(net), netSign)}</div>
+                        <div class="fw-medium" style="color:${netColor};font-size:0.9rem;">${netSign}${formatCurrency(Math.abs(net))}</div>
                     </div>
                     <svg class="cf-chevron text-white-30 flex-shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2" style="transition:transform 0.25s ease;">
@@ -7722,7 +7707,7 @@ function loadMoreCfTransactions(btn, bizId, currentCount) {
                 </div>
             </div>
             <div class="text-end ps-3 flex-shrink-0">
-                <div class="fw-medium" style="color:${color};font-size:0.95rem;">${fmtINR(Math.abs(tx.amount), isIn ? '+' : '-')}</div>
+                <div class="fw-medium" style="color:${color};font-size:0.95rem;">${isIn ? '+' : '-'}${formatCurrency(Math.abs(tx.amount))}</div>
                 <div class="text-white-30 text-uppercase" style="font-size:0.65rem;">${isIn ? 'Income' : 'Expense'}</div>
             </div>`;
         wrapper.appendChild(div);
@@ -7799,7 +7784,7 @@ function renderBusinessStatements() {
                         <div class="mb-4 text-center py-3 rounded-xl" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03);">
                             <div class="small text-white-40 text-uppercase tracking-wider mb-1" style="font-size: 0.7rem;">Net Profit</div>
                             <div class="h3 fw-light mb-0" style="color: ${profitColor}; letter-spacing: -0.02em;">
-                                ${fmtINR(Math.abs(pl.netProfit || 0), isProfitable ? '+' : '-')}
+                                ${isProfitable ? '+' : '-'}${formatCurrency(Math.abs(pl.netProfit || 0))}
                             </div>
                         </div>
 
@@ -7809,14 +7794,14 @@ function renderBusinessStatements() {
                                 <div class="p-3 h-100 d-flex flex-column align-items-center justify-content-center text-center" 
                                      style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 18px;">
                                     <span class="small text-green-400 text-uppercase tracking-wider mb-1" style="font-size: 0.65rem;">Revenue</span>
-                                    <div class="fw-light h5 mb-0 text-white">${fmtINR(pl.revenue || 0)}</div>
+                                    <div class="fw-light h5 mb-0 text-white">${formatCurrency(pl.revenue || 0)}</div>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="p-3 h-100 d-flex flex-column align-items-center justify-content-center text-center" 
                                      style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 18px;">
                                     <span class="small text-red-400 text-uppercase tracking-wider mb-1" style="font-size: 0.65rem;">Expenses</span>
-                                    <div class="fw-light h5 mb-0 text-white">${fmtINR(pl.expenses || 0)}</div>
+                                    <div class="fw-light h5 mb-0 text-white">${formatCurrency(pl.expenses || 0)}</div>
                                 </div>
                             </div>
                         </div>
@@ -7835,7 +7820,7 @@ function renderBusinessStatements() {
                                 ${Object.entries(pl.expenseBreakdown || {}).map(([cat, amount]) => `
                                     <div class="d-flex justify-content-between align-items-center small">
                                         <span class="text-white-50">${cat}</span>
-                                        <span class="text-white-70 font-monospace">${fmtINR(amount || 0)}</span>
+                                        <span class="text-white-70 font-monospace">${formatCurrency(amount || 0)}</span>
                                     </div>
                                 `).join('')}
                                 </div>
