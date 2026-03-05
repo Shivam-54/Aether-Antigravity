@@ -7456,10 +7456,26 @@ function renderBusinessVentures() {
         `;
     }).join('');
 }
+
+/**
+ * Smart INR formatter for the Business module.
+ * Auto-switches between Lakh and Crore:
+ *   >= ₹1 Crore (10,000,000) → "₹X.XXCr"
+ *   >= ₹1 Lakh  (100,000)    → "₹X.XXL"
+ *   else                      → "₹X,XX,XXX"
+ * Pass a sign prefix ('+'/'-') as second arg if needed.
+ */
+function fmtINR(v, sign = '') {
+    const abs = Math.abs(v);
+    if (abs >= 10_000_000) return `${sign}₹${(abs / 10_000_000).toFixed(2)}Cr`;
+    if (abs >= 100_000) return `${sign}₹${(abs / 100_000).toFixed(2)}L`;
+    return `${sign}₹${abs.toLocaleString('en-IN')}`;
+}
+
 function renderBusinessCashFlow() {
     console.log('Rendering Business Cash Flow...');
 
-    // Populate filter dropdown
+    // Populate filter dropdowns (first load only)
     const filterDropdown = document.getElementById('business-cf-filter-business');
     if (filterDropdown && filterDropdown.options.length <= 1) {
         BUSINESS_DATA.forEach(biz => {
@@ -7475,25 +7491,16 @@ function renderBusinessCashFlow() {
     const filterBusiness = document.getElementById('business-cf-filter-business')?.value || 'all';
     const filterType = document.getElementById('business-cf-filter-type')?.value || 'all';
 
-    // Filter transactions
+    // Filter & sort all transactions
     const filtered = BUSINESS_TRANSACTIONS.filter(tx => {
         const bizMatch = filterBusiness === 'all' || tx.businessId === filterBusiness;
         const typeMatch = filterType === 'all' || tx.type === filterType;
         return bizMatch && typeMatch;
     }).sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    // Calculate Totals based on filtered data OR all data? Usually filtered.
-    // Logic: Income/Investment are Inflows. Expense/Transfer are Outflows.
-    const totalIncome = filtered.reduce((sum, tx) => {
-        const isIncome = tx.type === 'Income' || tx.type === 'Investment' || (tx.category && tx.category.includes('Revenue'));
-        return isIncome ? sum + Math.abs(tx.amount) : sum;
-    }, 0);
-
-    const totalExpense = filtered.reduce((sum, tx) => {
-        const isExpense = tx.type === 'Expense' || tx.type === 'Transfer' || !((tx.type === 'Income' || tx.type === 'Investment' || (tx.category && tx.category.includes('Revenue'))));
-        return isExpense ? sum + Math.abs(tx.amount) : sum;
-    }, 0);
-
+    // Totals
+    const totalIncome = filtered.reduce((s, tx) => tx.amount > 0 ? s + tx.amount : s, 0);
+    const totalExpense = filtered.reduce((s, tx) => tx.amount < 0 ? s + Math.abs(tx.amount) : s, 0);
     const netFlow = totalIncome - totalExpense;
 
     const container = document.getElementById('business-cf-transactions');
@@ -7504,101 +7511,233 @@ function renderBusinessCashFlow() {
         return;
     }
 
-    // Generate Summary Cards HTML
+    // ── Summary cards ──────────────────────────────────────────────────────────
     const summaryHtml = `
         <div class="row g-4 mb-5">
             <div class="col-md-4">
                 <div class="glass-card p-4 h-100 d-flex flex-column justify-content-center align-items-center text-center">
                     <span class="small text-white-40 text-uppercase tracking-wider mb-2">Net Cash Flow</span>
-                    <h3 class="fw-light mb-0" style="color: ${netFlow >= 0 ? '#10b981' : '#ef4444'};">${netFlow >= 0 ? '+' : '-'}₹${(Math.abs(netFlow) / 100000).toFixed(2)}L</h3>
+                    <h3 class="fw-light mb-0" style="color: ${netFlow >= 0 ? '#10b981' : '#ef4444'};">${fmtINR(Math.abs(netFlow), netFlow >= 0 ? '+' : '-')}</h3>
                 </div>
             </div>
             <div class="col-6 col-md-4">
                 <div class="glass-card p-4 h-100 d-flex flex-column justify-content-center align-items-center text-center">
                     <span class="text-green-400 small text-uppercase tracking-wider mb-2">Total In</span>
-                    <h4 class="text-white fw-light mb-0">₹${(totalIncome / 100000).toFixed(2)}L</h4>
+                    <h4 class="text-white fw-light mb-0">${fmtINR(totalIncome)}</h4>
                 </div>
             </div>
             <div class="col-6 col-md-4">
                 <div class="glass-card p-4 h-100 d-flex flex-column justify-content-center align-items-center text-center">
                     <span class="text-red-400 small text-uppercase tracking-wider mb-2">Total Out</span>
-                    <h4 class="text-white fw-light mb-0">₹${(totalExpense / 100000).toFixed(2)}L</h4>
+                    <h4 class="text-white fw-light mb-0">${fmtINR(totalExpense)}</h4>
                 </div>
             </div>
         </div>
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="h5 text-white fw-medium mb-0">Recent Transactions</h3>
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <h3 class="h5 text-white fw-medium mb-0">Business Cash Flow</h3>
+            <span class="text-white-30 small">Click a business to view transactions</span>
         </div>
     `;
 
-    // Group transactions by business
+    // ── Group by business ──────────────────────────────────────────────────────
     const groupedByBusiness = {};
     filtered.forEach(tx => {
-        if (!groupedByBusiness[tx.businessId]) {
-            groupedByBusiness[tx.businessId] = {
-                name: tx.businessName || 'Unknown Business',
-                transactions: []
+        const id = tx.businessId;
+        if (!groupedByBusiness[id]) {
+            groupedByBusiness[id] = {
+                name: tx.businessName || 'Unknown',
+                transactions: [],
+                income: 0,
+                expense: 0
             };
         }
-        groupedByBusiness[tx.businessId].transactions.push(tx);
+        groupedByBusiness[id].transactions.push(tx);
+        if (tx.amount > 0) groupedByBusiness[id].income += tx.amount;
+        else groupedByBusiness[id].expense += Math.abs(tx.amount);
     });
 
-    const typeColors = {
-        'Income': 'bg-green-500-10 text-green-400',
-        'Expense': 'bg-red-500-10 text-red-400',
-        'Investment': 'bg-blue-500-10 text-blue-400',
-        'Transfer': 'bg-purple-500-10 text-purple-400'
-    };
+    const PAGE_SIZE = 20;
 
-    // Render cards
-    const listHtml = Object.values(groupedByBusiness).map(group => `
-        <div class="glass-card mb-4 p-0 overflow-hidden">
-            <div class="px-4 py-3 d-flex align-items-center justify-content-between" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
-                <span class="fw-medium text-white" style="font-size: 0.95rem; letter-spacing: 0.01em;">${group.name}</span>
-                <span class="text-white-40" style="font-size: 0.75rem; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 20px;">${group.transactions.length} Entries</span>
-            </div>
-            <div class="p-3">
-                ${group.transactions.map(tx => {
-        const isIncome = tx.type === 'Income' || tx.type === 'Investment' || (tx.category && tx.category.includes('Revenue'));
-        const amountColor = isIncome ? '#10b981' : '#ef4444';
+    // ── Business cards ─────────────────────────────────────────────────────────
+    const cardsHtml = Object.entries(groupedByBusiness).map(([bizId, group], cardIdx) => {
+        const net = group.income - group.expense;
+        const netColor = net >= 0 ? '#10b981' : '#ef4444';
+        const netSign = net >= 0 ? '+' : '-';
+        const biz = BUSINESS_DATA.find(b => b.id === bizId) || {};
 
-        return `
-                     <div class="p-3 mb-2 d-flex align-items-center justify-content-between" 
-                          style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; transition: all 0.2s ease;"  
-                         onmouseover="this.style.background='rgba(255,255,255,0.04)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" 
-                         onmouseout="this.style.background='rgba(255,255,255,0.02)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-                        
-                        <div class="d-flex align-items-center gap-3" style="flex: 1;">
-                            <div class="d-flex align-items-center justify-content-center" 
-                                 style="width: 36px; height: 36px; background: ${isIncome ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; border-radius: 10px; box-shadow: 0 0 15px ${isIncome ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'};">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${amountColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    ${isIncome ? '<path d="M17 7L7 17M7 17H17M7 17V7"/>' : '<path d="M7 17L17 7M17 7H7M17 7V17"/>'}
-                                </svg>
-                            </div>
-                            
-                            <div style="flex: 1;">
-                                <div class="mb-1 d-flex align-items-center gap-2">
-                                    <span class="fw-medium" style="color: ${amountColor}; font-size: 0.9rem;">${tx.category || tx.type}</span>
-                                    ${tx.notes ? `<span class="text-white-30" style="font-size: 0.75rem;">•</span> <span class="text-white-50 text-truncate" style="font-size: 0.8rem; max-width: 200px;">${tx.notes}</span>` : ''}
-                                </div>
-                                <div class="small text-white-40" style="font-size: 0.75rem;">
-                                    ${new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                </div>
-                            </div>
+        // First page of transactions (pre-built into HTML; rest loaded on demand)
+        const firstPage = group.transactions.slice(0, PAGE_SIZE);
+        const hasMore = group.transactions.length > PAGE_SIZE;
+
+        const txRows = firstPage.map(tx => {
+            const isIn = tx.amount > 0;
+            const color = isIn ? '#10b981' : '#ef4444';
+            const bgColor = isIn ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)';
+            const icon = isIn
+                ? '<path d="M17 7L7 17M7 17H17M7 17V7"/>'
+                : '<path d="M7 17L17 7M17 7H7M17 7V17"/>';
+            const dateStr = new Date(tx.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+            return `
+                <div class="d-flex align-items-center justify-content-between p-3 mb-2 rounded-3"
+                     style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); transition:background 0.2s;"
+                     onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                     onmouseout="this.style.background='rgba(255,255,255,0.02)'">
+                    <div class="d-flex align-items-center gap-3" style="flex:1; min-width:0;">
+                        <div class="d-flex align-items-center justify-content-center flex-shrink-0"
+                             style="width:34px;height:34px;background:${bgColor};border-radius:10px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${icon}</svg>
                         </div>
-                        
-                        <div class="text-end ps-3">
-                            <div class="fw-medium" style="color: ${amountColor}; font-size: 1rem; letter-spacing: 0.02em;">${isIncome ? '+' : '-'}₹${(Math.abs(tx.amount) / 100000).toFixed(2)}L</div>
-                            <div class="small text-white-40 text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.05em; margin-top: 2px;">${isIncome ? 'Income' : 'Expense'}</div>
+                        <div style="min-width:0;">
+                            <div class="fw-medium text-truncate" style="color:${color};font-size:0.85rem;max-width:280px;">${tx.category || tx.type}</div>
+                            ${tx.notes ? `<div class="text-white-40 text-truncate" style="font-size:0.75rem;max-width:280px;">${tx.notes}</div>` : ''}
+                            <div class="text-white-30" style="font-size:0.7rem;">${dateStr}</div>
                         </div>
                     </div>
-                    `;
-    }).join('')}
-            </div>
-        </div>
-    `).join('');
+                    <div class="text-end ps-3 flex-shrink-0">
+                        <div class="fw-medium" style="color:${color};font-size:0.95rem;">${fmtINR(Math.abs(tx.amount), isIn ? '+' : '-')}</div>
+                        <div class="text-white-30 text-uppercase" style="font-size:0.65rem;">${isIn ? 'Income' : 'Expense'}</div>
+                    </div>
+                </div>`;
+        }).join('');
 
-    container.innerHTML = summaryHtml + listHtml;
+        const moreBtn = hasMore ? `
+            <button class="btn w-100 mt-2 py-2 text-white-40 small"
+                    style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;"
+                    onclick="loadMoreCfTransactions(this, '${bizId}', ${PAGE_SIZE})"
+                    onmouseover="this.style.background='rgba(255,255,255,0.07)'"
+                    onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                Load more (${group.transactions.length - PAGE_SIZE} remaining)
+            </button>` : '';
+
+        return `
+        <div class="glass-card mb-4 overflow-hidden">
+            <!-- Business summary card (clickable header) -->
+            <div class="px-4 py-4 d-flex align-items-center justify-content-between"
+                 style="cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.2s;"
+                 onclick="toggleCfPanel(this)"
+                 onmouseover="this.style.background='rgba(255,255,255,0.03)'"
+                 onmouseout="this.style.background='transparent'">
+
+                <!-- Left: icon + name + count -->
+                <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center justify-content-center text-white fs-5 fw-light"
+                         style="width:44px;height:44px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;">
+                        ${biz.name ? biz.name.charAt(0) : '?'}
+                    </div>
+                    <div>
+                        <div class="text-white fw-medium" style="font-size:0.95rem;">${group.name}</div>
+                        <div class="text-white-40 small">${group.transactions.length} entries &nbsp;·&nbsp; ${biz.industry || 'Manufacturing'}</div>
+                    </div>
+                </div>
+
+                <!-- Right: net + income + expense + chevron -->
+                <div class="d-flex align-items-center gap-4">
+                    <div class="text-center d-none d-md-block">
+                        <div class="text-white-30 text-uppercase mb-1" style="font-size:0.6rem;letter-spacing:.05em;">Income</div>
+                        <div class="text-green-400 fw-medium" style="font-size:0.9rem;">${fmtINR(group.income, '+')}</div>
+                    </div>
+                    <div class="text-center d-none d-md-block">
+                        <div class="text-white-30 text-uppercase mb-1" style="font-size:0.6rem;letter-spacing:.05em;">Expenses</div>
+                        <div class="text-red-400 fw-medium" style="font-size:0.9rem;">${fmtINR(group.expense, '-')}</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-white-30 text-uppercase mb-1" style="font-size:0.6rem;letter-spacing:.05em;">Net</div>
+                        <div class="fw-medium" style="color:${netColor};font-size:0.9rem;">${fmtINR(Math.abs(net), netSign)}</div>
+                    </div>
+                    <svg class="cf-chevron text-white-30 flex-shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" style="transition:transform 0.25s ease;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Collapsible transaction panel (hidden by default) -->
+            <div class="cf-tx-panel" style="display:none;" data-biz-id="${bizId}">
+                <div class="p-4">
+                    ${txRows}
+                    ${moreBtn}
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+
+    container.innerHTML = summaryHtml + cardsHtml;
+}
+
+/** Toggle the collapsible transaction panel for a business card in Cash Flow */
+function toggleCfPanel(headerEl) {
+    const card = headerEl.closest('.glass-card');
+    const panel = card.querySelector('.cf-tx-panel');
+    const chevron = headerEl.querySelector('.cf-chevron');
+    if (!panel) return;
+
+    const isOpen = panel.style.display !== 'none';
+    panel.style.display = isOpen ? 'none' : 'block';
+    if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+    // Remove hover indicator on open header
+    headerEl.style.borderBottomColor = isOpen
+        ? 'rgba(255,255,255,0.05)'
+        : 'rgba(255,255,255,0.1)';
+}
+
+/** Load the next page of transactions into an already-open panel */
+function loadMoreCfTransactions(btn, bizId, currentCount) {
+    const PAGE_SIZE = 20;
+    const filterType = document.getElementById('business-cf-filter-type')?.value || 'all';
+
+    const allTxns = BUSINESS_TRANSACTIONS
+        .filter(tx => tx.businessId === bizId && (filterType === 'all' || tx.type === filterType))
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    const nextBatch = allTxns.slice(currentCount, currentCount + PAGE_SIZE);
+    const remaining = allTxns.length - currentCount - nextBatch.length;
+
+    const wrapper = btn.parentElement;
+    btn.remove(); // Remove current button before inserting rows
+
+    nextBatch.forEach(tx => {
+        const isIn = tx.amount > 0;
+        const color = isIn ? '#10b981' : '#ef4444';
+        const bgColor = isIn ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)';
+        const icon = isIn
+            ? '<path d="M17 7L7 17M7 17H17M7 17V7"/>'
+            : '<path d="M7 17L17 7M17 7H7M17 7V17"/>';
+        const dateStr = new Date(tx.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+        const div = document.createElement('div');
+        div.className = 'd-flex align-items-center justify-content-between p-3 mb-2 rounded-3';
+        div.style.cssText = 'background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);transition:background 0.2s;';
+        div.onmouseover = () => div.style.background = 'rgba(255,255,255,0.04)';
+        div.onmouseout = () => div.style.background = 'rgba(255,255,255,0.02)';
+        div.innerHTML = `
+            <div class="d-flex align-items-center gap-3" style="flex:1;min-width:0;">
+                <div class="d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:34px;height:34px;background:${bgColor};border-radius:10px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${icon}</svg>
+                </div>
+                <div style="min-width:0;">
+                    <div class="fw-medium text-truncate" style="color:${color};font-size:0.85rem;max-width:280px;">${tx.category || tx.type}</div>
+                    ${tx.notes ? `<div class="text-white-40 text-truncate" style="font-size:0.75rem;max-width:280px;">${tx.notes}</div>` : ''}
+                    <div class="text-white-30" style="font-size:0.7rem;">${dateStr}</div>
+                </div>
+            </div>
+            <div class="text-end ps-3 flex-shrink-0">
+                <div class="fw-medium" style="color:${color};font-size:0.95rem;">${fmtINR(Math.abs(tx.amount), isIn ? '+' : '-')}</div>
+                <div class="text-white-30 text-uppercase" style="font-size:0.65rem;">${isIn ? 'Income' : 'Expense'}</div>
+            </div>`;
+        wrapper.appendChild(div);
+    });
+
+    if (remaining > 0) {
+        const newBtn = document.createElement('button');
+        newBtn.className = 'btn w-100 mt-2 py-2 text-white-40 small';
+        newBtn.style.cssText = 'background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;';
+        newBtn.textContent = `Load more (${remaining} remaining)`;
+        newBtn.onmouseover = () => newBtn.style.background = 'rgba(255,255,255,0.07)';
+        newBtn.onmouseout = () => newBtn.style.background = 'rgba(255,255,255,0.03)';
+        newBtn.onclick = () => loadMoreCfTransactions(newBtn, bizId, currentCount + PAGE_SIZE);
+        wrapper.appendChild(newBtn);
+    }
 }
 
 function renderBusinessStatements() {
@@ -7660,7 +7799,7 @@ function renderBusinessStatements() {
                         <div class="mb-4 text-center py-3 rounded-xl" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03);">
                             <div class="small text-white-40 text-uppercase tracking-wider mb-1" style="font-size: 0.7rem;">Net Profit</div>
                             <div class="h3 fw-light mb-0" style="color: ${profitColor}; letter-spacing: -0.02em;">
-                                ${isProfitable ? '+' : '-'}₹${(Math.abs(pl.netProfit || 0) / 100000).toFixed(2)}L
+                                ${fmtINR(Math.abs(pl.netProfit || 0), isProfitable ? '+' : '-')}
                             </div>
                         </div>
 
@@ -7670,14 +7809,14 @@ function renderBusinessStatements() {
                                 <div class="p-3 h-100 d-flex flex-column align-items-center justify-content-center text-center" 
                                      style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 18px;">
                                     <span class="small text-green-400 text-uppercase tracking-wider mb-1" style="font-size: 0.65rem;">Revenue</span>
-                                    <div class="fw-light h5 mb-0 text-white">₹${((pl.revenue || 0) / 100000).toFixed(2)}L</div>
+                                    <div class="fw-light h5 mb-0 text-white">${fmtINR(pl.revenue || 0)}</div>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="p-3 h-100 d-flex flex-column align-items-center justify-content-center text-center" 
                                      style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 18px;">
                                     <span class="small text-red-400 text-uppercase tracking-wider mb-1" style="font-size: 0.65rem;">Expenses</span>
-                                    <div class="fw-light h5 mb-0 text-white">₹${((pl.expenses || 0) / 100000).toFixed(2)}L</div>
+                                    <div class="fw-light h5 mb-0 text-white">${fmtINR(pl.expenses || 0)}</div>
                                 </div>
                             </div>
                         </div>
@@ -7696,7 +7835,7 @@ function renderBusinessStatements() {
                                 ${Object.entries(pl.expenseBreakdown || {}).map(([cat, amount]) => `
                                     <div class="d-flex justify-content-between align-items-center small">
                                         <span class="text-white-50">${cat}</span>
-                                        <span class="text-white-70 font-monospace">₹${((amount || 0) / 100000).toFixed(2)}L</span>
+                                        <span class="text-white-70 font-monospace">${fmtINR(amount || 0)}</span>
                                     </div>
                                 `).join('')}
                                 </div>
