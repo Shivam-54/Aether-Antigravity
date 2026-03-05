@@ -9780,16 +9780,38 @@ function _showSettingsToast(msg) {
 const _origPopulate = window._populateProfileDrawer || _populateProfileDrawer;
 
 function _populateSettingsState() {
-    // Last login
+    // Last login history (last 5)
     const loginDisplay = document.getElementById('lastLoginDisplay');
     if (loginDisplay) {
-        // Store login time on first load
-        if (!localStorage.getItem('aether_last_login')) {
-            localStorage.setItem('aether_last_login', new Date().toISOString());
+        // Load existing history
+        let loginHistory = [];
+        try {
+            loginHistory = JSON.parse(localStorage.getItem('aether_login_history') || '[]');
+        } catch (e) {
+            // Migrate old single-value key if it exists
+            const old = localStorage.getItem('aether_last_login');
+            if (old) loginHistory = [old];
         }
-        const ts = new Date(localStorage.getItem('aether_last_login'));
-        const timeStr = ts.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
-        loginDisplay.textContent = `${timeStr} · Chrome`;
+
+        // Prepend current login and keep only last 5
+        loginHistory.unshift(new Date().toISOString());
+        loginHistory = loginHistory.slice(0, 5);
+        localStorage.setItem('aether_login_history', JSON.stringify(loginHistory));
+
+        // Detect browser name
+        const ua = navigator.userAgent;
+        const browser = /Edg/.test(ua) ? 'Edge' : /OPR/.test(ua) ? 'Opera' : /Chrome/.test(ua) ? 'Chrome' : /Firefox/.test(ua) ? 'Firefox' : /Safari/.test(ua) ? 'Safari' : 'Browser';
+
+        // Render each login entry
+        loginDisplay.innerHTML = loginHistory.map((iso, idx) => {
+            const ts = new Date(iso);
+            const timeStr = ts.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
+            const isLatest = idx === 0;
+            return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;${idx > 0 ? 'border-top:1px solid rgba(255,255,255,0.05);' : ''}">
+                <span style="color:${isLatest ? '#fff' : 'rgba(255,255,255,0.45)'};font-size:${isLatest ? '0.9rem' : '0.8rem'};font-weight:${isLatest ? '500' : '400'};">${timeStr} · ${browser}</span>
+                ${isLatest ? '<span style="font-size:0.65rem;padding:2px 8px;border-radius:20px;background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.2);letter-spacing:0.05em;">CURRENT</span>' : ''}
+            </div>`;
+        }).join('');
     }
 
     // Privacy mode

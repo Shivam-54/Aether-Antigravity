@@ -3,8 +3,7 @@ Crypto AI Insights Generator using Google Gemini
 Generates actionable portfolio insights for cryptocurrency holdings
 """
 
-import google.generativeai as genai
-from google.generativeai.types import RequestOptions
+from google import genai
 import pandas as pd
 import numpy as np
 import os
@@ -32,8 +31,7 @@ class CryptoInsightsGenerator:
         if not api_key:
             raise ValueError("GEMINI_API_KEY not found in environment")
 
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
+        self.client = genai.Client(api_key=api_key)
 
     async def get_crypto_context(self, symbols: List[str]) -> Dict:
         """
@@ -148,9 +146,9 @@ class CryptoInsightsGenerator:
 
         try:
             response = await asyncio.to_thread(
-                self.model.generate_content,
-                prompt,
-                request_options=RequestOptions(timeout=10)
+                self.client.models.generate_content,
+                model='gemini-2.0-flash',
+                contents=prompt
             )
             insights = self._parse_response(response.text)
         except Exception as e:

@@ -3,7 +3,7 @@ AI-Powered Real Estate Portfolio Insights Generator using Google Gemini
 Generates actionable insights based on property data, ROI, and rental metrics
 """
 
-import google.generativeai as genai
+from google import genai
 import os
 import json
 from datetime import datetime
@@ -16,8 +16,7 @@ class REInsightsGenerator:
         if not api_key:
             raise ValueError("GEMINI_API_KEY not found in environment")
 
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
+        self.client = genai.Client(api_key=api_key)
 
     def _build_property_context(self, properties: list) -> dict:
         """Build a rich context dict from property ORM objects"""
@@ -94,7 +93,7 @@ class REInsightsGenerator:
         prompt = self._build_prompt(context)
 
         try:
-            response = self.model.generate_content(prompt)
+            response = self.client.models.generate_content(model='gemini-2.0-flash', contents=prompt)
             insights = self._parse_response(response.text)
         except Exception as e:
             insights = self._rule_based_insights(context)

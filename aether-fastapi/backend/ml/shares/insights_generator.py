@@ -3,7 +3,7 @@ AI-Powered Portfolio Insights Generator using Google Gemini
 Generates actionable insights based on stock data, trends, and risk metrics
 """
 
-import google.generativeai as genai
+from google import genai
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -19,8 +19,7 @@ class InsightsGenerator:
         if not api_key:
             raise ValueError("GEMINI_API_KEY not found in environment")
         
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
+        self.client = genai.Client(api_key=api_key)
     
     def get_stock_context(self, tickers: list) -> dict:
         """Gather comprehensive stock data for AI analysis"""
@@ -98,7 +97,7 @@ class InsightsGenerator:
         prompt = self._build_prompt(stock_context, portfolio_value)
         
         try:
-            response = self.model.generate_content(prompt)
+            response = self.client.models.generate_content(model='gemini-2.0-flash', contents=prompt)
             insights = self._parse_response(response.text)
         except Exception as e:
             # Fallback to rule-based insights if AI fails

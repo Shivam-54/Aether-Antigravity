@@ -33,3 +33,6 @@ ta>=0.11.0  # Technical analysis library
 # Financial Data
 yfinance>=0.2.59
 
+# Google Gemini AI (new SDK, replaces deprecated google-generativeai)
+google-genai>=1.0.0
+
