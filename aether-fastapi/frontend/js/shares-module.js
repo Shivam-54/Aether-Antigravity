@@ -16,6 +16,8 @@ let SHARES_DATA = {
 };
 
 let currentSharesFilter = 'active'; // 'active' or 'sold'
+let currentSharesPerfPeriod = '1M';  // Default period for performance chart
+let sharesPerformanceChartInstance = null;
 let shareSearchTimeout = null;
 let selectedStock = null;
 
@@ -37,6 +39,8 @@ async function fetchSharesData() {
 
         renderSharesOverview();
         renderSharesHoldings();
+        // Render performance chart
+        loadSharesPerformanceChart(currentSharesPerfPeriod);
         // Sync Performance Tab
         if (window.renderPerformanceAnalytics) {
             renderPerformanceAnalytics();
@@ -62,19 +66,36 @@ function renderSharesOverview() {
                 </div>
             </div>
 
-            <!-- Portfolio Chart Placeholder -->
+            <!-- Portfolio Performance Chart -->
             <div class="rounded-4 overflow-hidden position-relative" 
-                 style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); height: 300px; padding: 2rem;">
-                <div class="d-flex align-items-center justify-content-between mb-4">
-                    <h3 class="small fw-medium text-white-70">Portfolio Performance</h3>
+                 style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 2rem;">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <h3 class="small fw-medium text-white-70 mb-0">Portfolio Performance</h3>
+                        <div id="shares-perf-subtitle" class="text-white-40" style="font-size:0.7rem;margin-top:2px;">Loading...</div>
+                    </div>
                     <div class="d-flex gap-2">
                         ${['1D', '1W', '1M', '1Y', 'ALL'].map(range => `
-                            <button class="px-3 py-1 rounded-pill small" style="background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); border: none;">${range}</button>
+                            <button onclick="loadSharesPerformanceChart('${range}')" 
+                                id="shares-perf-btn-${range}"
+                                class="px-3 py-1 rounded-pill small" 
+                                style="background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); border: 1px solid transparent; cursor:pointer; transition: all 0.2s;"
+                                onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+                                onmouseout="if(currentSharesPerfPeriod !== '${range}') { this.style.background='rgba(255,255,255,0.05)'; this.style.color='rgba(255,255,255,0.4)'; }">
+                                ${range}
+                            </button>
                         `).join('')}
                     </div>
                 </div>
-                <div class="text-white-50 text-center mt-5">
-                    <p>Performance chart coming soon...</p>
+                <div id="shares-perf-loading" class="text-white-50 text-center py-4" style="display:none;">
+                    <div class="spinner-border spinner-border-sm text-light" role="status"></div>
+                    <p class="small mt-2 mb-0">Loading chart...</p>
+                </div>
+                <div id="shares-perf-empty" class="text-white-50 text-center py-4" style="display:none;">
+                    <p class="small mb-0">No holdings data yet. Add shares to see performance.</p>
+                </div>
+                <div style="height: 260px; width: 100%;">
+                    <canvas id="sharesPerformanceChart"></canvas>
                 </div>
             </div>
 
@@ -299,6 +320,176 @@ function renderSharesOverview() {
         });
     }
 }
+
+// =====================================================
+// SHARES PORTFOLIO PERFORMANCE CHART
+// =====================================================
+
+const PERIOD_MAP = {
+    '1D': '1d',
+    '1W': '5d',
+    '1M': '1mo',
+    '1Y': '1y',
+    'ALL': '5y'
+};
+
+async function loadSharesPerformanceChart(period) {
+    currentSharesPerfPeriod = period;
+
+    // Highlight active button
+    ['1D', '1W', '1M', '1Y', 'ALL'].forEach(p => {
+        const btn = document.getElementById(`shares-perf-btn-${p}`);
+        if (!btn) return;
+        if (p === period) {
+            btn.style.background = 'rgba(255,255,255,0.15)';
+            btn.style.color = 'rgba(255,255,255,0.9)';
+            btn.style.border = '1px solid rgba(255,255,255,0.25)';
+        } else {
+            btn.style.background = 'rgba(255,255,255,0.05)';
+            btn.style.color = 'rgba(255,255,255,0.4)';
+            btn.style.border = '1px solid transparent';
+        }
+    });
+
+    const canvas = document.getElementById('sharesPerformanceChart');
+    const loading = document.getElementById('shares-perf-loading');
+    const empty = document.getElementById('shares-perf-empty');
+    const subtitle = document.getElementById('shares-perf-subtitle');
+
+    if (!canvas) return;
+
+    // Show loading
+    if (loading) loading.style.display = 'block';
+    if (empty) empty.style.display = 'none';
+    canvas.style.opacity = '0';
+
+    try {
+        const apiPeriod = PERIOD_MAP[period] || '1mo';
+        const response = await fetch(`${API_BASE_URL}/shares/portfolio-chart?period=${apiPeriod}`, {
+            headers: getAuthHeaders()
+        });
+
+        if (loading) loading.style.display = 'none';
+
+        if (!response.ok) throw new Error('API error');
+        const result = await response.json();
+
+        const chartData = result.data || [];
+
+        if (!chartData.length) {
+            if (empty) empty.style.display = 'block';
+            if (subtitle) subtitle.textContent = 'No data for this period';
+            return;
+        }
+
+        const labels = chartData.map(d => {
+            const date = new Date(d.date);
+            if (period === '1D') return date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+            if (period === '1W') return date.toLocaleDateString([], {weekday: 'short', day: 'numeric'});
+            return date.toLocaleDateString([], {month: 'short', day: 'numeric'});
+        });
+        const values = chartData.map(d => d.value);
+
+        const firstVal = values[0];
+        const lastVal = values[values.length - 1];
+        const change = lastVal - firstVal;
+        const changePct = firstVal > 0 ? (change / firstVal * 100) : 0;
+        const isPositive = change >= 0;
+        const lineColor   = isPositive ? '#22d399' : '#ef4444';
+        const fillColorStart = isPositive ? 'rgba(34,211,153,0.25)' : 'rgba(239,68,68,0.25)';
+        const fillColorEnd   = 'rgba(0,0,0,0)';
+
+        if (subtitle) {
+            subtitle.textContent = `${isPositive ? '+' : ''}${changePct.toFixed(2)}%  ·  ₹${Math.abs(change).toLocaleString('en-IN', {maximumFractionDigits: 0})} ${isPositive ? '▲' : '▼'}  over ${period}`;
+            subtitle.style.color = isPositive ? '#22d399' : '#ef4444';
+        }
+
+        // Destroy old chart
+        if (sharesPerformanceChartInstance) {
+            sharesPerformanceChartInstance.destroy();
+            sharesPerformanceChartInstance = null;
+        }
+
+        const ctx = canvas.getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 260);
+        gradient.addColorStop(0, fillColorStart);
+        gradient.addColorStop(1, fillColorEnd);
+
+        sharesPerformanceChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Portfolio Value (₹)',
+                    data: values,
+                    borderColor: lineColor,
+                    borderWidth: 2,
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: chartData.length > 60 ? 0 : 3,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: lineColor,
+                    pointBorderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 600, easing: 'easeInOutQuart' },
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.85)',
+                        titleColor: 'rgba(255,255,255,0.7)',
+                        bodyColor: '#fff',
+                        padding: 12,
+                        cornerRadius: 8,
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: c => '₹' + c.raw.toLocaleString('en-IN', {maximumFractionDigits: 2})
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
+                        ticks: {
+                            color: 'rgba(255,255,255,0.35)',
+                            font: { family: 'Inter', size: 10 },
+                            maxTicksLimit: 8,
+                            maxRotation: 0
+                        },
+                        border: { display: false }
+                    },
+                    y: {
+                        position: 'right',
+                        grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
+                        ticks: {
+                            color: 'rgba(255,255,255,0.35)',
+                            font: { family: 'Inter', size: 10 },
+                            callback: v => '₹' + (v >= 100000 ? (v/100000).toFixed(1)+'L' : v >= 1000 ? (v/1000).toFixed(0)+'k' : v)
+                        },
+                        border: { display: false }
+                    }
+                }
+            }
+        });
+
+        canvas.style.opacity = '1';
+        canvas.style.transition = 'opacity 0.4s ease';
+
+    } catch (err) {
+        console.error('Shares performance chart error:', err);
+        if (loading) loading.style.display = 'none';
+        if (subtitle) subtitle.textContent = 'Unable to load chart data';
+        canvas.style.opacity = '1';
+    }
+}
+
+window.loadSharesPerformanceChart = loadSharesPerformanceChart;
 
 // Render Shares Holdings
 function renderSharesHoldings() {

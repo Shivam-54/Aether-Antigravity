@@ -138,7 +138,13 @@ def get_historical_data(symbol: str, period: str = "1mo") -> Optional[List[Dict]
         ticker = yf.Ticker(normalized_symbol)
         
         # Download historical data
-        hist = ticker.history(period=period)
+        kwargs = {"period": period}
+        if period == "1d":
+            kwargs["interval"] = "5m"
+        elif period == "5d":
+            kwargs["interval"] = "15m"
+            
+        hist = ticker.history(**kwargs)
         
         if hist.empty:
             logger.warning(f"No historical data for {normalized_symbol}")
@@ -147,8 +153,14 @@ def get_historical_data(symbol: str, period: str = "1mo") -> Optional[List[Dict]
         # Convert to list of dicts
         data_points = []
         for index, row in hist.iterrows():
+            # For 1d or 5d, include time. Otherwise just date.
+            if period in ["1d", "5d"]:
+                date_str = index.strftime('%Y-%m-%d %H:%M')
+            else:
+                date_str = index.strftime('%Y-%m-%d')
+                
             data_points.append({
-                'date': index.strftime('%Y-%m-%d'),
+                'date': date_str,
                 'price': float(row['Close']),
                 'volume': int(row['Volume']) if 'Volume' in row else 0
             })

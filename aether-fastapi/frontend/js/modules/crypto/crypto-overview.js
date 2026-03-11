@@ -371,6 +371,13 @@ async function renderPortfolioPerformanceChart(activeRange) {
     const labels = filtered.map(p => p.date);
     const values = filtered.map(p => p.value);
 
+    const firstVal = values.length > 0 ? values[0] : 0;
+    const lastVal = values.length > 0 ? values[values.length - 1] : 0;
+    const isPositive = (lastVal - firstVal) >= 0;
+    const lineColor = isPositive ? '#22d399' : '#ef4444';
+    const fillColorStart = isPositive ? 'rgba(34, 211, 153, 0.15)' : 'rgba(239, 68, 68, 0.15)';
+    const fillColorEnd = 'rgba(0, 0, 0, 0)';
+
     // Destroy previous instance if any
     if (window.cryptoPerformanceChartInstance) {
         window.cryptoPerformanceChartInstance.destroy();
@@ -387,17 +394,17 @@ async function renderPortfolioPerformanceChart(activeRange) {
                 backgroundColor: function(context) {
                     const chart = context.chart;
                     const {ctx, chartArea} = chart;
-                    if (!chartArea) return 'rgba(255,255,255,0.05)';
+                    if (!chartArea) return fillColorStart;
                     const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-                    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
-                    gradient.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+                    gradient.addColorStop(0, fillColorStart);
+                    gradient.addColorStop(1, fillColorEnd);
                     return gradient;
                 },
-                borderColor: '#FFFFFF',
+                borderColor: lineColor,
                 borderWidth: 1.5,
                 pointRadius: 0,
                 pointHoverRadius: 4,
-                pointHoverBackgroundColor: '#FFFFFF',
+                pointHoverBackgroundColor: lineColor,
                 tension: 0.4
             }]
         },
