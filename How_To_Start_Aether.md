@@ -79,6 +79,22 @@ Serving HTTP on :: port 3000 (http://[::]:3000/) ...
 
 ---
 
+## Troubleshooting: "Address already in use" Error
+If you get an error that says `OSError: [Errno 48] Address already in use` when trying to start the frontend server, it means another process (likely a previous run of the frontend) is still running in the background.
+
+**To fix this, type this EXACTLY and press Enter:**
+```bash
+lsof -ti :3000 | xargs kill -9
+```
+*(This command finds whatever is using port 3000 and forcefully quits it. You won't see any confirmation message, but the port will be freed.)*
+
+After running that command, try Step 6 again:
+```bash
+python3 -m http.server 3000
+```
+
+---
+
 ## Step 7: Open the Website in Chrome/Safari
 Both of your servers are now running! 
 1. Open Google Chrome or Safari.
