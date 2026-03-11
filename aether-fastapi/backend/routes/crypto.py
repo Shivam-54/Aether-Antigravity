@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from uuid import UUID
 import requests
 import os
@@ -323,6 +323,79 @@ def delete_wallet(
     db.delete(wallet)
     db.commit()
     return None
+
+
+# --- Portfolio History Route ---
+
+class PortfolioDataPoint(BaseModel):
+    date: str
+    value: float
+
+@router.get("/portfolio-history", response_model=List[PortfolioDataPoint])
+def get_portfolio_history(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Reconstruct a daily cumulative portfolio value timeline from holdings.
+    For each holding, we interpolate value linearly from (purchase_date, purchase_price_avg)
+    to (today, current_price). We then sum all holding values per day.
+    """
+    holdings = db.query(CryptoHolding).filter(CryptoHolding.user_id == current_user.id).all()
+
+    if not holdings:
+        return []
+
+    today = date.today()
+
+    # Build a dict of date -> total_value
+    daily_values: dict[date, float] = {}
+
+    for holding in holdings:
+        # Use purchase_date if set, otherwise fall back to created_at date
+        if holding.purchase_date:
+            start_date = holding.purchase_date
+        elif holding.created_at:
+            start_date = holding.created_at.date()
+        else:
+            start_date = today
+
+        # Clamp start to today if somehow in the future
+        if start_date > today:
+            start_date = today
+
+        buy_price = holding.purchase_price_avg or 0.0
+        cur_price = holding.current_price or buy_price
+        qty = holding.quantity or 0.0
+
+        start_value = qty * buy_price
+        end_value = qty * cur_price
+
+        num_days = (today - start_date).days
+        if num_days < 0:
+            num_days = 0
+
+        # Generate a data point for each day from start_date to today
+        for day_offset in range(num_days + 1):
+            current_day = start_date + timedelta(days=day_offset)
+            # Linear interpolation of value
+            if num_days > 0:
+                t = day_offset / num_days
+            else:
+                t = 1.0
+            interpolated_value = start_value + t * (end_value - start_value)
+
+            if current_day in daily_values:
+                daily_values[current_day] += interpolated_value
+            else:
+                daily_values[current_day] = interpolated_value
+
+    # Sort by date and return
+    sorted_dates = sorted(daily_values.keys())
+    return [
+        PortfolioDataPoint(date=d.isoformat(), value=round(daily_values[d], 2))
+        for d in sorted_dates
+    ]
 
 
 # --- Metrics Route ---

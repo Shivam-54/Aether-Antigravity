@@ -650,53 +650,79 @@ function renderHomeDashboard() {
                 <div class="p-4 rounded-4" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h3 class="h5 fw-light text-white-90 mb-0">Performance Overview</h3>
-                        <div class="text-white-50 small fw-light">Monthly Growth</div>
+                        <div class="text-white-50 small fw-light">Portfolio Performance</div>
                     </div>
                     
                     <div class="row g-0 align-items-center text-center">
-                        <!-- Real Estate Growth -->
-                        <div class="col position-relative">
-                            <div class="py-2">
-                                <div class="small fw-light text-white-50 text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 0.1em;">Real Estate</div>
-                                <div class="h5 fw-normal text-white mb-0">+4.2%</div>
-                            </div>
-                            <div class="position-absolute end-0 top-50 translate-middle-y" style="width: 1px; height: 30px; background: rgba(255,255,255,0.1);"></div>
-                        </div>
+                        ${(() => {
+            const modules = [];
 
-                        <!-- Crypto Growth -->
-                        <div class="col position-relative">
-                             <div class="py-2">
-                                <div class="small fw-light text-white-50 text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 0.1em;">Crypto</div>
-                                <div class="h5 fw-normal text-success mb-0">+12.8%</div>
-                            </div>
-                             <div class="position-absolute end-0 top-50 translate-middle-y" style="width: 1px; height: 30px; background: rgba(255,255,255,0.1);"></div>
-                        </div>
+            // 1. Real Estate — (currentVal - invested) / invested * 100
+            const activeProps = REAL_ESTATE_DATA.properties.filter(p => p.status !== 'Sold');
+            const reInvested = activeProps.reduce((sum, p) => sum + (p.purchase_price || 0), 0);
+            const reCurrent = metrics.realEstateVal;
+            const rePct = reInvested > 0 ? ((reCurrent - reInvested) / reInvested) * 100 : null;
+            modules.push({ label: 'Real Estate', pct: rePct, sublabel: 'Total Return' });
 
-                        <!-- Shares Growth -->
-                        <div class="col position-relative">
-                             <div class="py-2">
-                                <div class="small fw-light text-white-50 text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 0.1em;">Shares</div>
-                                <div class="h5 fw-normal text-danger mb-0">-1.4%</div>
-                            </div>
-                             <div class="position-absolute end-0 top-50 translate-middle-y" style="width: 1px; height: 30px; background: rgba(255,255,255,0.1);"></div>
-                        </div>
+            // 2. Crypto — cost basis from purchase_price_avg * quantity vs current total
+            const cryptoHoldings = (typeof CRYPTO_DATA !== 'undefined' && CRYPTO_DATA.holdings) ? CRYPTO_DATA.holdings : [];
+            const cryptoInvested = cryptoHoldings.reduce((sum, h) => sum + ((h.purchase_price_avg || 0) * (h.quantity || 0)), 0);
+            const cryptoCurrent = metrics.cryptoVal;
+            const cryptoPct = cryptoInvested > 0 ? ((cryptoCurrent - cryptoInvested) / cryptoInvested) * 100 : null;
+            modules.push({ label: 'Crypto', pct: cryptoPct, sublabel: 'Total Return' });
 
-                        <!-- Bonds Growth -->
-                        <div class="col position-relative">
-                             <div class="py-2">
-                                <div class="small fw-light text-white-50 text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 0.1em;">Bonds</div>
-                                <div class="h5 fw-normal text-white mb-0">+0.8%</div>
-                            </div>
-                             <div class="position-absolute end-0 top-50 translate-middle-y" style="width: 1px; height: 30px; background: rgba(255,255,255,0.1);"></div>
-                        </div>
+            // 3. Shares — use pre-calculated metric from shares module
+            const sharesPct = (typeof SHARES_DATA !== 'undefined' && SHARES_DATA.metrics && SHARES_DATA.metrics.total_invested > 0)
+                ? SHARES_DATA.metrics.total_gain_loss_percent
+                : null;
+            modules.push({ label: 'Shares', pct: sharesPct, sublabel: 'Total Return' });
 
-                        <!-- Business Growth -->
-                        <div class="col">
-                             <div class="py-2">
-                                <div class="small fw-light text-white-50 text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 0.1em;">Business</div>
-                                <div class="h5 fw-normal text-success mb-0">+8.5%</div>
-                            </div>
-                        </div>
+            // 4. Bonds — weighted avg coupon rate (yield), not P&L
+            const bondsArr = (typeof BONDS_DATA !== 'undefined' && Array.isArray(BONDS_DATA)) ? BONDS_DATA : [];
+            let bondsPct = null;
+            if (bondsArr.length > 0) {
+                const totalFace = bondsArr.reduce((sum, b) => sum + (b.faceValue || 0), 0);
+                if (totalFace > 0) {
+                    const weightedCoupon = bondsArr.reduce((sum, b) => sum + ((b.couponRate || 0) * (b.faceValue || 0)), 0);
+                    bondsPct = weightedCoupon / totalFace;
+                }
+            }
+            modules.push({ label: 'Bonds', pct: bondsPct, sublabel: 'Avg Yield', alwaysPositive: true });
+
+            // 5. Business — profit margin (annualProfit / annualRevenue * 100)
+            const bizArr = (typeof BUSINESS_DATA !== 'undefined' && Array.isArray(BUSINESS_DATA)) ? BUSINESS_DATA : [];
+            let bizPct = null;
+            if (bizArr.length > 0) {
+                const totalRev = bizArr.reduce((sum, b) => sum + (b.annualRevenue || 0), 0);
+                const totalProfit = bizArr.reduce((sum, b) => sum + (b.annualProfit || 0), 0);
+                if (totalRev > 0) bizPct = (totalProfit / totalRev) * 100;
+            }
+            modules.push({ label: 'Business', pct: bizPct, sublabel: 'Profit Margin' });
+
+            return modules.map((mod, idx) => {
+                const isLast = idx === modules.length - 1;
+                let colorClass, displayVal;
+                if (mod.pct === null || mod.pct === undefined || isNaN(mod.pct)) {
+                    colorClass = 'text-white-50';
+                    displayVal = '—';
+                } else if (mod.alwaysPositive || mod.pct >= 0) {
+                    colorClass = 'text-success';
+                    displayVal = `+${mod.pct.toFixed(1)}%`;
+                } else {
+                    colorClass = 'text-danger';
+                    displayVal = `${mod.pct.toFixed(1)}%`;
+                }
+                return `
+                                <div class="col position-relative">
+                                    <div class="py-2">
+                                        <div class="small fw-light text-white-50 text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 0.1em;">${mod.label}</div>
+                                        <div class="h5 fw-normal ${colorClass} mb-0">${displayVal}</div>
+                                        <div class="small fw-light text-white-30 mt-1" style="font-size: 0.65rem; opacity: 0.5;">${mod.sublabel}</div>
+                                    </div>
+                                    ${!isLast ? '<div class="position-absolute end-0 top-50 translate-middle-y" style="width: 1px; height: 30px; background: rgba(255,255,255,0.1);"></div>' : ''}
+                                </div>`;
+            }).join('');
+        })()}
                     </div>
                 </div>
             </div>
@@ -1168,7 +1194,11 @@ function switchSource(source) {
 
         // Special handling for Business
         if (source === 'business') {
-            fetchBusinessData();
+            // Hide all sub-sections and reset to Overview (same pattern as all other modules)
+            document.querySelectorAll('.business-section').forEach(el => el.style.display = 'none');
+            const overviewSection = document.getElementById('business-section-overview');
+            if (overviewSection) overviewSection.style.display = 'block';
+            fetchBusinessData().then(() => renderBusinessDashboard());
         }
     }
 
@@ -5040,7 +5070,11 @@ function addChatMessage(text, sender) {
 // The new module handles CRYPTO_DATA, fetchCryptoData, and rendering.
 // Keeping this comment for code traceability.
 
-function renderCryptoOverview() {
+// renderCryptoOverview is now defined in js/modules/crypto/crypto-overview.js
+// That module version includes the dynamic Chart.js portfolio performance chart.
+// The function below is intentionally renamed to avoid overriding the module.
+
+function _renderCryptoOverview_DISABLED() {
     const metrics = calculateCryptoMetrics();
 
 
@@ -5340,7 +5374,8 @@ function renderCryptoOverview() {
     }
 }
 
-function renderCryptoHoldings() {
+// renderCryptoHoldings is defined in js/modules/crypto/crypto-overview.js
+function _renderCryptoHoldings_DISABLED() {
     const container = document.getElementById('crypto-holdings-list');
     if (!container) return;
 
@@ -7425,7 +7460,7 @@ function renderBusinessVentures() {
                 </div>
                 
                 <!-- Horizontal Metrics Row (Old Website Style) -->
-                <div class="d-flex gap-3 p-3 rounded-3 border" style="background: rgba(0,0,0,0.15); border-color: rgba(255,255,255,0.05) !important;">
+                <div class="d-flex gap-3 p-3 rounded-3" style="background: rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.06);">
                     <div class="text-center flex-fill">
                         <div class="text-white-30 text-uppercase mb-1" style="font-size: 0.6rem; letter-spacing: 0.05em;">Ownership</div>
                         <div class="text-white fw-medium">${biz.ownership}%</div>

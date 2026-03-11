@@ -139,6 +139,9 @@ function calculateCryptoMetrics() {
 }
 
 function renderCryptoOverview() {
+    // Reset cache so each fresh render fetches up-to-date history
+    window._cryptoPortfolioHistory = null;
+
     const metrics = calculateCryptoMetrics();
 
     // NOTE: This large HTML block is migrated from dashboard.js
@@ -157,26 +160,27 @@ function renderCryptoOverview() {
             <div class="row g-4">
                 <!-- Portfolio Performance Graph -->
                 <div class="col-lg-8">
-                    <div class="rounded-4 overflow-hidden position-relative h-100" 
+                    <div class="rounded-4 overflow-hidden position-relative h-100 d-flex flex-column" 
                          style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); min-height: 320px; padding: 1.5rem;">
-                        <div class="d-flex align-items-center justify-content-between mb-4">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
                             <h3 class="small fw-medium text-white-70 mb-0">Portfolio Performance</h3>
-                            <div class="d-flex gap-2">
-                                ${['1D', '1W', '1M', '1Y', 'ALL'].map(range => `
-                                    <button class="px-3 py-1 rounded-pill small" style="background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); border: none;">${range}</button>
+                            <div class="d-flex gap-2" id="perfRangeBtns">
+                                ${['1D', '1W', '1M', '1Y', 'ALL'].map((range, i) => `
+                                    <button
+                                        data-range="${range}"
+                                        class="px-3 py-1 rounded-pill small perf-range-btn"
+                                        style="background: ${i === 4 ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)'}; color: ${i === 4 ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)'}; border: none; cursor: pointer; transition: all 0.2s;">
+                                        ${range}
+                                    </button>
                                 `).join('')}
                             </div>
                         </div>
-                        <svg class="w-100" preserveAspectRatio="none" viewBox="0 0 100 50" style="position: absolute; bottom: 0; left: 0; right: 0; height: 70%;">
-                            <defs>
-                                <linearGradient id="cryptoChartGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stop-color="rgba(255, 255, 255, 0.15)" />
-                                    <stop offset="100%" stop-color="rgba(255, 255, 255, 0)" />
-                                </linearGradient>
-                            </defs>
-                            <path d="M0,45 C20,40 30,20 50,25 C70,30 80,10 100,5 V50 H0 Z" fill="url(#cryptoChartGradient)"/>
-                            <path d="M0,45 C20,40 30,20 50,25 C70,30 80,10 100,5" fill="none" stroke="#FFFFFF" stroke-width="0.5"/>
-                        </svg>
+                        <div class="flex-grow-1 position-relative" style="min-height: 220px;">
+                            <canvas id="cryptoPerformanceChart"></canvas>
+                            <div id="cryptoPerformanceEmpty" class="d-none position-absolute top-50 start-50 translate-middle text-center">
+                                <p class="small text-white-30 mb-0">No holdings data yet</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -293,8 +297,158 @@ function renderCryptoOverview() {
         container.innerHTML = overviewHtml;
         initCryptoCharts(metrics);
         initNetworkAnimation();
+        // Render the real performance chart after DOM is ready
+        renderPortfolioPerformanceChart('ALL');
     }
 }
+
+// ── Portfolio Performance Chart ─────────────────────────────────────────────
+
+// Cache the full history so range buttons don't re-fetch
+window._cryptoPortfolioHistory = null;
+
+async function renderPortfolioPerformanceChart(activeRange) {
+    const canvas = document.getElementById('cryptoPerformanceChart');
+    const emptyEl = document.getElementById('cryptoPerformanceEmpty');
+    if (!canvas) return;
+
+    // Fetch history only once per overview render
+    if (!window._cryptoPortfolioHistory) {
+        try {
+            const res = await withTimeout(fetch(`${API_BASE_URL}/crypto/portfolio-history`, {
+                headers: getAuthHeaders()
+            }));
+            if (res.ok) {
+                window._cryptoPortfolioHistory = await res.json();
+            } else {
+                window._cryptoPortfolioHistory = [];
+            }
+        } catch (e) {
+            console.warn('Could not fetch portfolio history:', e);
+            window._cryptoPortfolioHistory = [];
+        }
+    }
+
+    const allData = window._cryptoPortfolioHistory || [];
+
+    // Wire up range buttons
+    const btnContainer = document.getElementById('perfRangeBtns');
+    if (btnContainer) {
+        btnContainer.querySelectorAll('.perf-range-btn').forEach(btn => {
+            btn.onclick = () => {
+                window._cryptoPortfolioHistory = window._cryptoPortfolioHistory; // keep cache
+                renderPortfolioPerformanceChart(btn.dataset.range);
+            };
+            const isActive = btn.dataset.range === activeRange;
+            btn.style.background = isActive ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)';
+            btn.style.color    = isActive ? 'rgba(255,255,255,0.9)'  : 'rgba(255,255,255,0.4)';
+        });
+    }
+
+    // Filter data by selected range
+    const now = new Date();
+    const cutoffMap = {
+        '1D': new Date(now - 1  * 24 * 60 * 60 * 1000),
+        '1W': new Date(now - 7  * 24 * 60 * 60 * 1000),
+        '1M': new Date(now - 30 * 24 * 60 * 60 * 1000),
+        '1Y': new Date(now - 365* 24 * 60 * 60 * 1000),
+        'ALL': null
+    };
+    const cutoff = cutoffMap[activeRange] || null;
+    const filtered = cutoff
+        ? allData.filter(p => new Date(p.date) >= cutoff)
+        : allData;
+
+    // Show empty state if no data
+    if (filtered.length === 0) {
+        if (emptyEl) emptyEl.classList.remove('d-none');
+        canvas.style.display = 'none';
+        return;
+    }
+    if (emptyEl) emptyEl.classList.add('d-none');
+    canvas.style.display = '';
+
+    const labels = filtered.map(p => p.date);
+    const values = filtered.map(p => p.value);
+
+    // Destroy previous instance if any
+    if (window.cryptoPerformanceChartInstance) {
+        window.cryptoPerformanceChartInstance.destroy();
+        window.cryptoPerformanceChartInstance = null;
+    }
+
+    window.cryptoPerformanceChartInstance = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                data: values,
+                fill: true,
+                backgroundColor: function(context) {
+                    const chart = context.chart;
+                    const {ctx, chartArea} = chart;
+                    if (!chartArea) return 'rgba(255,255,255,0.05)';
+                    const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
+                    gradient.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+                    return gradient;
+                },
+                borderColor: '#FFFFFF',
+                borderWidth: 1.5,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                pointHoverBackgroundColor: '#FFFFFF',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.85)',
+                    titleColor: 'rgba(255,255,255,0.5)',
+                    bodyColor: '#fff',
+                    padding: 12,
+                    cornerRadius: 8,
+                    titleFont: { family: 'Inter', size: 10 },
+                    bodyFont: { family: 'Inter', size: 13, weight: '300' },
+                    callbacks: {
+                        title: (items) => items[0].label,
+                        label: (item) => '₹' + Number(item.raw).toLocaleString('en-IN', { maximumFractionDigits: 0 })
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    border: { display: false },
+                    ticks: {
+                        color: 'rgba(255,255,255,0.3)',
+                        font: { family: 'Inter', size: 9 },
+                        maxTicksLimit: 6,
+                        maxRotation: 0
+                    }
+                },
+                y: {
+                    position: 'right',
+                    grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
+                    border: { display: false },
+                    ticks: {
+                        color: 'rgba(255,255,255,0.3)',
+                        font: { family: 'Inter', size: 9 },
+                        maxTicksLimit: 4,
+                        callback: (v) => '₹' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v)
+                    }
+                }
+            }
+        }
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function initNetworkAnimation() {
     if (document.getElementById('networkCorrelationCanvas')) {

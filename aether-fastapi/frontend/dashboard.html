@@ -3197,20 +3197,20 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-    <!-- Core & Modules -->
-    <script src="js/modules/crypto/crypto-overview.js?v=2" defer></script>
-    <script src="js/modules/crypto/crypto-transactions.js?v=3" defer></script>
-    <script src="js/modules/crypto/crypto-insights.js" defer></script>
-
-    <!-- Main Dashboard Logic -->
-    <script src="js/dashboard.js?v=231" defer></script>
+    <!-- Main Dashboard Logic (must load first so modules can override its functions) -->
+    <script src="js/dashboard.js?v=233" defer></script>
     <script src="js/real-estate-ai.js?v=13" defer></script>
     <script src="js/share-transactions.js?v=1" defer></script>
     <script src="js/modules/crypto/crypto-wallets.js?v=5" defer></script>
     <script src="js/analytics-utils.js" defer></script> <!-- NEW: Analytics Logic -->
-    <script src="js/shares-module.js?v=12" defer></script>
-    <script src="js/shares-performance.js?v=1" defer></script>
+    <script src="js/shares-module.js?v=14" defer></script>
+    <script src="js/shares-performance.js?v=2" defer></script>
     <script src="js/shares-ai-v2.js" defer></script> <!-- NEW: AI Lab price predictions -->
+
+    <!-- Crypto Modules (loaded AFTER dashboard.js so they override its duplicate functions) -->
+    <script src="js/modules/crypto/crypto-overview.js?v=3" defer></script>
+    <script src="js/modules/crypto/crypto-transactions.js?v=3" defer></script>
+    <script src="js/modules/crypto/crypto-insights.js" defer></script>
 
 
     <!-- Add Property Modal -->

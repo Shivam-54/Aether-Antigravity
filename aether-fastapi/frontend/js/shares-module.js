@@ -355,9 +355,9 @@ function renderSharesHoldings() {
         tableHtml += `
             <div class="py-5 text-center">
                 <div class="mb-3">
-                    <div class="d-inline-flex align-items-center justify-content-center bg-white bg-opacity-5 rounded-circle" style="width: 64px; height: 64px;">
-                        <svg width="32" height="32" fill="none" stroke="rgba(255,255,255,0.3)" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 64px; height: 64px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10);">
+                        <svg width="28" height="28" fill="none" stroke="rgba(255,255,255,0.35)" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3v18h18M9 17V9m4 8V5m4 12v-5"></path>
                         </svg>
                     </div>
                 </div>
@@ -366,6 +366,7 @@ function renderSharesHoldings() {
                     ${currentSharesFilter === 'active' ? 'Add your first share to track performance.' : 'Sold shares will appear here.'}
                 </p>
             </div>`;
+
     } else {
         // List Header
         tableHtml += `
@@ -746,6 +747,16 @@ async function submitAddShare(event) {
         return;
     }
 
+    const submitBtn = event.target.querySelector('button[type="submit"]') || document.getElementById('btn-add-share-submit');
+    const originalBtnText = submitBtn ? submitBtn.innerHTML : 'Add Share';
+
+    // Disable button and show loading state
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Adding...';
+        submitBtn.style.opacity = '0.7';
+    }
+
     const shareData = {
         symbol: document.getElementById('selected-share-symbol').value,
         company_name: document.getElementById('selected-share-name').value,
@@ -788,6 +799,13 @@ async function submitAddShare(event) {
     } catch (error) {
         console.error('Error adding share:', error);
         alert('Error adding share');
+    } finally {
+        // Re-enable button
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+            submitBtn.style.opacity = '1';
+        }
     }
 }
 
