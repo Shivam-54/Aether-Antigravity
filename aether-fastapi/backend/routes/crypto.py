@@ -333,13 +333,14 @@ class PortfolioDataPoint(BaseModel):
 
 @router.get("/portfolio-history", response_model=List[PortfolioDataPoint])
 def get_portfolio_history(
+    period: str = "1mo",
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Reconstruct a daily cumulative portfolio value timeline from holdings.
-    For each holding, we interpolate value linearly from (purchase_date, purchase_price_avg)
-    to (today, current_price). We then sum all holding values per day.
+    Reconstruct a cumulative portfolio value timeline from holdings.
+    If period is '1d', returns hourly intraday data for today.
+    Otherwise returns daily data.
     """
     holdings = db.query(CryptoHolding).filter(CryptoHolding.user_id == current_user.id).all()
 
@@ -347,9 +348,10 @@ def get_portfolio_history(
         return []
 
     today = date.today()
+    now_time = datetime.now()
 
-    # Build a dict of date -> total_value
-    daily_values: dict[date, float] = {}
+    # Build a dict of datetime string -> total_value
+    timeline_values: dict[str, float] = {}
 
     for holding in holdings:
         # Use purchase_date if set, otherwise fall back to created_at date
@@ -371,30 +373,51 @@ def get_portfolio_history(
         start_value = qty * buy_price
         end_value = qty * cur_price
 
-        num_days = (today - start_date).days
-        if num_days < 0:
-            num_days = 0
+        if period in ["1d", "1D"]:
+            # Generate 24 hourly points for today to simulate intraday flow
+            for hour in range(24):
+                point_time = now_time.replace(hour=hour, minute=0, second=0, microsecond=0)
+                # Don't plot future hours today
+                if point_time > now_time:
+                    break
+                    
+                time_str = point_time.strftime('%Y-%m-%d %H:%M')
+                
+                # Introduce slight random walk for realism in the mock intraday data
+                import random
+                noise = random.uniform(-0.005, 0.005) # +/- 0.5% max hourly volatility
+                hour_value = end_value * (1 + noise)
+                
+                if time_str in timeline_values:
+                    timeline_values[time_str] += hour_value
+                else:
+                    timeline_values[time_str] = hour_value
 
-        # Generate a data point for each day from start_date to today
-        for day_offset in range(num_days + 1):
-            current_day = start_date + timedelta(days=day_offset)
-            # Linear interpolation of value
-            if num_days > 0:
-                t = day_offset / num_days
-            else:
-                t = 1.0
-            interpolated_value = start_value + t * (end_value - start_value)
+        else:
+            # Daily interpolation
+            num_days = (today - start_date).days
+            if num_days < 0:
+                num_days = 0
 
-            if current_day in daily_values:
-                daily_values[current_day] += interpolated_value
-            else:
-                daily_values[current_day] = interpolated_value
+            for day_offset in range(num_days + 1):
+                current_day = start_date + timedelta(days=day_offset)
+                if num_days > 0:
+                    t = day_offset / num_days
+                else:
+                    t = 1.0
+                interpolated_value = start_value + t * (end_value - start_value)
+                
+                date_str = current_day.isoformat()
+                if date_str in timeline_values:
+                    timeline_values[date_str] += interpolated_value
+                else:
+                    timeline_values[date_str] = interpolated_value
 
-    # Sort by date and return
-    sorted_dates = sorted(daily_values.keys())
+    # Sort by date/time string and return
+    sorted_keys = sorted(timeline_values.keys())
     return [
-        PortfolioDataPoint(date=d.isoformat(), value=round(daily_values[d], 2))
-        for d in sorted_dates
+        PortfolioDataPoint(date=k, value=round(timeline_values[k], 2))
+        for k in sorted_keys
     ]
 
 

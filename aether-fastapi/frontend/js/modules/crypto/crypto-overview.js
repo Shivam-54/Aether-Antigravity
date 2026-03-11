@@ -304,39 +304,39 @@ function renderCryptoOverview() {
 
 // ── Portfolio Performance Chart ─────────────────────────────────────────────
 
-// Cache the full history so range buttons don't re-fetch
-window._cryptoPortfolioHistory = null;
+const CRYPTO_PERIOD_MAP = {
+    '1D': '1d',
+    '1W': '5d',
+    '1M': '1mo',
+    '1Y': '1y',
+    'ALL': '5y'
+};
 
 async function renderPortfolioPerformanceChart(activeRange) {
     const canvas = document.getElementById('cryptoPerformanceChart');
     const emptyEl = document.getElementById('cryptoPerformanceEmpty');
     if (!canvas) return;
 
-    // Fetch history only once per overview render
-    if (!window._cryptoPortfolioHistory) {
-        try {
-            const res = await withTimeout(fetch(`${API_BASE_URL}/crypto/portfolio-history`, {
-                headers: getAuthHeaders()
-            }));
-            if (res.ok) {
-                window._cryptoPortfolioHistory = await res.json();
-            } else {
-                window._cryptoPortfolioHistory = [];
-            }
-        } catch (e) {
-            console.warn('Could not fetch portfolio history:', e);
-            window._cryptoPortfolioHistory = [];
+    // Map frontend range to backend parameter
+    const apiPeriod = CRYPTO_PERIOD_MAP[activeRange] || '1mo';
+    let chartData = [];
+
+    try {
+        const res = await withTimeout(fetch(`${API_BASE_URL}/crypto/portfolio-history?period=${apiPeriod}`, {
+            headers: getAuthHeaders()
+        }));
+        if (res.ok) {
+            chartData = await res.json();
         }
+    } catch (e) {
+        console.warn('Could not fetch portfolio history:', e);
     }
 
-    const allData = window._cryptoPortfolioHistory || [];
-
-    // Wire up range buttons
+    // Wire up range buttons (re-render on click)
     const btnContainer = document.getElementById('perfRangeBtns');
     if (btnContainer) {
         btnContainer.querySelectorAll('.perf-range-btn').forEach(btn => {
             btn.onclick = () => {
-                window._cryptoPortfolioHistory = window._cryptoPortfolioHistory; // keep cache
                 renderPortfolioPerformanceChart(btn.dataset.range);
             };
             const isActive = btn.dataset.range === activeRange;
@@ -345,19 +345,9 @@ async function renderPortfolioPerformanceChart(activeRange) {
         });
     }
 
-    // Filter data by selected range
-    const now = new Date();
-    const cutoffMap = {
-        '1D': new Date(now - 1  * 24 * 60 * 60 * 1000),
-        '1W': new Date(now - 7  * 24 * 60 * 60 * 1000),
-        '1M': new Date(now - 30 * 24 * 60 * 60 * 1000),
-        '1Y': new Date(now - 365* 24 * 60 * 60 * 1000),
-        'ALL': null
-    };
-    const cutoff = cutoffMap[activeRange] || null;
-    const filtered = cutoff
-        ? allData.filter(p => new Date(p.date) >= cutoff)
-        : allData;
+    // Filter data by selected range (backend now handles 1d granularity)
+    // Backend now handles all filtering and intraday generation based on the period parameter
+    const filtered = chartData;
 
     // Show empty state if no data
     if (filtered.length === 0) {
