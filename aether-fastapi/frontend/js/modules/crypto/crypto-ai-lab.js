@@ -154,6 +154,67 @@ class CryptoAILab {
                 <!-- Predictions Content -->
                 <div id="aiLabPredictions"></div>
 
+                <!-- INFO: Price Forecast -->
+                <div class="ai-info-box mb-4">
+                    <div class="ai-info-header">
+                        <div class="ai-info-header-left">
+                            <div class="ai-info-icon">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
+                                    <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
+                                    <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                </svg>
+                            </div>
+                            <span class="ai-info-title">Price Forecast</span>
+                        </div>
+                        <span class="ai-info-badge">How it works</span>
+                    </div>
+                    <div class="ai-info-body">
+                        <p class="ai-info-desc">Uses trained ML models on 90 days of historical price data to project where the asset is likely to move over 1, 7, and 30 days.</p>
+                        <div class="ai-info-grid">
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#22d399;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Prophet</span>
+                                    <span class="ai-info-chip-val">Best for seasonal &amp; trend-driven price cycles</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#3b82f6;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">LSTM</span>
+                                    <span class="ai-info-chip-val">Neural network &mdash; suited for volatile patterns</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Ensemble</span>
+                                    <span class="ai-info-chip-val">Combines Prophet + LSTM for most robust forecast</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#5eead4;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Confidence Band</span>
+                                    <span class="ai-info-chip-val">Wider band = higher uncertainty in the forecast</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#fde68a;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">1 / 7 / 30 Day</span>
+                                    <span class="ai-info-chip-val">Short to long-term horizon forecast cards</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ai-info-tip">
+                            <span class="ai-info-tip-icon">&#9672;</span>
+                            Use 30D for strategic planning &mdash; use 1D for short-term entry/exit signals
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Risk Analysis Section Divider -->
                 <div class="d-flex align-items-center gap-3 mt-2">
                     <div style="flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(245,158,11,0.3), transparent);"></div>
@@ -169,6 +230,67 @@ class CryptoAILab {
 
                 <!-- Risk Analysis Content -->
                 <div id="riskAnalysisContent"></div>
+
+                <!-- INFO: Risk Analysis -->
+                <div class="ai-info-box mt-4">
+                    <div class="ai-info-header">
+                        <div class="ai-info-header-left">
+                            <div class="ai-info-icon">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
+                                    <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
+                                    <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                </svg>
+                            </div>
+                            <span class="ai-info-title">Risk Analysis</span>
+                        </div>
+                        <span class="ai-info-badge">How it works</span>
+                    </div>
+                    <div class="ai-info-body">
+                        <p class="ai-info-desc">XGBoost classifier scores each asset from 0&ndash;100 using volatility, momentum, and volume indicators to output a risk level and probability distribution.</p>
+                        <div class="ai-info-grid">
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#22d399;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Low Risk</span>
+                                    <span class="ai-info-chip-val">Stable price action &mdash; lower volatility</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#f59e0b;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Medium Risk</span>
+                                    <span class="ai-info-chip-val">Moderate swings &mdash; watch closely</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#ef4444;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">High Risk</span>
+                                    <span class="ai-info-chip-val">Elevated volatility &mdash; reduce exposure</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#3b82f6;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Volatility Forecast</span>
+                                    <span class="ai-info-chip-val">Current + 7D + 30D expected swing %</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Risk Factors</span>
+                                    <span class="ai-info-chip-val">Top drivers contributing to the score</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ai-info-tip">
+                            <span class="ai-info-tip-icon">&#9672;</span>
+                            Re-run analysis after major market events &mdash; risk levels can shift significantly within hours
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
 
@@ -310,30 +432,6 @@ class CryptoAILab {
                 ${this.renderPredictionCard(predictions['30_day'], '30-Day', 'Next Month')}
             </div>
 
-            <!-- Model Performance -->
-            <div class="glass-card p-4">
-                <h5 class="text-white mb-3">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
-                        <line x1="12" y1="20" x2="12" y2="10"/>
-                        <line x1="18" y1="20" x2="18" y2="4"/>
-                        <line x1="6" y1="20" x2="6" y2="16"/>
-                    </svg>
-                    Model Performance Metrics
-                </h5>
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="text-white-50 small mb-1">Trend Confidence</div>
-                        <div class="h4 text-white">${metrics.trend_confidence ? metrics.trend_confidence.toFixed(1) + '%' : 'N/A'}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-white-50 small mb-1">Volatility Score</div>
-                        <div class="h4 text-white">${metrics.volatility_score ? metrics.volatility_score.toFixed(2) + '%' : 'N/A'}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-white-50 small mb-1">Model Trained</div>
-                        <div class="h6 text-white-50">${metrics.model_trained_at ? new Date(metrics.model_trained_at).toLocaleDateString() : 'N/A'}</div>
-                    </div>
-                </div>
             </div>
         `;
 
@@ -776,27 +874,63 @@ class CryptoAILab {
                     </div>
                 </div>
 
-                <!-- How It Works Card -->
-                <div class="glass-card p-4">
-                    <h4 class="h6 fw-light mb-3 text-white">How AI Insights Work</h4>
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="text-white-50 small">
-                                <strong class="text-white">📊 Data Collection:</strong><br>
-                                Analyzes 90-day price data, SMAs, RSI, volume trends, and volatility for each crypto asset.
+                <!-- INFO: AI-Generated Insights -->
+                <div class="ai-info-box mb-4">
+                    <div class="ai-info-header">
+                        <div class="ai-info-header-left">
+                            <div class="ai-info-icon">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
+                                    <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
+                                    <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                </svg>
+                            </div>
+                            <span class="ai-info-title">AI-Generated Insights</span>
+                        </div>
+                        <span class="ai-info-badge">How it works</span>
+                    </div>
+                    <div class="ai-info-body">
+                        <p class="ai-info-desc">Google Gemini analyses your crypto holdings&rsquo; 90-day price, RSI and volume data to produce plain-language insights &mdash; no jargon, just actionable signals.</p>
+                        <div class="ai-info-grid">
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#f87171;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Risk</span>
+                                    <span class="ai-info-chip-val">Vulnerabilities &mdash; over-concentration or high drawdown</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#5eead4;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Opportunity</span>
+                                    <span class="ai-info-chip-val">Underperforming assets with upside potential</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#fde68a;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Action</span>
+                                    <span class="ai-info-chip-val">Specific steps you should consider right now</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#a5b4fc;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Overview</span>
+                                    <span class="ai-info-chip-val">General portfolio performance commentary</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Severity Border</span>
+                                    <span class="ai-info-chip-val">Red = High &middot; Yellow = Medium &middot; Teal = Low</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="text-white-50 small">
-                                <strong class="text-white">🤖 AI Analysis:</strong><br>
-                                Google Gemini processes the data to identify patterns, risks, and market opportunities.
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="text-white-50 small">
-                                <strong class="text-white">💡 Actionable Output:</strong><br>
-                                Categorized insights with severity levels help you make informed crypto decisions.
-                            </div>
+                        <div class="ai-info-tip">
+                            <span class="ai-info-tip-icon">&#9672;</span>
+                            Insights refresh in real time &mdash; hit Refresh after adding new holdings or after major price moves
                         </div>
                     </div>
                 </div>
@@ -804,7 +938,7 @@ class CryptoAILab {
                 <!-- ═══ Section Divider: News Sentiment ═══ -->
                 <div class="d-flex align-items-center gap-3 mt-2">
                     <div style="flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(118,75,162,0.4), transparent);"></div>
-                    <span class="text-white-50 small fw-medium" style="letter-spacing: 0.05em;">📰 NEWS SENTIMENT</span>
+                    <span class="text-white-50 small fw-medium" style="letter-spacing: 0.05em;">&#128240; NEWS SENTIMENT</span>
                     <div style="flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(118,75,162,0.4), transparent);"></div>
                 </div>
 
@@ -838,6 +972,74 @@ class CryptoAILab {
 
                 <!-- Sentiment Content -->
                 <div id="sentimentContent"></div>
+
+                <!-- INFO: News Sentiment -->
+                <div class="ai-info-box mt-4">
+                    <div class="ai-info-header">
+                        <div class="ai-info-header-left">
+                            <div class="ai-info-icon">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
+                                    <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
+                                    <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                </svg>
+                            </div>
+                            <span class="ai-info-title">News Sentiment</span>
+                        </div>
+                        <span class="ai-info-badge">How it works</span>
+                    </div>
+                    <div class="ai-info-body">
+                        <p class="ai-info-desc">Aggregates and scores news headlines, social media, technical signals and market data to give you a real-time sentiment reading for each crypto asset.</p>
+                        <div class="ai-info-grid">
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#5eead4;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Sentiment Score</span>
+                                    <span class="ai-info-chip-val">&minus;1 (very bearish) &rarr; 0 (neutral) &rarr; +1 (very bullish)</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#a5b4fc;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Confidence</span>
+                                    <span class="ai-info-chip-val">How certain the model is &mdash; higher = more reliable</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#60a5fa;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">News (45%)</span>
+                                    <span class="ai-info-chip-val">Largest weight &mdash; headlines from major sources</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Social (25%)</span>
+                                    <span class="ai-info-chip-val">Hashtags, keywords, community mentions</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#2dd4bf;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Technical (20%)</span>
+                                    <span class="ai-info-chip-val">RSI, SMA, momentum signals</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#fcd34d;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Market (10%)</span>
+                                    <span class="ai-info-chip-val">Volume, liquidity, market-wide context</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ai-info-tip">
+                            <span class="ai-info-tip-icon">&#9672;</span>
+                            Combine sentiment with price forecast &mdash; when both align bullish or bearish, signals are strongest
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
 
@@ -1138,7 +1340,9 @@ class CryptoAILab {
                     <div class="d-flex justify-content-between mb-1">
                         <span class="small text-white-50">${s.label}</span>
                         <span class="small text-white">${(s.value * 100).toFixed(0)}%</span>
-                    </div>
+
+
+                        </div>
                     <div style="background: rgba(255,255,255,0.1); height: 6px; border-radius: 3px; overflow: hidden;">
                         <div style="background: ${color}; width: ${percent}%; height: 100%;"></div>
                     </div>
@@ -1181,6 +1385,74 @@ class CryptoAILab {
 
                 <!-- Performance Content -->
                 <div id="performanceContent"></div>
+
+                <!-- INFO: Model Performance -->
+                <div class="ai-info-box mt-4">
+                    <div class="ai-info-header">
+                        <div class="ai-info-header-left">
+                            <div class="ai-info-icon">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
+                                    <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
+                                    <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                </svg>
+                            </div>
+                            <span class="ai-info-title">Model Performance</span>
+                        </div>
+                        <span class="ai-info-badge">How it works</span>
+                    </div>
+                    <div class="ai-info-body">
+                        <p class="ai-info-desc">Compares the historical accuracy of each prediction model over the last 30 days &mdash; so you can pick the best model for each asset&rsquo;s behaviour.</p>
+                        <div class="ai-info-grid">
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#22d399;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Prophet</span>
+                                    <span class="ai-info-chip-val">Time-series model &mdash; best for trend &amp; seasonality</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#3b82f6;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">LSTM</span>
+                                    <span class="ai-info-chip-val">Neural network &mdash; best for volatile/irregular data</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Ensemble</span>
+                                    <span class="ai-info-chip-val">Prophet + LSTM combined &mdash; most balanced overall</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#f59e0b;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">MAE</span>
+                                    <span class="ai-info-chip-val">Mean absolute error &mdash; lower = more accurate</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#ef4444;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">RMSE</span>
+                                    <span class="ai-info-chip-val">Penalises large errors more &mdash; lower is better</span>
+                                </div>
+                            </div>
+                            <div class="ai-info-chip">
+                                <div class="ai-info-chip-dot" style="background:#5eead4;"></div>
+                                <div class="ai-info-chip-body">
+                                    <span class="ai-info-chip-label">Win Rate</span>
+                                    <span class="ai-info-chip-val">% of directional predictions that were correct</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ai-info-tip">
+                            <span class="ai-info-tip-icon">&#9672;</span>
+                            Run analysis on multiple assets &mdash; different coins respond better to different models
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
 

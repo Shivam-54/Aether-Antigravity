@@ -2347,24 +2347,63 @@
                                 </div>
                             </div>
 
-                            <!-- Info Card -->
-                            <div class="glass-card p-4">
-                                <h3 class="h5 fw-light mb-3 text-white">About These Predictions</h3>
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <div class="text-white-50 small">
-                                            <strong class="text-white">Ensemble Model:</strong><br>
-                                            Combines Prophet (60%) for trend & seasonality with ARIMA (40%) for time
-                                            series
-                                            analysis.
+                            <!-- INFO: Price Prediction -->
+                            <div class="ai-info-box mb-4">
+                                <div class="ai-info-header">
+                                    <div class="ai-info-header-left">
+                                        <div class="ai-info-icon">
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            </svg>
+                                        </div>
+                                        <span class="ai-info-title">Price Prediction</span>
+                                    </div>
+                                    <span class="ai-info-badge">How it works</span>
+                                </div>
+                                <div class="ai-info-body">
+                                    <p class="ai-info-desc">An ensemble of Prophet (60%) and ARIMA (40%) models trained on historical price data to forecast where a stock is likely to trade — with confidence intervals to show uncertainty.</p>
+                                    <div class="ai-info-grid">
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Prophet (60%)</span>
+                                                <span class="ai-info-chip-val">Captures trend &amp; seasonal patterns</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#3b82f6;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">ARIMA (40%)</span>
+                                                <span class="ai-info-chip-val">Time-series regression for short-term precision</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#5eead4;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Confidence Interval</span>
+                                                <span class="ai-info-chip-val">Shaded band = 95% probability range</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#f59e0b;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">RMSE</span>
+                                                <span class="ai-info-chip-val">Model error in $ &mdash; lower = more accurate</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#22d399;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Horizon</span>
+                                                <span class="ai-info-chip-val">7 / 30 / 90 day prediction windows</span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="text-white-50 small">
-                                            <strong class="text-white">Confidence Intervals:</strong><br>
-                                            The shaded area represents 95% confidence. Prices have 95% probability of
-                                            falling within this range.
-                                        </div>
+                                    <div class="ai-info-tip">
+                                        <span class="ai-info-tip-icon">&#9672;</span>
+                                        Wider confidence bands at longer horizons are normal &mdash; uncertainty grows the further out the forecast goes
                                     </div>
                                 </div>
                             </div>
@@ -2421,34 +2460,62 @@
                                 </div>
                             </div>
 
-                            <!-- Risk Info Card -->
-                            <div class="glass-card p-4">
-                                <h4 class="h6 fw-light mb-3 text-white">Understanding Risk Metrics</h4>
-                                <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <div class="text-white-50 small">
-                                            <strong class="text-white">VaR (Value at Risk):</strong><br>
-                                            Maximum expected loss at 95% confidence. There's only a 5% chance of losing
-                                            more.
+                            <!-- INFO: Risk Analysis -->
+                            <div class="ai-info-box mb-4">
+                                <div class="ai-info-header">
+                                    <div class="ai-info-header-left">
+                                        <div class="ai-info-icon">
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            </svg>
+                                        </div>
+                                        <span class="ai-info-title">Risk Analysis</span>
+                                    </div>
+                                    <span class="ai-info-badge">How it works</span>
+                                </div>
+                                <div class="ai-info-body">
+                                    <p class="ai-info-desc">Monte Carlo simulation runs 10,000 portfolio scenarios to produce risk metrics that show how much you could lose &mdash; and how likely that is &mdash; under different market conditions.</p>
+                                    <div class="ai-info-grid">
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#ef4444;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">VaR (95%)</span>
+                                                <span class="ai-info-chip-val">Max loss with 95% certainty &mdash; 5% chance of exceeding</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#f97316;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">CVaR (95%)</span>
+                                                <span class="ai-info-chip-val">Average loss in the worst 5% of scenarios</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#22d399;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Sharpe Ratio</span>
+                                                <span class="ai-info-chip-val">&gt;1 good &middot; &gt;2 excellent &middot; negative = losing</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#3b82f6;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Expected Return</span>
+                                                <span class="ai-info-chip-val">1-year projected return based on historical data</span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
-                                        <div class="text-white-50 small">
-                                            <strong class="text-white">CVaR (Conditional VaR):</strong><br>
-                                            Average loss in the worst 5% of scenarios. Shows tail risk exposure.
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="text-white-50 small">
-                                            <strong class="text-white">Sharpe Ratio:</strong><br>
-                                            Risk-adjusted return. >1 is good, >2 is excellent. Negative means loss.
-                                        </div>
+                                    <div class="ai-info-tip">
+                                        <span class="ai-info-tip-icon">&#9672;</span>
+                                        High CVaR relative to VaR signals fat-tail risk &mdash; your worst-case losses could be much worse than the 95th percentile suggests
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Tab Panel: Insights & Sentiment -->
+                        <!-- Tab Panel: Insights &amp; Sentiment -->
                         <div class="ai-lab-panel" id="ai-lab-panel-insights-sentiment" style="display: none;">
                             <div class="glass-card p-4">
                                 <div class="d-flex align-items-center justify-content-between mb-3">
@@ -2478,29 +2545,56 @@
                                 </div>
                             </div>
 
-                            <!-- How It Works Card -->
-                            <div class="glass-card p-4 mt-4">
-                                <h4 class="h6 fw-light mb-3 text-white">How AI Insights Work</h4>
-                                <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <div class="text-white-50 small">
-                                            <strong class="text-white">📊 Data Collection:</strong><br>
-                                            Analyzes 3-month price data, moving averages, volume trends, and volatility
-                                            for each stock.
+                            <!-- INFO: AI-Generated Insights -->
+                            <div class="ai-info-box mb-4">
+                                <div class="ai-info-header">
+                                    <div class="ai-info-header-left">
+                                        <div class="ai-info-icon">
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            </svg>
+                                        </div>
+                                        <span class="ai-info-title">AI-Generated Insights</span>
+                                    </div>
+                                    <span class="ai-info-badge">How it works</span>
+                                </div>
+                                <div class="ai-info-body">
+                                    <p class="ai-info-desc">Google Gemini analyses your portfolio&rsquo;s 3-month price data, moving averages, volume trends, and volatility to produce plain-language, actionable insights &mdash; no jargon.</p>
+                                    <div class="ai-info-grid">
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#f87171;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Risk</span>
+                                                <span class="ai-info-chip-val">Vulnerabilities &mdash; concentration or drawdown warnings</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#5eead4;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Opportunity</span>
+                                                <span class="ai-info-chip-val">Underperforming stocks with upside potential</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#fde68a;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Action</span>
+                                                <span class="ai-info-chip-val">Specific steps you should consider right now</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Severity Border</span>
+                                                <span class="ai-info-chip-val">Red = High &middot; Yellow = Medium &middot; Teal = Low</span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
-                                        <div class="text-white-50 small">
-                                            <strong class="text-white">🤖 AI Analysis:</strong><br>
-                                            Google Gemini processes the data to identify patterns, risks, and
-                                            opportunities.
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="text-white-50 small">
-                                            <strong class="text-white">💡 Actionable Output:</strong><br>
-                                            Categorized insights with severity levels help you make informed decisions.
-                                        </div>
+                                    <div class="ai-info-tip">
+                                        <span class="ai-info-tip-icon">&#9672;</span>
+                                        Insights are generated fresh on each refresh &mdash; hit refresh after adding holdings or after major earnings announcements
                                     </div>
                                 </div>
                             </div>
@@ -2643,30 +2737,70 @@
                                     </div>
                                 </div>
 
-                                <!-- How it works -->
-                                <div class="glass-card p-4">
-                                    <h4 class="h6 fw-light mb-3 text-white">How Sentiment Analysis Works</h4>
-                                    <div class="row g-3">
-                                        <div class="col-md-4">
-                                            <div class="text-white-50 small">
-                                                <strong class="text-white">📰 News Scraping:</strong><br>
-                                                Fetches real-time headlines from multiple news APIs and analyzes each
-                                                with VADER sentiment scoring.
+                                <!-- INFO: Sentiment Analysis -->
+                                <div class="ai-info-box mt-4">
+                                    <div class="ai-info-header">
+                                        <div class="ai-info-header-left">
+                                            <div class="ai-info-icon">
+                                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
+                                                    <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
+                                                    <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                                </svg>
+                                            </div>
+                                            <span class="ai-info-title">Sentiment Analysis</span>
+                                        </div>
+                                        <span class="ai-info-badge">How it works</span>
+                                    </div>
+                                    <div class="ai-info-body">
+                                        <p class="ai-info-desc">Aggregates real-time news headlines, social media signals, and technical indicators &mdash; scored with VADER NLP &mdash; into a weighted sentiment reading for any stock.</p>
+                                        <div class="ai-info-grid">
+                                            <div class="ai-info-chip">
+                                                <div class="ai-info-chip-dot" style="background:#60a5fa;"></div>
+                                                <div class="ai-info-chip-body">
+                                                    <span class="ai-info-chip-label">News (45%)</span>
+                                                    <span class="ai-info-chip-val">Real-time headlines scored with VADER NLP</span>
+                                                </div>
+                                            </div>
+                                            <div class="ai-info-chip">
+                                                <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
+                                                <div class="ai-info-chip-body">
+                                                    <span class="ai-info-chip-label">Social (25%)</span>
+                                                    <span class="ai-info-chip-val">Hashtags, keywords, community mentions</span>
+                                                </div>
+                                            </div>
+                                            <div class="ai-info-chip">
+                                                <div class="ai-info-chip-dot" style="background:#2dd4bf;"></div>
+                                                <div class="ai-info-chip-body">
+                                                    <span class="ai-info-chip-label">Technical (20%)</span>
+                                                    <span class="ai-info-chip-val">RSI, SMA crossovers, momentum signals</span>
+                                                </div>
+                                            </div>
+                                            <div class="ai-info-chip">
+                                                <div class="ai-info-chip-dot" style="background:#fcd34d;"></div>
+                                                <div class="ai-info-chip-body">
+                                                    <span class="ai-info-chip-label">Market (10%)</span>
+                                                    <span class="ai-info-chip-val">Volume, liquidity, broader market context</span>
+                                                </div>
+                                            </div>
+                                            <div class="ai-info-chip">
+                                                <div class="ai-info-chip-dot" style="background:#5eead4;"></div>
+                                                <div class="ai-info-chip-body">
+                                                    <span class="ai-info-chip-label">Score</span>
+                                                    <span class="ai-info-chip-val">&minus;1 (very bearish) &rarr; 0 (neutral) &rarr; +1 (very bullish)</span>
+                                                </div>
+                                            </div>
+                                            <div class="ai-info-chip">
+                                                <div class="ai-info-chip-dot" style="background:#a5b4fc;"></div>
+                                                <div class="ai-info-chip-body">
+                                                    <span class="ai-info-chip-label">Confidence</span>
+                                                    <span class="ai-info-chip-val">Higher when all sources agree &mdash; more reliable signal</span>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-4">
-                                            <div class="text-white-50 small">
-                                                <strong class="text-white">📊 Multi-Source:</strong><br>
-                                                Combines news (45%), social (25%), technical (20%), and market signals
-                                                (10%) into a weighted score.
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="text-white-50 small">
-                                                <strong class="text-white">🎯 Confidence:</strong><br>
-                                                Confidence increases when sources agree. High confidence = reliable
-                                                signal across all channels.
-                                            </div>
+                                        <div class="ai-info-tip">
+                                            <span class="ai-info-tip-icon">&#9672;</span>
+                                            Cross-reference sentiment with the price prediction &mdash; aligned bullish signals across both are the strongest buy indicators
                                         </div>
                                     </div>
                                 </div>
@@ -2756,13 +2890,57 @@
                             </div>
                         </div>
 
-                        <!-- How Correlation Analysis Works -->
-                        <div class="glass-card p-4 mb-4">
-                            <h4 class="h6 fw-light mb-3 text-white">How Correlation Analysis Works</h4>
-                            <div class="text-white-50 small">
-                                📊 Computes Pearson correlation coefficients on 3 months of daily returns.
-                                Diversification score = (1 - avg correlation) × 100. Lower correlation between
-                                holdings = better risk diversification.
+                        <!-- INFO: Correlation Analysis -->
+                        <div class="ai-info-box mb-4">
+                            <div class="ai-info-header">
+                                <div class="ai-info-header-left">
+                                    <div class="ai-info-icon">
+                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
+                                            <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
+                                            <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                        </svg>
+                                    </div>
+                                    <span class="ai-info-title">Correlation Analysis</span>
+                                </div>
+                                <span class="ai-info-badge">How it works</span>
+                            </div>
+                            <div class="ai-info-body">
+                                <p class="ai-info-desc">Computes Pearson correlation on 3 months of daily returns across all your holdings. Lower correlation = better diversification &mdash; your portfolio is less exposed to a single market move.</p>
+                                <div class="ai-info-grid">
+                                    <div class="ai-info-chip">
+                                        <div class="ai-info-chip-dot" style="background:#22d399;"></div>
+                                        <div class="ai-info-chip-body">
+                                            <span class="ai-info-chip-label">+1.0</span>
+                                            <span class="ai-info-chip-val">Perfect positive correlation &mdash; move in lockstep</span>
+                                        </div>
+                                    </div>
+                                    <div class="ai-info-chip">
+                                        <div class="ai-info-chip-dot" style="background:#f59e0b;"></div>
+                                        <div class="ai-info-chip-body">
+                                            <span class="ai-info-chip-label">0.0</span>
+                                            <span class="ai-info-chip-val">No correlation &mdash; ideal for diversification</span>
+                                        </div>
+                                    </div>
+                                    <div class="ai-info-chip">
+                                        <div class="ai-info-chip-dot" style="background:#ef4444;"></div>
+                                        <div class="ai-info-chip-body">
+                                            <span class="ai-info-chip-label">&minus;1.0</span>
+                                            <span class="ai-info-chip-val">Perfect negative &mdash; one rises when other falls</span>
+                                        </div>
+                                    </div>
+                                    <div class="ai-info-chip">
+                                        <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
+                                        <div class="ai-info-chip-body">
+                                            <span class="ai-info-chip-label">Diversification Score</span>
+                                            <span class="ai-info-chip-val">(1 &minus; avg correlation) &times; 100 &mdash; higher = better</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ai-info-tip">
+                                    <span class="ai-info-tip-icon">&#9672;</span>
+                                    If most of your holdings are &gt;0.8 correlated, you&rsquo;re not as diversified as you think &mdash; consider adding uncorrelated assets
+                                </div>
                             </div>
                         </div>
 
@@ -5754,7 +5932,7 @@
 
     <script src="js/modules/crypto/crypto-simulator.js" defer></script>
     <!-- crypto-insights.js loaded once above (line ~3111) -->
-    <script src="js/modules/crypto/crypto-ai-lab.js?v=insights-v2" defer></script>
+    <script src="js/modules/crypto/crypto-ai-lab.js?v=info-boxes-v2" defer></script>
 
     <!-- Model Comparison Modal -->
     <div id="modelComparisonModal" class="modal fade" tabindex="-1" style="display: none;">
@@ -6154,7 +6332,7 @@
                             style="padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;">
                             <span style="font-size:1.2rem;">🇨🇭</span><span
                                 style="font-weight:600;font-size:0.8rem;letter-spacing:0.03em;">Fr CHF</span>
-                        </button>
+                     </button>
                     </div>
                 </div>
 
