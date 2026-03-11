@@ -1,7 +1,7 @@
 #!/bin/bash
 # ╔══════════════════════════════════════════════════════╗
-# ║  Aether — Auto-Restarting Server                    ║
-# ║  Keeps the server alive indefinitely.               ║
+# ║  Aether — Auto-Restarting Server                     ║
+# ║  Keeps the server alive indefinitely.                ║
 # ║  If a worker crashes, it respawns automatically.    ║
 # ╚══════════════════════════════════════════════════════╝
 

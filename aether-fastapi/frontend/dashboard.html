@@ -19,7 +19,7 @@
         rel="stylesheet">
 
     <!-- Custom CSS -->
-    <link href="css/style.css?v=87" rel="stylesheet">
+    <link href="css/style.css?v=88" rel="stylesheet">
 
 
     <style>
@@ -1266,11 +1266,136 @@
                                 </div>
                             </div>
 
+                            <!-- INFO: Accuracy Chart -->
+                            <div class="ai-info-box mb-4">
+                                <div class="ai-info-header">
+                                    <div class="ai-info-header-left">
+                                        <div class="ai-info-icon">
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            </svg>
+                                        </div>
+                                        <span class="ai-info-title">Prediction Accuracy</span>
+                                    </div>
+                                    <span class="ai-info-badge">How it works</span>
+                                </div>
+                                <div class="ai-info-body">
+                                    <p class="ai-info-desc">Validates how closely the AI model predicted past property prices — higher accuracy means more reliable future forecasts.</p>
+                                    <div class="ai-info-grid">
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#3b82f6;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Blue Line</span>
+                                                <span class="ai-info-chip-val">AI predicted price</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#10b981;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Green Line</span>
+                                                <span class="ai-info-chip-val">Actual recorded valuation</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">RMSE / MAE</span>
+                                                <span class="ai-info-chip-val">Average error in ₹ — lower is better</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#06b6d4;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">R² Score</span>
+                                                <span class="ai-info-chip-val">Model fit quality — above 0.8 = reliable</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#64748b;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Shaded Band</span>
+                                                <span class="ai-info-chip-val">80% confidence interval — narrower = more certain</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="ai-info-tip">
+                                        <span class="ai-info-tip-icon">◈</span>
+                                        Add more historical valuations to your properties over time to improve model accuracy
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Portfolio Health Score -->
                             <div id="ai-health-score-container" class="glass-card p-4 mb-4">
                                 <div class="text-center text-white-50 py-4">
                                     <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
                                     <div>Calculating Portfolio Health...</div>
+                                </div>
+                            </div>
+
+                            <!-- INFO: Health Score -->
+                            <div class="ai-info-box mb-4">
+                                <div class="ai-info-header">
+                                    <div class="ai-info-header-left">
+                                        <div class="ai-info-icon">
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            </svg>
+                                        </div>
+                                        <span class="ai-info-title">Portfolio Health Score</span>
+                                    </div>
+                                    <span class="ai-info-badge">How it works</span>
+                                </div>
+                                <div class="ai-info-body">
+                                    <p class="ai-info-desc">A composite 0–100 score measuring the overall strength of your portfolio across four key dimensions.</p>
+                                    <div class="ai-info-grid">
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#22c55e;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Growth</span>
+                                                <span class="ai-info-chip-val">Capital appreciation across all properties</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#ef4444;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Risk</span>
+                                                <span class="ai-info-chip-val">Concentration, vacancy &amp; debt exposure</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#f59e0b;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Yield</span>
+                                                <span class="ai-info-chip-val">Rental income vs. total portfolio value</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#06b6d4;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Liquidity</span>
+                                                <span class="ai-info-chip-val">How quickly assets could be sold if needed</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#22c55e;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">70 – 100</span>
+                                                <span class="ai-info-chip-val">Healthy portfolio</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#ef4444;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Below 50</span>
+                                                <span class="ai-info-chip-val">Needs immediate attention</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1296,6 +1421,60 @@
                                     💰 Price Forecasts</h3>
                                 <div id="ai-price-predictions" class="row g-3">
                                     <!-- Dynamic prediction cards -->
+                                </div>
+                            </div>
+
+                            <!-- INFO: Price Forecasts -->
+                            <div class="ai-info-box">
+                                <div class="ai-info-header">
+                                    <div class="ai-info-header-left">
+                                        <div class="ai-info-icon">
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            </svg>
+                                        </div>
+                                        <span class="ai-info-title">Price Forecasts</span>
+                                    </div>
+                                    <span class="ai-info-badge">How it works</span>
+                                </div>
+                                <div class="ai-info-body">
+                                    <p class="ai-info-desc">Projects each property's expected future value using historical valuations and the AI model you select above.</p>
+                                    <div class="ai-info-grid">
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#3b82f6;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Prophet</span>
+                                                <span class="ai-info-chip-val">Best for seasonal &amp; trend-driven changes</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">LSTM</span>
+                                                <span class="ai-info-chip-val">Neural network for volatile patterns</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#10b981;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Ensemble</span>
+                                                <span class="ai-info-chip-val">Prophet + LSTM combined — most robust</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#64748b;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Confidence Band</span>
+                                                <span class="ai-info-chip-val">Wider = more uncertainty, less data</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="ai-info-tip">
+                                        <span class="ai-info-tip-icon">◈</span>
+                                        Use 1 Year for strategic decisions · Use 30 Days for near-term pricing and rent reviews
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1343,6 +1522,70 @@
                                 </div>
                             </div>
 
+                            <!-- INFO: AI Portfolio Summary -->
+                            <div class="ai-info-box mb-4">
+                                <div class="ai-info-header">
+                                    <div class="ai-info-header-left">
+                                        <div class="ai-info-icon">
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            </svg>
+                                        </div>
+                                        <span class="ai-info-title">AI Portfolio Summary</span>
+                                    </div>
+                                    <span class="ai-info-badge">How it works</span>
+                                </div>
+                                <div class="ai-info-body">
+                                    <p class="ai-info-desc">Google Gemini analyses your entire property portfolio in real time and returns plain-language insights — no financial jargon.</p>
+                                    <div class="ai-info-grid">
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#ef4444;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Risk</span>
+                                                <span class="ai-info-chip-val">Flags vulnerabilities like vacancies or over-concentration</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#22c55e;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Opportunity</span>
+                                                <span class="ai-info-chip-val">Underperforming assets with upside potential</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#f59e0b;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Action</span>
+                                                <span class="ai-info-chip-val">Specific steps you should take right now</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Overview</span>
+                                                <span class="ai-info-chip-val">General portfolio performance commentary</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#ef4444;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Red Border</span>
+                                                <span class="ai-info-chip-val">High severity — requires immediate attention</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#06b6d4;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Refresh Button</span>
+                                                <span class="ai-info-chip-val">Re-runs Gemini with the latest portfolio data</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- ── Divider ── -->
                             <div class="ai-lab-section-divider">
                                 <div class="divider-line"></div>
@@ -1373,6 +1616,63 @@
                                         <div class="spinner-border spinner-border-sm text-primary mb-2" role="status">
                                         </div>
                                         <div>Analysing portfolio concentration...</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- INFO: Diversification Score -->
+                            <div class="ai-info-box mt-4">
+                                <div class="ai-info-header">
+                                    <div class="ai-info-header-left">
+                                        <div class="ai-info-icon">
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            </svg>
+                                        </div>
+                                        <span class="ai-info-title">Diversification Score</span>
+                                    </div>
+                                    <span class="ai-info-badge">How it works</span>
+                                </div>
+                                <div class="ai-info-body">
+                                    <p class="ai-info-desc">Measures how spread out your portfolio is — a well-diversified portfolio is resilient to local market shocks.</p>
+                                    <div class="ai-info-grid">
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#3b82f6;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">City</span>
+                                                <span class="ai-info-chip-val">Are all properties in one location?</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Type</span>
+                                                <span class="ai-info-chip-val">All residential? All land? Mix matters</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#f59e0b;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Value</span>
+                                                <span class="ai-info-chip-val">One asset dominating 90%+ is dangerous</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#22c55e;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Grade A</span>
+                                                <span class="ai-info-chip-val">Well spread — resilient to downturns</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#ef4444;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">&gt; 70% Concentration</span>
+                                                <span class="ai-info-chip-val">Flagged in red — high risk dimension</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1419,6 +1719,60 @@
                                 </div>
                             </div>
 
+                            <!-- INFO: Rebalancing Advisor -->
+                            <div class="ai-info-box mb-4">
+                                <div class="ai-info-header">
+                                    <div class="ai-info-header-left">
+                                        <div class="ai-info-icon">
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            </svg>
+                                        </div>
+                                        <span class="ai-info-title">Rebalancing Advisor</span>
+                                    </div>
+                                    <span class="ai-info-badge">How it works</span>
+                                </div>
+                                <div class="ai-info-body">
+                                    <p class="ai-info-desc">Gemini AI detects imbalances in your portfolio and recommends exactly what to acquire next to fix them.</p>
+                                    <div class="ai-info-grid">
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Gap Detection</span>
+                                                <span class="ai-info-chip-val">Shortfalls in city, type &amp; value split</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#ef4444;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">High Priority</span>
+                                                <span class="ai-info-chip-val">Significant imbalance — act soon</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#f59e0b;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Medium Priority</span>
+                                                <span class="ai-info-chip-val">Moderate gap, worth planning for</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#22c55e;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Suggestions</span>
+                                                <span class="ai-info-chip-val">Specific type &amp; location to buy next</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="ai-info-tip">
+                                        <span class="ai-info-tip-icon">◈</span>
+                                        Fix the highest-priority gap first — it delivers the most portfolio resilience per rupee invested
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- ── Divider ── -->
                             <div class="ai-lab-section-divider">
                                 <div class="divider-line"></div>
@@ -1448,6 +1802,67 @@
                                         <div class="spinner-border spinner-border-sm text-primary mb-2" role="status">
                                         </div>
                                         <div>Fetching rental market benchmarks...</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- INFO: Rental Yield Optimizer -->
+                            <div class="ai-info-box mt-4">
+                                <div class="ai-info-header">
+                                    <div class="ai-info-header-left">
+                                        <div class="ai-info-icon">
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            </svg>
+                                        </div>
+                                        <span class="ai-info-title">Rental Yield Optimizer</span>
+                                    </div>
+                                    <span class="ai-info-badge">How it works</span>
+                                </div>
+                                <div class="ai-info-body">
+                                    <p class="ai-info-desc">Compares your actual rental income against market-rate benchmarks to show how much you're leaving on the table.</p>
+                                    <div class="ai-info-grid">
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#f87171;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Vacant</span>
+                                                <span class="ai-info-chip-val">No rental income — shows full opportunity cost</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#fde68a;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Under-priced</span>
+                                                <span class="ai-info-chip-val">Rented below market — raise to suggested range</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#86efac;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">At Market</span>
+                                                <span class="ai-info-chip-val">Well-priced for the area and property type</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#5eead4;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Above Market</span>
+                                                <span class="ai-info-chip-val">Excellent — consider locking tenants long-term</span>
+                                            </div>
+                                        </div>
+                                        <div class="ai-info-chip">
+                                            <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
+                                            <div class="ai-info-chip-body">
+                                                <span class="ai-info-chip-label">Income Gap</span>
+                                                <span class="ai-info-chip-val">Total ₹ uncaptured monthly &amp; annually</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="ai-info-tip">
+                                        <span class="ai-info-tip-icon">◈</span>
+                                        Focus on Vacant and Under-priced properties first — they represent the highest potential income recovery
                                     </div>
                                 </div>
                             </div>
