@@ -19,7 +19,7 @@
         rel="stylesheet">
 
     <!-- Custom CSS -->
-    <link href="css/style.css?v=88" rel="stylesheet">
+    <link href="css/style.css?v=92" rel="stylesheet">
 
 
     <style>
@@ -1167,7 +1167,13 @@
                             <div class="ai-lab-tab-grid">
                                 <button type="button" class="ai-lab-tab active" data-tab="re-predictions-risk"
                                     onclick="switchREAILabTab('re-predictions-risk')">
-                                    <div class="tab-icon-wrap">📈</div>
+                                    <div class="tab-icon-wrap">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                        </svg>
+                                    </div>
                                     <div class="tab-content">
                                         <span class="tab-title">Predictions & Risk</span>
                                         <span class="tab-desc">ML forecasting + Portfolio health</span>
@@ -1175,7 +1181,14 @@
                                 </button>
                                 <button type="button" class="ai-lab-tab" data-tab="re-insights-sentiment"
                                     onclick="switchREAILabTab('re-insights-sentiment')">
-                                    <div class="tab-icon-wrap">✨</div>
+                                    <div class="tab-icon-wrap">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z">
+                                            </path>
+                                        </svg>
+                                    </div>
                                     <div class="tab-content">
                                         <span class="tab-title">Insights & Diversification</span>
                                         <span class="tab-desc">AI summary + Portfolio spread</span>
@@ -1185,7 +1198,14 @@
                                 </button>
                                 <button type="button" class="ai-lab-tab" data-tab="re-anomaly-correlation"
                                     onclick="switchREAILabTab('re-anomaly-correlation')">
-                                    <div class="tab-icon-wrap">⚖️</div>
+                                    <div class="tab-icon-wrap">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3">
+                                            </path>
+                                        </svg>
+                                    </div>
                                     <div class="tab-content">
                                         <span class="tab-title">Rebalancing &amp; Yield</span>
                                         <span class="tab-desc">Portfolio advisor + Rental optimizer</span>
@@ -1271,10 +1291,13 @@
                                 <div class="ai-info-header">
                                     <div class="ai-info-header-left">
                                         <div class="ai-info-icon">
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
-                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
-                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)"
+                                                    stroke-width="1.2" />
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7"
+                                                    fill="rgba(139,92,246,0.7)" />
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)" />
                                             </svg>
                                         </div>
                                         <span class="ai-info-title">Prediction Accuracy</span>
@@ -1282,7 +1305,8 @@
                                     <span class="ai-info-badge">How it works</span>
                                 </div>
                                 <div class="ai-info-body">
-                                    <p class="ai-info-desc">Validates how closely the AI model predicted past property prices — higher accuracy means more reliable future forecasts.</p>
+                                    <p class="ai-info-desc">Validates how closely the AI model predicted past property
+                                        prices — higher accuracy means more reliable future forecasts.</p>
                                     <div class="ai-info-grid">
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#3b82f6;"></div>
@@ -1302,27 +1326,31 @@
                                             <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">RMSE / MAE</span>
-                                                <span class="ai-info-chip-val">Average error in ₹ — lower is better</span>
+                                                <span class="ai-info-chip-val">Average error in ₹ — lower is
+                                                    better</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#06b6d4;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">R² Score</span>
-                                                <span class="ai-info-chip-val">Model fit quality — above 0.8 = reliable</span>
+                                                <span class="ai-info-chip-val">Model fit quality — above 0.8 =
+                                                    reliable</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#64748b;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Shaded Band</span>
-                                                <span class="ai-info-chip-val">80% confidence interval — narrower = more certain</span>
+                                                <span class="ai-info-chip-val">80% confidence interval — narrower = more
+                                                    certain</span>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="ai-info-tip">
                                         <span class="ai-info-tip-icon">◈</span>
-                                        Add more historical valuations to your properties over time to improve model accuracy
+                                        Add more historical valuations to your properties over time to improve model
+                                        accuracy
                                     </div>
                                 </div>
                             </div>
@@ -1340,10 +1368,13 @@
                                 <div class="ai-info-header">
                                     <div class="ai-info-header-left">
                                         <div class="ai-info-icon">
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
-                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
-                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)"
+                                                    stroke-width="1.2" />
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7"
+                                                    fill="rgba(139,92,246,0.7)" />
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)" />
                                             </svg>
                                         </div>
                                         <span class="ai-info-title">Portfolio Health Score</span>
@@ -1351,34 +1382,39 @@
                                     <span class="ai-info-badge">How it works</span>
                                 </div>
                                 <div class="ai-info-body">
-                                    <p class="ai-info-desc">A composite 0–100 score measuring the overall strength of your portfolio across four key dimensions.</p>
+                                    <p class="ai-info-desc">A composite 0–100 score measuring the overall strength of
+                                        your portfolio across four key dimensions.</p>
                                     <div class="ai-info-grid">
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#22c55e;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Growth</span>
-                                                <span class="ai-info-chip-val">Capital appreciation across all properties</span>
+                                                <span class="ai-info-chip-val">Capital appreciation across all
+                                                    properties</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#ef4444;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Risk</span>
-                                                <span class="ai-info-chip-val">Concentration, vacancy &amp; debt exposure</span>
+                                                <span class="ai-info-chip-val">Concentration, vacancy &amp; debt
+                                                    exposure</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#f59e0b;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Yield</span>
-                                                <span class="ai-info-chip-val">Rental income vs. total portfolio value</span>
+                                                <span class="ai-info-chip-val">Rental income vs. total portfolio
+                                                    value</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#06b6d4;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Liquidity</span>
-                                                <span class="ai-info-chip-val">How quickly assets could be sold if needed</span>
+                                                <span class="ai-info-chip-val">How quickly assets could be sold if
+                                                    needed</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
@@ -1429,10 +1465,13 @@
                                 <div class="ai-info-header">
                                     <div class="ai-info-header-left">
                                         <div class="ai-info-icon">
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
-                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
-                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)"
+                                                    stroke-width="1.2" />
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7"
+                                                    fill="rgba(139,92,246,0.7)" />
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)" />
                                             </svg>
                                         </div>
                                         <span class="ai-info-title">Price Forecasts</span>
@@ -1440,40 +1479,46 @@
                                     <span class="ai-info-badge">How it works</span>
                                 </div>
                                 <div class="ai-info-body">
-                                    <p class="ai-info-desc">Projects each property's expected future value using historical valuations and the AI model you select above.</p>
+                                    <p class="ai-info-desc">Projects each property's expected future value using
+                                        historical valuations and the AI model you select above.</p>
                                     <div class="ai-info-grid">
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#3b82f6;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Prophet</span>
-                                                <span class="ai-info-chip-val">Best for seasonal &amp; trend-driven changes</span>
+                                                <span class="ai-info-chip-val">Best for seasonal &amp; trend-driven
+                                                    changes</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">LSTM</span>
-                                                <span class="ai-info-chip-val">Neural network for volatile patterns</span>
+                                                <span class="ai-info-chip-val">Neural network for volatile
+                                                    patterns</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#10b981;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Ensemble</span>
-                                                <span class="ai-info-chip-val">Prophet + LSTM combined — most robust</span>
+                                                <span class="ai-info-chip-val">Prophet + LSTM combined — most
+                                                    robust</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#64748b;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Confidence Band</span>
-                                                <span class="ai-info-chip-val">Wider = more uncertainty, less data</span>
+                                                <span class="ai-info-chip-val">Wider = more uncertainty, less
+                                                    data</span>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="ai-info-tip">
                                         <span class="ai-info-tip-icon">◈</span>
-                                        Use 1 Year for strategic decisions · Use 30 Days for near-term pricing and rent reviews
+                                        Use 1 Year for strategic decisions · Use 30 Days for near-term pricing and rent
+                                        reviews
                                     </div>
                                 </div>
                             </div>
@@ -1527,10 +1572,13 @@
                                 <div class="ai-info-header">
                                     <div class="ai-info-header-left">
                                         <div class="ai-info-icon">
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
-                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
-                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)"
+                                                    stroke-width="1.2" />
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7"
+                                                    fill="rgba(139,92,246,0.7)" />
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)" />
                                             </svg>
                                         </div>
                                         <span class="ai-info-title">AI Portfolio Summary</span>
@@ -1538,48 +1586,55 @@
                                     <span class="ai-info-badge">How it works</span>
                                 </div>
                                 <div class="ai-info-body">
-                                    <p class="ai-info-desc">Google Gemini analyses your entire property portfolio in real time and returns plain-language insights — no financial jargon.</p>
+                                    <p class="ai-info-desc">Google Gemini analyses your entire property portfolio in
+                                        real time and returns plain-language insights — no financial jargon.</p>
                                     <div class="ai-info-grid">
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#ef4444;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Risk</span>
-                                                <span class="ai-info-chip-val">Flags vulnerabilities like vacancies or over-concentration</span>
+                                                <span class="ai-info-chip-val">Flags vulnerabilities like vacancies or
+                                                    over-concentration</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#22c55e;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Opportunity</span>
-                                                <span class="ai-info-chip-val">Underperforming assets with upside potential</span>
+                                                <span class="ai-info-chip-val">Underperforming assets with upside
+                                                    potential</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#f59e0b;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Action</span>
-                                                <span class="ai-info-chip-val">Specific steps you should take right now</span>
+                                                <span class="ai-info-chip-val">Specific steps you should take right
+                                                    now</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Overview</span>
-                                                <span class="ai-info-chip-val">General portfolio performance commentary</span>
+                                                <span class="ai-info-chip-val">General portfolio performance
+                                                    commentary</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#ef4444;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Red Border</span>
-                                                <span class="ai-info-chip-val">High severity — requires immediate attention</span>
+                                                <span class="ai-info-chip-val">High severity — requires immediate
+                                                    attention</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#06b6d4;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Refresh Button</span>
-                                                <span class="ai-info-chip-val">Re-runs Gemini with the latest portfolio data</span>
+                                                <span class="ai-info-chip-val">Re-runs Gemini with the latest portfolio
+                                                    data</span>
                                             </div>
                                         </div>
                                     </div>
@@ -1625,10 +1680,13 @@
                                 <div class="ai-info-header">
                                     <div class="ai-info-header-left">
                                         <div class="ai-info-icon">
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
-                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
-                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)"
+                                                    stroke-width="1.2" />
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7"
+                                                    fill="rgba(139,92,246,0.7)" />
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)" />
                                             </svg>
                                         </div>
                                         <span class="ai-info-title">Diversification Score</span>
@@ -1636,41 +1694,47 @@
                                     <span class="ai-info-badge">How it works</span>
                                 </div>
                                 <div class="ai-info-body">
-                                    <p class="ai-info-desc">Measures how spread out your portfolio is — a well-diversified portfolio is resilient to local market shocks.</p>
+                                    <p class="ai-info-desc">Measures how spread out your portfolio is — a
+                                        well-diversified portfolio is resilient to local market shocks.</p>
                                     <div class="ai-info-grid">
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#3b82f6;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">City</span>
-                                                <span class="ai-info-chip-val">Are all properties in one location?</span>
+                                                <span class="ai-info-chip-val">Are all properties in one
+                                                    location?</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Type</span>
-                                                <span class="ai-info-chip-val">All residential? All land? Mix matters</span>
+                                                <span class="ai-info-chip-val">All residential? All land? Mix
+                                                    matters</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#f59e0b;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Value</span>
-                                                <span class="ai-info-chip-val">One asset dominating 90%+ is dangerous</span>
+                                                <span class="ai-info-chip-val">One asset dominating 90%+ is
+                                                    dangerous</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#22c55e;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Grade A</span>
-                                                <span class="ai-info-chip-val">Well spread — resilient to downturns</span>
+                                                <span class="ai-info-chip-val">Well spread — resilient to
+                                                    downturns</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#ef4444;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">&gt; 70% Concentration</span>
-                                                <span class="ai-info-chip-val">Flagged in red — high risk dimension</span>
+                                                <span class="ai-info-chip-val">Flagged in red — high risk
+                                                    dimension</span>
                                             </div>
                                         </div>
                                     </div>
@@ -1724,10 +1788,13 @@
                                 <div class="ai-info-header">
                                     <div class="ai-info-header-left">
                                         <div class="ai-info-icon">
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
-                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
-                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)"
+                                                    stroke-width="1.2" />
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7"
+                                                    fill="rgba(139,92,246,0.7)" />
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)" />
                                             </svg>
                                         </div>
                                         <span class="ai-info-title">Rebalancing Advisor</span>
@@ -1735,13 +1802,15 @@
                                     <span class="ai-info-badge">How it works</span>
                                 </div>
                                 <div class="ai-info-body">
-                                    <p class="ai-info-desc">Gemini AI detects imbalances in your portfolio and recommends exactly what to acquire next to fix them.</p>
+                                    <p class="ai-info-desc">Gemini AI detects imbalances in your portfolio and
+                                        recommends exactly what to acquire next to fix them.</p>
                                     <div class="ai-info-grid">
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Gap Detection</span>
-                                                <span class="ai-info-chip-val">Shortfalls in city, type &amp; value split</span>
+                                                <span class="ai-info-chip-val">Shortfalls in city, type &amp; value
+                                                    split</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
@@ -1762,13 +1831,15 @@
                                             <div class="ai-info-chip-dot" style="background:#22c55e;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Suggestions</span>
-                                                <span class="ai-info-chip-val">Specific type &amp; location to buy next</span>
+                                                <span class="ai-info-chip-val">Specific type &amp; location to buy
+                                                    next</span>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="ai-info-tip">
                                         <span class="ai-info-tip-icon">◈</span>
-                                        Fix the highest-priority gap first — it delivers the most portfolio resilience per rupee invested
+                                        Fix the highest-priority gap first — it delivers the most portfolio resilience
+                                        per rupee invested
                                     </div>
                                 </div>
                             </div>
@@ -1811,10 +1882,13 @@
                                 <div class="ai-info-header">
                                     <div class="ai-info-header-left">
                                         <div class="ai-info-icon">
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
-                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
-                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)"
+                                                    stroke-width="1.2" />
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7"
+                                                    fill="rgba(139,92,246,0.7)" />
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)" />
                                             </svg>
                                         </div>
                                         <span class="ai-info-title">Rental Yield Optimizer</span>
@@ -1822,47 +1896,54 @@
                                     <span class="ai-info-badge">How it works</span>
                                 </div>
                                 <div class="ai-info-body">
-                                    <p class="ai-info-desc">Compares your actual rental income against market-rate benchmarks to show how much you're leaving on the table.</p>
+                                    <p class="ai-info-desc">Compares your actual rental income against market-rate
+                                        benchmarks to show how much you're leaving on the table.</p>
                                     <div class="ai-info-grid">
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#f87171;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Vacant</span>
-                                                <span class="ai-info-chip-val">No rental income — shows full opportunity cost</span>
+                                                <span class="ai-info-chip-val">No rental income — shows full opportunity
+                                                    cost</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#fde68a;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Under-priced</span>
-                                                <span class="ai-info-chip-val">Rented below market — raise to suggested range</span>
+                                                <span class="ai-info-chip-val">Rented below market — raise to suggested
+                                                    range</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#86efac;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">At Market</span>
-                                                <span class="ai-info-chip-val">Well-priced for the area and property type</span>
+                                                <span class="ai-info-chip-val">Well-priced for the area and property
+                                                    type</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#5eead4;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Above Market</span>
-                                                <span class="ai-info-chip-val">Excellent — consider locking tenants long-term</span>
+                                                <span class="ai-info-chip-val">Excellent — consider locking tenants
+                                                    long-term</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Income Gap</span>
-                                                <span class="ai-info-chip-val">Total ₹ uncaptured monthly &amp; annually</span>
+                                                <span class="ai-info-chip-val">Total ₹ uncaptured monthly &amp;
+                                                    annually</span>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="ai-info-tip">
                                         <span class="ai-info-tip-icon">◈</span>
-                                        Focus on Vacant and Under-priced properties first — they represent the highest potential income recovery
+                                        Focus on Vacant and Under-priced properties first — they represent the highest
+                                        potential income recovery
                                     </div>
                                 </div>
                             </div>
@@ -2241,7 +2322,13 @@
                             <div class="ai-lab-tab-grid">
                                 <button class="ai-lab-tab active" data-tab="predictions-risk"
                                     onclick="switchAILabTab('predictions-risk')">
-                                    <div class="tab-icon-wrap">📈</div>
+                                    <div class="tab-icon-wrap">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                        </svg>
+                                    </div>
                                     <div class="tab-content">
                                         <span class="tab-title">Predictions & Risk</span>
                                         <span class="tab-desc">ML forecasting + Portfolio VaR</span>
@@ -2249,7 +2336,14 @@
                                 </button>
                                 <button class="ai-lab-tab" data-tab="insights-sentiment"
                                     onclick="switchAILabTab('insights-sentiment')">
-                                    <div class="tab-icon-wrap">✨</div>
+                                    <div class="tab-icon-wrap">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z">
+                                            </path>
+                                        </svg>
+                                    </div>
                                     <div class="tab-content">
                                         <span class="tab-title">Insights & Sentiment</span>
                                         <span class="tab-desc">AI analysis + News signals</span>
@@ -2259,7 +2353,13 @@
                                 </button>
                                 <button class="ai-lab-tab" data-tab="anomaly-correlation"
                                     onclick="switchAILabTab('anomaly-correlation')">
-                                    <div class="tab-icon-wrap">🔍</div>
+                                    <div class="tab-icon-wrap">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                        </svg>
+                                    </div>
                                     <div class="tab-content">
                                         <span class="tab-title">Anomaly & Correlation</span>
                                         <span class="tab-desc">Outlier detection + Diversification</span>
@@ -2352,10 +2452,13 @@
                                 <div class="ai-info-header">
                                     <div class="ai-info-header-left">
                                         <div class="ai-info-icon">
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
-                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
-                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)"
+                                                    stroke-width="1.2" />
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7"
+                                                    fill="rgba(139,92,246,0.7)" />
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)" />
                                             </svg>
                                         </div>
                                         <span class="ai-info-title">Price Prediction</span>
@@ -2363,34 +2466,40 @@
                                     <span class="ai-info-badge">How it works</span>
                                 </div>
                                 <div class="ai-info-body">
-                                    <p class="ai-info-desc">An ensemble of Prophet (60%) and ARIMA (40%) models trained on historical price data to forecast where a stock is likely to trade — with confidence intervals to show uncertainty.</p>
+                                    <p class="ai-info-desc">An ensemble of Prophet (60%) and ARIMA (40%) models trained
+                                        on historical price data to forecast where a stock is likely to trade — with
+                                        confidence intervals to show uncertainty.</p>
                                     <div class="ai-info-grid">
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Prophet (60%)</span>
-                                                <span class="ai-info-chip-val">Captures trend &amp; seasonal patterns</span>
+                                                <span class="ai-info-chip-val">Captures trend &amp; seasonal
+                                                    patterns</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#3b82f6;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">ARIMA (40%)</span>
-                                                <span class="ai-info-chip-val">Time-series regression for short-term precision</span>
+                                                <span class="ai-info-chip-val">Time-series regression for short-term
+                                                    precision</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#5eead4;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Confidence Interval</span>
-                                                <span class="ai-info-chip-val">Shaded band = 95% probability range</span>
+                                                <span class="ai-info-chip-val">Shaded band = 95% probability
+                                                    range</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#f59e0b;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">RMSE</span>
-                                                <span class="ai-info-chip-val">Model error in $ &mdash; lower = more accurate</span>
+                                                <span class="ai-info-chip-val">Model error in $ &mdash; lower = more
+                                                    accurate</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
@@ -2403,7 +2512,8 @@
                                     </div>
                                     <div class="ai-info-tip">
                                         <span class="ai-info-tip-icon">&#9672;</span>
-                                        Wider confidence bands at longer horizons are normal &mdash; uncertainty grows the further out the forecast goes
+                                        Wider confidence bands at longer horizons are normal &mdash; uncertainty grows
+                                        the further out the forecast goes
                                     </div>
                                 </div>
                             </div>
@@ -2465,10 +2575,13 @@
                                 <div class="ai-info-header">
                                     <div class="ai-info-header-left">
                                         <div class="ai-info-icon">
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
-                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
-                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)"
+                                                    stroke-width="1.2" />
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7"
+                                                    fill="rgba(139,92,246,0.7)" />
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)" />
                                             </svg>
                                         </div>
                                         <span class="ai-info-title">Risk Analysis</span>
@@ -2476,40 +2589,47 @@
                                     <span class="ai-info-badge">How it works</span>
                                 </div>
                                 <div class="ai-info-body">
-                                    <p class="ai-info-desc">Monte Carlo simulation runs 10,000 portfolio scenarios to produce risk metrics that show how much you could lose &mdash; and how likely that is &mdash; under different market conditions.</p>
+                                    <p class="ai-info-desc">Monte Carlo simulation runs 10,000 portfolio scenarios to
+                                        produce risk metrics that show how much you could lose &mdash; and how likely
+                                        that is &mdash; under different market conditions.</p>
                                     <div class="ai-info-grid">
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#ef4444;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">VaR (95%)</span>
-                                                <span class="ai-info-chip-val">Max loss with 95% certainty &mdash; 5% chance of exceeding</span>
+                                                <span class="ai-info-chip-val">Max loss with 95% certainty &mdash; 5%
+                                                    chance of exceeding</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#f97316;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">CVaR (95%)</span>
-                                                <span class="ai-info-chip-val">Average loss in the worst 5% of scenarios</span>
+                                                <span class="ai-info-chip-val">Average loss in the worst 5% of
+                                                    scenarios</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#22d399;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Sharpe Ratio</span>
-                                                <span class="ai-info-chip-val">&gt;1 good &middot; &gt;2 excellent &middot; negative = losing</span>
+                                                <span class="ai-info-chip-val">&gt;1 good &middot; &gt;2 excellent
+                                                    &middot; negative = losing</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#3b82f6;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Expected Return</span>
-                                                <span class="ai-info-chip-val">1-year projected return based on historical data</span>
+                                                <span class="ai-info-chip-val">1-year projected return based on
+                                                    historical data</span>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="ai-info-tip">
                                         <span class="ai-info-tip-icon">&#9672;</span>
-                                        High CVaR relative to VaR signals fat-tail risk &mdash; your worst-case losses could be much worse than the 95th percentile suggests
+                                        High CVaR relative to VaR signals fat-tail risk &mdash; your worst-case losses
+                                        could be much worse than the 95th percentile suggests
                                     </div>
                                 </div>
                             </div>
@@ -2550,10 +2670,13 @@
                                 <div class="ai-info-header">
                                     <div class="ai-info-header-left">
                                         <div class="ai-info-icon">
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
-                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
-                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"
+                                                xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)"
+                                                    stroke-width="1.2" />
+                                                <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7"
+                                                    fill="rgba(139,92,246,0.7)" />
+                                                <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)" />
                                             </svg>
                                         </div>
                                         <span class="ai-info-title">AI-Generated Insights</span>
@@ -2561,40 +2684,47 @@
                                     <span class="ai-info-badge">How it works</span>
                                 </div>
                                 <div class="ai-info-body">
-                                    <p class="ai-info-desc">Google Gemini analyses your portfolio&rsquo;s 3-month price data, moving averages, volume trends, and volatility to produce plain-language, actionable insights &mdash; no jargon.</p>
+                                    <p class="ai-info-desc">Google Gemini analyses your portfolio&rsquo;s 3-month price
+                                        data, moving averages, volume trends, and volatility to produce plain-language,
+                                        actionable insights &mdash; no jargon.</p>
                                     <div class="ai-info-grid">
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#f87171;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Risk</span>
-                                                <span class="ai-info-chip-val">Vulnerabilities &mdash; concentration or drawdown warnings</span>
+                                                <span class="ai-info-chip-val">Vulnerabilities &mdash; concentration or
+                                                    drawdown warnings</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#5eead4;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Opportunity</span>
-                                                <span class="ai-info-chip-val">Underperforming stocks with upside potential</span>
+                                                <span class="ai-info-chip-val">Underperforming stocks with upside
+                                                    potential</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#fde68a;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Action</span>
-                                                <span class="ai-info-chip-val">Specific steps you should consider right now</span>
+                                                <span class="ai-info-chip-val">Specific steps you should consider right
+                                                    now</span>
                                             </div>
                                         </div>
                                         <div class="ai-info-chip">
                                             <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
                                             <div class="ai-info-chip-body">
                                                 <span class="ai-info-chip-label">Severity Border</span>
-                                                <span class="ai-info-chip-val">Red = High &middot; Yellow = Medium &middot; Teal = Low</span>
+                                                <span class="ai-info-chip-val">Red = High &middot; Yellow = Medium
+                                                    &middot; Teal = Low</span>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="ai-info-tip">
                                         <span class="ai-info-tip-icon">&#9672;</span>
-                                        Insights are generated fresh on each refresh &mdash; hit refresh after adding holdings or after major earnings announcements
+                                        Insights are generated fresh on each refresh &mdash; hit refresh after adding
+                                        holdings or after major earnings announcements
                                     </div>
                                 </div>
                             </div>
@@ -2742,10 +2872,13 @@
                                     <div class="ai-info-header">
                                         <div class="ai-info-header-left">
                                             <div class="ai-info-icon">
-                                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
-                                                    <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
-                                                    <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"
+                                                    xmlns="http://www.w3.org/2000/svg">
+                                                    <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)"
+                                                        stroke-width="1.2" />
+                                                    <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7"
+                                                        fill="rgba(139,92,246,0.7)" />
+                                                    <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)" />
                                                 </svg>
                                             </div>
                                             <span class="ai-info-title">Sentiment Analysis</span>
@@ -2753,54 +2886,63 @@
                                         <span class="ai-info-badge">How it works</span>
                                     </div>
                                     <div class="ai-info-body">
-                                        <p class="ai-info-desc">Aggregates real-time news headlines, social media signals, and technical indicators &mdash; scored with VADER NLP &mdash; into a weighted sentiment reading for any stock.</p>
+                                        <p class="ai-info-desc">Aggregates real-time news headlines, social media
+                                            signals, and technical indicators &mdash; scored with VADER NLP &mdash; into
+                                            a weighted sentiment reading for any stock.</p>
                                         <div class="ai-info-grid">
                                             <div class="ai-info-chip">
                                                 <div class="ai-info-chip-dot" style="background:#60a5fa;"></div>
                                                 <div class="ai-info-chip-body">
                                                     <span class="ai-info-chip-label">News (45%)</span>
-                                                    <span class="ai-info-chip-val">Real-time headlines scored with VADER NLP</span>
+                                                    <span class="ai-info-chip-val">Real-time headlines scored with VADER
+                                                        NLP</span>
                                                 </div>
                                             </div>
                                             <div class="ai-info-chip">
                                                 <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
                                                 <div class="ai-info-chip-body">
                                                     <span class="ai-info-chip-label">Social (25%)</span>
-                                                    <span class="ai-info-chip-val">Hashtags, keywords, community mentions</span>
+                                                    <span class="ai-info-chip-val">Hashtags, keywords, community
+                                                        mentions</span>
                                                 </div>
                                             </div>
                                             <div class="ai-info-chip">
                                                 <div class="ai-info-chip-dot" style="background:#2dd4bf;"></div>
                                                 <div class="ai-info-chip-body">
                                                     <span class="ai-info-chip-label">Technical (20%)</span>
-                                                    <span class="ai-info-chip-val">RSI, SMA crossovers, momentum signals</span>
+                                                    <span class="ai-info-chip-val">RSI, SMA crossovers, momentum
+                                                        signals</span>
                                                 </div>
                                             </div>
                                             <div class="ai-info-chip">
                                                 <div class="ai-info-chip-dot" style="background:#fcd34d;"></div>
                                                 <div class="ai-info-chip-body">
                                                     <span class="ai-info-chip-label">Market (10%)</span>
-                                                    <span class="ai-info-chip-val">Volume, liquidity, broader market context</span>
+                                                    <span class="ai-info-chip-val">Volume, liquidity, broader market
+                                                        context</span>
                                                 </div>
                                             </div>
                                             <div class="ai-info-chip">
                                                 <div class="ai-info-chip-dot" style="background:#5eead4;"></div>
                                                 <div class="ai-info-chip-body">
                                                     <span class="ai-info-chip-label">Score</span>
-                                                    <span class="ai-info-chip-val">&minus;1 (very bearish) &rarr; 0 (neutral) &rarr; +1 (very bullish)</span>
+                                                    <span class="ai-info-chip-val">&minus;1 (very bearish) &rarr; 0
+                                                        (neutral) &rarr; +1 (very bullish)</span>
                                                 </div>
                                             </div>
                                             <div class="ai-info-chip">
                                                 <div class="ai-info-chip-dot" style="background:#a5b4fc;"></div>
                                                 <div class="ai-info-chip-body">
                                                     <span class="ai-info-chip-label">Confidence</span>
-                                                    <span class="ai-info-chip-val">Higher when all sources agree &mdash; more reliable signal</span>
+                                                    <span class="ai-info-chip-val">Higher when all sources agree &mdash;
+                                                        more reliable signal</span>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="ai-info-tip">
                                             <span class="ai-info-tip-icon">&#9672;</span>
-                                            Cross-reference sentiment with the price prediction &mdash; aligned bullish signals across both are the strongest buy indicators
+                                            Cross-reference sentiment with the price prediction &mdash; aligned bullish
+                                            signals across both are the strongest buy indicators
                                         </div>
                                     </div>
                                 </div>
@@ -2895,10 +3037,13 @@
                             <div class="ai-info-header">
                                 <div class="ai-info-header-left">
                                     <div class="ai-info-icon">
-                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)" stroke-width="1.2"/>
-                                            <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7" fill="rgba(139,92,246,0.7)"/>
-                                            <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)"/>
+                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"
+                                            xmlns="http://www.w3.org/2000/svg">
+                                            <circle cx="8" cy="8" r="7" stroke="rgba(139,92,246,0.7)"
+                                                stroke-width="1.2" />
+                                            <rect x="7.3" y="7" width="1.4" height="4.6" rx="0.7"
+                                                fill="rgba(139,92,246,0.7)" />
+                                            <circle cx="8" cy="4.8" r="0.9" fill="rgba(139,92,246,0.7)" />
                                         </svg>
                                     </div>
                                     <span class="ai-info-title">Correlation Analysis</span>
@@ -2906,40 +3051,47 @@
                                 <span class="ai-info-badge">How it works</span>
                             </div>
                             <div class="ai-info-body">
-                                <p class="ai-info-desc">Computes Pearson correlation on 3 months of daily returns across all your holdings. Lower correlation = better diversification &mdash; your portfolio is less exposed to a single market move.</p>
+                                <p class="ai-info-desc">Computes Pearson correlation on 3 months of daily returns across
+                                    all your holdings. Lower correlation = better diversification &mdash; your portfolio
+                                    is less exposed to a single market move.</p>
                                 <div class="ai-info-grid">
                                     <div class="ai-info-chip">
                                         <div class="ai-info-chip-dot" style="background:#22d399;"></div>
                                         <div class="ai-info-chip-body">
                                             <span class="ai-info-chip-label">+1.0</span>
-                                            <span class="ai-info-chip-val">Perfect positive correlation &mdash; move in lockstep</span>
+                                            <span class="ai-info-chip-val">Perfect positive correlation &mdash; move in
+                                                lockstep</span>
                                         </div>
                                     </div>
                                     <div class="ai-info-chip">
                                         <div class="ai-info-chip-dot" style="background:#f59e0b;"></div>
                                         <div class="ai-info-chip-body">
                                             <span class="ai-info-chip-label">0.0</span>
-                                            <span class="ai-info-chip-val">No correlation &mdash; ideal for diversification</span>
+                                            <span class="ai-info-chip-val">No correlation &mdash; ideal for
+                                                diversification</span>
                                         </div>
                                     </div>
                                     <div class="ai-info-chip">
                                         <div class="ai-info-chip-dot" style="background:#ef4444;"></div>
                                         <div class="ai-info-chip-body">
                                             <span class="ai-info-chip-label">&minus;1.0</span>
-                                            <span class="ai-info-chip-val">Perfect negative &mdash; one rises when other falls</span>
+                                            <span class="ai-info-chip-val">Perfect negative &mdash; one rises when other
+                                                falls</span>
                                         </div>
                                     </div>
                                     <div class="ai-info-chip">
                                         <div class="ai-info-chip-dot" style="background:#8b5cf6;"></div>
                                         <div class="ai-info-chip-body">
                                             <span class="ai-info-chip-label">Diversification Score</span>
-                                            <span class="ai-info-chip-val">(1 &minus; avg correlation) &times; 100 &mdash; higher = better</span>
+                                            <span class="ai-info-chip-val">(1 &minus; avg correlation) &times; 100
+                                                &mdash; higher = better</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="ai-info-tip">
                                     <span class="ai-info-tip-icon">&#9672;</span>
-                                    If most of your holdings are &gt;0.8 correlated, you&rsquo;re not as diversified as you think &mdash; consider adding uncorrelated assets
+                                    If most of your holdings are &gt;0.8 correlated, you&rsquo;re not as diversified as
+                                    you think &mdash; consider adding uncorrelated assets
                                 </div>
                             </div>
                         </div>
@@ -3281,7 +3433,13 @@
                             <div class="ai-lab-tab-grid">
                                 <button type="button" class="ai-lab-tab active" data-tab="bonds-ai-yield-curve"
                                     onclick="switchBondsAILabTab('yield-curve', this)">
-                                    <div class="tab-icon-wrap">📉</div>
+                                    <div class="tab-icon-wrap">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                        </svg>
+                                    </div>
                                     <div class="tab-content">
                                         <span class="tab-title">Yield Curve Forecaster</span>
                                         <span class="tab-desc">Time-Series Prediction</span>
@@ -3289,7 +3447,14 @@
                                 </button>
                                 <button type="button" class="ai-lab-tab" data-tab="bonds-ai-insights"
                                     onclick="switchBondsAILabTab('insights', this)">
-                                    <div class="tab-icon-wrap">🧠</div>
+                                    <div class="tab-icon-wrap">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z">
+                                            </path>
+                                        </svg>
+                                    </div>
                                     <div class="tab-content">
                                         <span class="tab-title">Insights & Sentiment</span>
                                         <span class="tab-desc">Portfolio Intelligence & News</span>
@@ -3299,7 +3464,14 @@
                                 </button>
                                 <button type="button" class="ai-lab-tab" data-tab="bonds-ai-fair-value"
                                     onclick="switchBondsAILabTab('fair-value', this)">
-                                    <div class="tab-icon-wrap">🔗</div>
+                                    <div class="tab-icon-wrap">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1">
+                                            </path>
+                                        </svg>
+                                    </div>
                                     <div class="tab-content">
                                         <span class="tab-title">Bond Recommender</span>
                                         <span class="tab-desc">Embedding Similarity Search</span>
@@ -3791,7 +3963,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <!-- Main Dashboard Logic (must load first so modules can override its functions) -->
-    <script src="js/dashboard.js?v=233" defer></script>
+    <script src="js/dashboard.js?v=235" defer></script>
     <script src="js/real-estate-ai.js?v=13" defer></script>
     <script src="js/share-transactions.js?v=1" defer></script>
     <script src="js/modules/crypto/crypto-wallets.js?v=5" defer></script>
@@ -5932,7 +6104,7 @@
 
     <script src="js/modules/crypto/crypto-simulator.js" defer></script>
     <!-- crypto-insights.js loaded once above (line ~3111) -->
-    <script src="js/modules/crypto/crypto-ai-lab.js?v=info-boxes-v2" defer></script>
+    <script src="js/modules/crypto/crypto-ai-lab.js?v=icons-v1" defer></script>
 
     <!-- Model Comparison Modal -->
     <div id="modelComparisonModal" class="modal fade" tabindex="-1" style="display: none;">
@@ -6115,7 +6287,13 @@
                     <div class="p-3 rounded"
                         style="background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981;">
                         <div class="d-flex align-items-start gap-2">
-                            <span style="font-size: 1.2rem;">🏆</span>
+                            <div class="text-success" style="opacity: 0.9;">
+                                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z">
+                                    </path>
+                                </svg>
+                            </div>
                             <div>
                                 <div class="text-white-90 small mb-1"><strong>Recommended Model: Ensemble</strong></div>
                                 <div class="text-white-60" style="font-size: 0.85rem;">
@@ -6174,60 +6352,77 @@
                     style="color:rgba(255,255,255,0.22);font-size:0.57rem;letter-spacing:0.12em;text-transform:uppercase;padding:2px 8px 8px;">
                     Settings</div>
 
-                <button onclick="switchSettingsPanel('privacy')" id="snav-privacy" class="snav-btn"
-                    style="width:100%;border-radius:12px;cursor:pointer;text-align:left;display:flex;flex-direction:row;align-items:center;gap:10px;padding:10px 12px;transition:all 0.18s;background:linear-gradient(90deg, rgb(var(--accent-rgb)/0.14) 0%, transparent 100%);border:1px solid rgba(255,255,255,0.05);border-left:2px solid var(--accent-1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:inset 0 0 10px rgba(255,255,255,0.02),0 0 10px rgb(var(--accent-rgb)/0.25);">
-                    <span style="font-size:0.9rem;">&#x1F575;&#xFE0F;</span><span
-                        style="color:#fff;font-size:0.75rem;font-weight:600;letter-spacing:0.03em;">Privacy</span>
+                <button onclick="switchSettingsPanel('privacy')" id="snav-privacy" class="snav-btn active">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                    <span class="snav-label">Privacy</span>
                 </button>
-                <button onclick="switchSettingsPanel('currency')" id="snav-currency" class="snav-btn"
-                    style="width:100%;background:none;border:1px solid transparent;border-left:2px solid transparent;border-radius:12px;padding:10px 12px;cursor:pointer;text-align:left;display:flex;flex-direction:row;align-items:center;gap:10px;transition:all 0.18s;"
-                    onmouseover="this.style.background='rgba(255,255,255,0.03)'"
-                    onmouseout="this.style.background='none'">
-                    <span style="font-size:0.9rem;">&#x1F4B1;</span><span
-                        style="color:rgba(255,255,255,0.6);font-size:0.75rem;font-weight:500;">Currency</span>
+                <button onclick="switchSettingsPanel('currency')" id="snav-currency" class="snav-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
+                        <path d="M12 18V6"></path>
+                    </svg>
+                    <span class="snav-label">Currency</span>
                 </button>
-                <button onclick="switchSettingsPanel('alerts')" id="snav-alerts" class="snav-btn"
-                    style="width:100%;background:none;border:1px solid transparent;border-left:2px solid transparent;border-radius:12px;padding:10px 12px;cursor:pointer;text-align:left;display:flex;flex-direction:row;align-items:center;gap:10px;transition:all 0.18s;"
-                    onmouseover="this.style.background='rgba(255,255,255,0.03)'"
-                    onmouseout="this.style.background='none'">
-                    <span style="font-size:0.9rem;">&#x1F514;</span><span
-                        style="color:rgba(255,255,255,0.6);font-size:0.75rem;font-weight:500;">Alerts</span>
+                <button onclick="switchSettingsPanel('alerts')" id="snav-alerts" class="snav-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="snav-label">Alerts</span>
                 </button>
-                <button onclick="switchSettingsPanel('export')" id="snav-export" class="snav-btn"
-                    style="width:100%;background:none;border:1px solid transparent;border-left:2px solid transparent;border-radius:12px;padding:10px 12px;cursor:pointer;text-align:left;display:flex;flex-direction:row;align-items:center;gap:10px;transition:all 0.18s;"
-                    onmouseover="this.style.background='rgba(255,255,255,0.03)'"
-                    onmouseout="this.style.background='none'">
-                    <span style="font-size:0.9rem;">&#x1F4E4;</span><span
-                        style="color:rgba(255,255,255,0.6);font-size:0.75rem;font-weight:500;">Export</span>
+                <button onclick="switchSettingsPanel('export')" id="snav-export" class="snav-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span class="snav-label">Export</span>
                 </button>
-                <button onclick="switchSettingsPanel('security')" id="snav-security" class="snav-btn"
-                    style="width:100%;background:none;border:1px solid transparent;border-left:2px solid transparent;border-radius:12px;padding:10px 12px;cursor:pointer;text-align:left;display:flex;flex-direction:row;align-items:center;gap:10px;transition:all 0.18s;"
-                    onmouseover="this.style.background='rgba(255,255,255,0.03)'"
-                    onmouseout="this.style.background='none'">
-                    <span style="font-size:0.9rem;">&#x1F510;</span><span
-                        style="color:rgba(255,255,255,0.6);font-size:0.75rem;font-weight:500;">Security</span>
+                <button onclick="switchSettingsPanel('security')" id="snav-security" class="snav-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <span class="snav-label">Security</span>
                 </button>
-                <button onclick="switchSettingsPanel('appearance')" id="snav-appearance" class="snav-btn"
-                    style="width:100%;background:none;border:1px solid transparent;border-left:2px solid transparent;border-radius:12px;padding:10px 12px;cursor:pointer;text-align:left;display:flex;flex-direction:row;align-items:center;gap:10px;transition:all 0.18s;"
-                    onmouseover="this.style.background='rgba(255,255,255,0.03)'"
-                    onmouseout="this.style.background='none'">
-                    <span style="font-size:0.9rem;">&#x1F3A8;</span><span
-                        style="color:rgba(255,255,255,0.6);font-size:0.75rem;font-weight:500;">Appearance</span>
+                <button onclick="switchSettingsPanel('appearance')" id="snav-appearance" class="snav-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
+                        <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
+                        <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle>
+                        <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle>
+                        <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle>
+                        <path
+                            d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z">
+                        </path>
+                    </svg>
+                    <span class="snav-label">Appearance</span>
                 </button>
-                <button onclick="switchSettingsPanel('defaultpage')" id="snav-defaultpage" class="snav-btn"
-                    style="width:100%;background:none;border:1px solid transparent;border-left:2px solid transparent;border-radius:12px;padding:10px 12px;cursor:pointer;text-align:left;display:flex;flex-direction:row;align-items:center;gap:10px;transition:all 0.18s;"
-                    onmouseover="this.style.background='rgba(255,255,255,0.03)'"
-                    onmouseout="this.style.background='none'">
-                    <span style="font-size:0.9rem;">&#x1F3E0;</span><span
-                        style="color:rgba(255,255,255,0.6);font-size:0.75rem;font-weight:500;">Default Page</span>
+                <button onclick="switchSettingsPanel('defaultpage')" id="snav-defaultpage" class="snav-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span class="snav-label">Default Page</span>
                 </button>
 
-                <button onclick="switchSettingsPanel('refresh')" id="snav-refresh" class="snav-btn"
-                    style="width:100%;background:none;border:1px solid transparent;border-left:2px solid transparent;border-radius:12px;padding:10px 12px;cursor:pointer;text-align:left;display:flex;flex-direction:row;align-items:center;gap:10px;transition:all 0.18s;"
-                    onmouseover="this.style.background='rgba(255,255,255,0.03)'"
-                    onmouseout="this.style.background='none'">
-                    <span style="font-size:0.9rem;">&#x1F504;</span><span
-                        style="color:rgba(255,255,255,0.6);font-size:0.75rem;font-weight:500;">Data Refresh</span>
+                <button onclick="switchSettingsPanel('refresh')" id="snav-refresh" class="snav-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    <span class="snav-label">Data Refresh</span>
                 </button>
             </div>
 
@@ -6332,7 +6527,7 @@
                             style="padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;">
                             <span style="font-size:1.2rem;">🇨🇭</span><span
                                 style="font-weight:600;font-size:0.8rem;letter-spacing:0.03em;">Fr CHF</span>
-                     </button>
+                        </button>
                     </div>
                 </div>
 
@@ -6737,6 +6932,99 @@
                         </div>
 
                     </div><!-- /accent-swatches -->
+                </div>
+
+                <!-- Default Page -->
+                <div id="spanel-defaultpage" class="spanel glass-card" style="display:none;">
+                    <div
+                        style="color:var(--accent-1);font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:20px;font-weight:600;">
+                        Startup Module</div>
+
+                    <div style="margin-bottom:24px;">
+                        <div style="color:#fff;font-size:0.95rem;font-weight:500;margin-bottom:6px;">Choose Default View
+                        </div>
+                        <div style="color:rgba(255,255,255,0.4);font-size:0.8rem;line-height:1.5;">Select which module
+                            Aether should load automatically when you sign in.</div>
+                    </div>
+
+                    <div style="display:flex;flex-direction:column;gap:12px;">
+                        <label class="d-flex align-items-center gap-3 p-3 rounded"
+                            style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);cursor:pointer;position:relative;transition:all 0.2s;">
+                            <input type="radio" name="defaultPage" value="home" class="form-check-input"
+                                style="opacity:0; width:0; height:0; position:absolute;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                            <span class="text-white fw-medium">Home (Overview)</span>
+                        </label>
+
+                        <label class="d-flex align-items-center gap-3 p-3 rounded"
+                            style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);cursor:pointer;position:relative;transition:all 0.2s;">
+                            <input type="radio" name="defaultPage" value="real-estate" class="form-check-input" checked
+                                style="opacity:0; width:0; height:0; position:absolute;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
+                                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                                <path d="M9 22v-4h6v4"></path>
+                                <path d="M8 6h.01"></path>
+                                <path d="M16 6h.01"></path>
+                                <path d="M12 6h.01"></path>
+                                <path d="M12 10h.01"></path>
+                                <path d="M12 14h.01"></path>
+                                <path d="M16 10h.01"></path>
+                                <path d="M16 14h.01"></path>
+                                <path d="M8 10h.01"></path>
+                                <path d="M8 14h.01"></path>
+                            </svg>
+                            <span class="text-white fw-medium">Real Estate</span>
+                        </label>
+                        <label class="d-flex align-items-center gap-3 p-3 rounded"
+                            style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);cursor:pointer;position:relative;transition:all 0.2s;">
+                            <input type="radio" name="defaultPage" value="crypto" class="form-check-input"
+                                style="opacity:0; width:0; height:0; position:absolute;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
+                                <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"></path>
+                                <path
+                                    d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 21-2.2 2-2 1.1 0 2-1.2 2-2s-.9-2-2-2m-8-2 1.4-1.6c.4-.3.6-.8.6-1.4v-4c0-1.1.9-2 2-2h2c1.1 0 2-.9 2-2">
+                                </path>
+                                <circle cx="12" cy="12" r="10"></circle>
+                            </svg>
+                            <span class="text-white fw-medium">Crypto</span>
+                        </label>
+                        <label class="d-flex align-items-center gap-3 p-3 rounded"
+                            style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);cursor:pointer;position:relative;transition:all 0.2s;">
+                            <input type="radio" name="defaultPage" value="shares" class="form-check-input"
+                                style="opacity:0; width:0; height:0; position:absolute;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                            <span class="text-white fw-medium">Shares</span>
+                        </label>
+                        <label class="d-flex align-items-center gap-3 p-3 rounded"
+                            style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);cursor:pointer;position:relative;transition:all 0.2s;">
+                            <input type="radio" name="defaultPage" value="bonds" class="form-check-input"
+                                style="opacity:0; width:0; height:0; position:absolute;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
+                                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                            </svg>
+                            <span class="text-white fw-medium">Bonds</span>
+                        </label>
+                        <label class="d-flex align-items-center gap-3 p-3 rounded"
+                            style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);cursor:pointer;position:relative;transition:all 0.2s;">
+                            <input type="radio" name="defaultPage" value="business" class="form-check-input"
+                                style="opacity:0; width:0; height:0; position:absolute;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
+                                <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                            </svg>
+                            <span class="text-white fw-medium">Business</span>
+                        </label>
+                    </div>
                 </div>
 
             </div>

@@ -37,14 +37,18 @@ class CryptoAILab {
                     </div>
                     <div class="ai-lab-tab-grid">
                         <button class="ai-lab-tab active" data-tab="predictions-risk">
-                            <div class="tab-icon-wrap">📈</div>
+                            <div class="tab-icon-wrap">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                            </div>
                             <div class="tab-content">
                                 <span class="tab-title">Forecasts & Risk</span>
                                 <span class="tab-desc">Price predictions + Risk analysis</span>
                             </div>
                         </button>
                         <button class="ai-lab-tab" data-tab="insights-sentiment">
-                            <div class="tab-icon-wrap">✨</div>
+                            <div class="tab-icon-wrap">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                            </div>
                             <div class="tab-content">
                                 <span class="tab-title">Insights & Sentiment</span>
                                 <span class="tab-desc">AI analysis + News signals</span>
@@ -52,7 +56,9 @@ class CryptoAILab {
                             <span class="tab-badge" style="background: rgba(118,75,162,0.3); color: #c4b5fd;">AI</span>
                         </button>
                         <button class="ai-lab-tab" data-tab="performance">
-                            <div class="tab-icon-wrap">🏆</div>
+                            <div class="tab-icon-wrap">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+                            </div>
                             <div class="tab-content">
                                 <span class="tab-title">Model Performance</span>
                                 <span class="tab-desc">Accuracy & metrics</span>
@@ -1567,7 +1573,9 @@ class CryptoAILab {
             <!-- Best Model Recommendation -->
             <div class="glass-card p-4">
                 <div class="d-flex align-items-center gap-3">
-                    <div style="font-size: 2rem;">🏆</div>
+                    <div class="text-success" style="opacity: 0.9;">
+                        <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+                    </div>
                     <div>
                         <h6 class="text-white mb-1">Recommended Model: ${data.best_model || 'Ensemble'}</h6>
                         <p class="text-white-50 small mb-0">Based on lowest MAE and highest win rate across all timeframes</p>

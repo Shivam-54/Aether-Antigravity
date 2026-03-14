@@ -1768,6 +1768,22 @@ function renderRealEstateDashboard() {
 
             if (!REAL_ESTATE_DATA.performance || REAL_ESTATE_DATA.performance.length === 0) return;
 
+            const firstVal = REAL_ESTATE_DATA.performance[0].value;
+            const lastVal = REAL_ESTATE_DATA.performance[REAL_ESTATE_DATA.performance.length - 1].value;
+            const isProfit = lastVal >= firstVal;
+            
+            const lineColor = isProfit ? '#10b981' : '#ef4444';
+            
+            const ctx2d = ctx.getContext('2d');
+            const gradient = ctx2d.createLinearGradient(0, 0, 0, 300);
+            if (isProfit) {
+                gradient.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
+                gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+            } else {
+                gradient.addColorStop(0, 'rgba(239, 68, 68, 0.2)');
+                gradient.addColorStop(1, 'rgba(239, 68, 68, 0)');
+            }
+
             new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -1775,14 +1791,14 @@ function renderRealEstateDashboard() {
                     datasets: [{
                         label: 'Portfolio Value',
                         data: REAL_ESTATE_DATA.performance.map(d => d.value),
-                        borderColor: '#FFFFFF',
-                        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                        borderColor: lineColor,
+                         backgroundColor: gradient,
                         borderWidth: 2,
                         fill: true,
                         tension: 0.4,
                         pointRadius: 0,
                         pointHoverRadius: 6,
-                        pointHoverBackgroundColor: '#FFFFFF',
+                        pointHoverBackgroundColor: lineColor,
                         pointHoverBorderColor: 'rgba(255, 255, 255, 0.3)',
                         pointHoverBorderWidth: 8
                     }]
@@ -3161,7 +3177,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!tokenValid) return; // _validateToken() already handles redirect
 
     // ── STEP 4: Token confirmed — now safe to load data ─────────────────
-    const _savedDefault = localStorage.getItem('aether_default_page') || 'home';
+    let _savedDefault = localStorage.getItem('aether_default_page') || 'realestate';
+    if (_savedDefault === 'real-estate') _savedDefault = 'realestate';
+    
+    // Explicit safety check: if _savedDefault is somehow unsupported, fallback to realestate
+    if (!['realestate', 'crypto', 'shares', 'bonds', 'business', 'home'].includes(_savedDefault)) {
+        console.warn(`Fallback to realestate for unrecognized default page: ${_savedDefault}`);
+        _savedDefault = 'realestate';
+    }
     switchSource(_savedDefault);
 
     // Re-apply privacy mode AFTER data renders (DOM scan needs actual content)
@@ -3174,7 +3197,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         const _savedAcc = JSON.parse(localStorage.getItem('aether_accent') || 'null');
         if (_savedAcc) {
-            setAccentColor(_savedAcc[0], _savedAcc[1]); // sets CSS var + _accentRGB
+            setAccentColor(_savedAcc[0], _savedAcc[1], false); // sets CSS var + _accentRGB without showing toast
 
             let _glowDebounce = null;
             const _glowObserver = new MutationObserver(() => {
@@ -9994,6 +10017,39 @@ function _populateSettingsState() {
     const notifThumb = document.getElementById('notifThumb');
     if (notifTrack) notifTrack.style.background = notifsOn ? 'rgba(102,126,234,0.6)' : 'rgba(255,255,255,0.1)';
     if (notifThumb) notifThumb.style.transform = notifsOn ? 'translateX(18px)' : 'translateX(0)';
+
+    // Default Page
+    const defPage = localStorage.getItem('aether_default_page') || 'real-estate';
+    const defInputs = document.querySelectorAll('input[name="defaultPage"]');
+    defInputs.forEach(input => {
+        const label = input.closest('label');
+        if (input.value === defPage) {
+            input.checked = true;
+            if (label) {
+                label.style.background = 'linear-gradient(90deg, rgb(var(--accent-rgb)/0.14) 0%, transparent 100%)';
+                label.style.borderColor = 'var(--accent-1)';
+                label.style.boxShadow = 'inset 0 0 10px rgba(255,255,255,0.02),0 0 10px rgb(var(--accent-rgb)/0.25)';
+            }
+        } else {
+            if (label) {
+                label.style.background = 'rgba(255,255,255,0.03)';
+                label.style.borderColor = 'rgba(255,255,255,0.06)';
+                label.style.boxShadow = 'none';
+            }
+        }
+
+        // Attach listeners if not already
+        if (!input.hasAttribute('data-defpage-listener')) {
+            input.setAttribute('data-defpage-listener', 'true');
+            input.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    localStorage.setItem('aether_default_page', e.target.value);
+                    // refresh styles
+                    _populateSettingsState();
+                }
+            });
+        }
+    });
 }
 
 // Patch openProfileDrawer to also call settings state restore
@@ -10013,25 +10069,11 @@ function switchSettingsPanel(panel) {
 
     // Update nav buttons
     document.querySelectorAll('.snav-btn').forEach(btn => {
-        btn.style.background = 'none';
-        btn.style.border = '1px solid transparent';
-        btn.style.borderLeft = '2px solid transparent';
-        btn.style.backdropFilter = '';
-        btn.style.webkitBackdropFilter = '';
-        btn.style.boxShadow = '';
-        const label = btn.querySelector('span:last-child');
-        if (label) { label.style.color = 'rgba(255,255,255,0.6)'; label.style.fontWeight = '500'; label.style.letterSpacing = 'normal'; }
+        btn.classList.remove('active');
     });
     const activeBtn = document.getElementById('snav-' + panel);
     if (activeBtn) {
-        activeBtn.style.background = 'linear-gradient(90deg, rgb(var(--accent-rgb)/0.14) 0%, transparent 100%)';
-        activeBtn.style.border = '1px solid rgba(255,255,255,0.05)';
-        activeBtn.style.borderLeft = '2px solid var(--accent-1)';
-        activeBtn.style.backdropFilter = 'blur(8px)';
-        activeBtn.style.webkitBackdropFilter = 'blur(8px)';
-        activeBtn.style.boxShadow = 'inset 0 0 10px rgba(255,255,255,0.02), 0 0 10px rgb(var(--accent-rgb)/0.25)';
-        const label = activeBtn.querySelector('span:last-child');
-        if (label) { label.style.color = '#fff'; label.style.fontWeight = '600'; label.style.letterSpacing = '0.03em'; }
+        activeBtn.classList.add('active');
     }
 }
 window.switchSettingsPanel = switchSettingsPanel;
@@ -10182,7 +10224,7 @@ function _reglowInlineElements(r, g, b) {
 }
 
 
-function setAccentColor(c1, c2) {
+function setAccentColor(c1, c2, showToast = true) {
     // ── 1. CSS variable setup ──────────────────────────────────────────────
     document.documentElement.style.setProperty('--accent-1', c1);
     document.documentElement.style.setProperty('--accent-2', c2);
@@ -10388,7 +10430,9 @@ function setAccentColor(c1, c2) {
     delete document.documentElement.dataset.accentSnapshot;
 
     localStorage.setItem('aether_accent', JSON.stringify([c1, c2]));
-    _showSettingsToast('Accent color updated');
+    if (showToast) {
+        _showSettingsToast('Accent color updated');
+    }
 }
 
 window.setAccentColor = setAccentColor;

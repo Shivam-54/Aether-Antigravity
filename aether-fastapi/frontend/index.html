@@ -1466,8 +1466,16 @@
                                 localStorage.setItem('access_token', data.access_token);
                                 localStorage.setItem('user_email', loginEmail.value);
 
-                                // Redirect to dashboard
-                                window.location.href = 'dashboard.html';
+                                // Redirect to preferred dashboard
+                                const defPage = localStorage.getItem('aether_default_page') || 'real-estate';
+                                const routes = {
+                                    'real-estate': 'dashboard.html',
+                                    'crypto': 'crypto/index.html',
+                                    'shares': 'shares/index.html',
+                                    'bonds': 'bonds/index.html',
+                                    'business': 'business/index.html'
+                                };
+                                window.location.href = routes[defPage] || 'dashboard.html';
                             })
                             .catch(error => {
                                 clearTimeout(timeoutId);
@@ -1621,8 +1629,16 @@
                                 localStorage.setItem('access_token', data.access_token);
                                 localStorage.setItem('user_email', inputs.email.value);
 
-                                // Redirect to dashboard
-                                window.location.href = 'dashboard.html';
+                                // Redirect to preferred dashboard
+                                const defPage = localStorage.getItem('aether_default_page') || 'real-estate';
+                                const routes = {
+                                    'real-estate': 'dashboard.html',
+                                    'crypto': 'crypto/index.html',
+                                    'shares': 'shares/index.html',
+                                    'bonds': 'bonds/index.html',
+                                    'business': 'business/index.html'
+                                };
+                                window.location.href = routes[defPage] || 'dashboard.html';
                             })
                             .catch(error => {
                                 console.error('Signup error:', error);
