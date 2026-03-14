@@ -44,6 +44,10 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
 
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str
+
 # Helper function to get current user from token
 def get_current_user(
     token: str = Depends(oauth2_scheme),
@@ -157,3 +161,25 @@ def logout():
     Logout (client should delete token)
     """
     return {"message": "Successfully logged out"}
+
+@router.post("/change-password")
+def change_password(
+    password_data: PasswordChangeRequest, 
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Change the current user's password
+    """
+    # Verify current password
+    if not verify_password(password_data.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect current password"
+        )
+    
+    # Hash new password and update
+    current_user.hashed_password = get_password_hash(password_data.new_password)
+    db.commit()
+    
+    return {"message": "Password updated successfully"}

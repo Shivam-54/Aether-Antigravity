@@ -10084,6 +10084,138 @@ window.toggleNotifications = toggleNotifications;
 window.exportPortfolioCSV = exportPortfolioCSV;
 
 // ==========================================
+// Change Password Handler
+// ==========================================
+
+// Generic dropdown setup
+const setupDropdown = (btnId, menuId, itemClass, onSelect) => {
+    const btn = document.getElementById(btnId);
+    const menu = document.getElementById(menuId);
+    if (!btn || !menu) return;
+
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.dropdown-menu').forEach(m => {
+            if (m.id !== menuId) m.classList.remove('active');
+        });
+        menu.classList.toggle('active');
+    });
+
+    menu.querySelectorAll(`.${itemClass}`).forEach(item => {
+        item.addEventListener('click', () => {
+            if (onSelect) onSelect(item);
+            menu.classList.remove('active');
+        });
+    });
+};
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', () => {
+    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        menu.classList.remove('active');
+    });
+});
+
+// Validation rules for Auth Key
+const validateAuthKey = (key, keyType = '4-Digit PIN') => {
+    if (!key) return { valid: false, error: 'Authentication key is required' };
+    if (keyType === '4-Digit PIN') {
+        if (!/^[0-9]{4}$/.test(key)) return { valid: false, error: 'Must be exactly 4 digits' };
+    } else if (keyType === '6-Digit PIN') {
+        if (!/^[0-9]{6}$/.test(key)) return { valid: false, error: 'Must be exactly 6 digits' };
+    } else if (keyType === 'Alphabetical') {
+        if (key.length < 6) return { valid: false, error: 'Must be at least 6 characters' };
+        if (!/^[a-zA-Z]+$/.test(key)) return { valid: false, error: 'Only letters allowed' };
+    } else if (keyType === 'Numeric') {
+        if (key.length < 6) return { valid: false, error: 'Must be at least 6 digits' };
+        if (!/^[0-9]+$/.test(key)) return { valid: false, error: 'Only numbers allowed' };
+    } else if (keyType === 'Custom') {
+        if (key.length < 6) return { valid: false, error: 'Must be at least 6 characters' };
+    }
+    return { valid: true };
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const changePasswordForm = document.getElementById('changePasswordForm');
+    
+    // Setup Change Password Dropdown
+    let cpSelectedKeyType = '4-Digit PIN';
+    const newPasswordInput = document.getElementById('newPasswordInput');
+    setupDropdown('cpKeyTypeBtn', 'cpKeyTypeMenu', 'dropdown-item', (item) => {
+        const val = item.getAttribute('data-val');
+        const ph = item.getAttribute('data-ph');
+        const btnSpan = document.querySelector('#cpKeyTypeBtn span');
+        if (btnSpan) btnSpan.textContent = val;
+        if (newPasswordInput) newPasswordInput.placeholder = `New Password (${ph})`;
+        cpSelectedKeyType = val;
+    });
+    if (changePasswordForm) {
+        changePasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('currentPasswordInput').value;
+            const newPassword = document.getElementById('newPasswordInput').value;
+            const confirmNewPassword = document.getElementById('confirmNewPasswordInput').value;
+
+            if (newPassword !== confirmNewPassword) {
+                _showSettingsToast('New passwords do not match', 'error');
+                return;
+            }
+
+            const validationResult = validateAuthKey(newPassword, cpSelectedKeyType);
+            if (!validationResult.valid) {
+                _showSettingsToast(validationResult.error, 'error');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('access_token');
+                if (!token) throw new Error('Not authenticated');
+
+                const btn = changePasswordForm.querySelector('button[type="submit"]');
+                const origText = btn.textContent;
+                btn.textContent = 'Updating...';
+                btn.disabled = true;
+
+                const response = await fetch('http://localhost:8000/api/auth/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
+
+                const data = await response.json();
+
+                btn.textContent = origText;
+                btn.disabled = false;
+
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Failed to update password');
+                }
+
+                _showSettingsToast('Password successfully updated!', 'success');
+                changePasswordForm.reset();
+
+            } catch (err) {
+                console.error('Password change error:', err);
+                _showSettingsToast(err.message, 'error');
+                
+                const btn = changePasswordForm.querySelector('button[type="submit"]');
+                if (btn) {
+                    btn.textContent = 'Update Password';
+                    btn.disabled = false;
+                }
+            }
+        });
+    }
+});
+
+// ==========================================
 // ── Helper: hex → "R G B" for CSS rgb(var(--accent-rgb) / alpha) ──
 // Global accent rgb tracker (set by setAccentColor, used by MutationObserver)
 let _accentRGB = null;

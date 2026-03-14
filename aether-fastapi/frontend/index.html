@@ -192,7 +192,7 @@
             position: relative;
             width: 100%;
             max-width: 28rem;
-            overflow: hidden;
+            overflow: visible;
             border-radius: 24px;
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -368,19 +368,17 @@
             position: absolute;
             top: 100%;
             left: 0;
-            margin-top: 0.5rem;
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            width: 100%;
+            margin-top: 0.25rem;
+            background: rgba(20, 20, 20, 0.95);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 0.75rem;
-            box-shadow: inset 0 0 20px 0 rgba(255, 255, 255, 0.02), 0 0 50px 0 rgba(255, 255, 255, 0.05);
-            z-index: 50;
-            min-width: 140px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
             overflow: hidden;
             display: none;
-            max-height: 200px;
+            max-height: 140px;
             overflow-y: auto;
+            z-index: 100;
         }
 
 
@@ -1354,6 +1352,8 @@
                 } else if (keyType === 'Numeric') {
                     if (key.length < 6) return { valid: false, error: 'Must be at least 6 digits' };
                     if (!/^[0-9]+$/.test(key)) return { valid: false, error: 'Only numbers allowed' };
+                } else if (keyType === 'Custom') {
+                    if (key.length < 6) return { valid: false, error: 'Must be at least 6 characters' };
                 }
                 return { valid: true };
             };
@@ -1817,6 +1817,8 @@
                                     data-ph="Enter alphabetical key">Alphabetical</button>
                                 <button type="button" class="dropdown-item" data-val="Numeric"
                                     data-ph="Enter numeric key">Numeric</button>
+                                <button type="button" class="dropdown-item" data-val="Custom"
+                                    data-ph="Enter custom key">Custom</button>
                             </div>
                         </div>
                         <input type="password" id="loginAuthKeyInput" class="glass-input" placeholder="****" required
@@ -1867,6 +1869,8 @@
                                     data-ph="Enter text">Alphabetical</button>
                                 <button type="button" class="dropdown-item" data-val="Numeric"
                                     data-ph="Enter numbers">Numeric</button>
+                                <button type="button" class="dropdown-item" data-val="Custom"
+                                    data-ph="Enter custom key">Custom</button>
                             </div>
                         </div>
                         <input type="text" class="glass-input" id="authKeyInput" placeholder="****" required>

@@ -945,6 +945,79 @@
                 transform: translateX(0);
             }
         }
+        /* Dropdowns */
+        .dropdown-wrapper {
+            position: relative;
+        }
+
+        .dropdown-btn {
+            height: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            padding: 0 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.75rem;
+            font-weight: 300;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            letter-spacing: 0.025em;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            /* Glossy Shadow */
+            box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.02), 0 0 22px rgba(255, 255, 255, 0.04);
+        }
+
+        .dropdown-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            margin-top: 0.25rem;
+            background: rgba(20, 20, 20, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+            display: none;
+            max-height: 140px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .dropdown-menu.active {
+            display: block;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+            font-weight: 300;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
     </style>
 </head>
 
@@ -6606,12 +6679,58 @@
                         </div>
                     </div>
 
-                    <div style="margin-bottom:16px;">
+                    <div style="margin-bottom:24px;">
                         <div
                             style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-bottom:4px;letter-spacing:0.02em;">
                             Signed in as</div>
                         <div id="securityEmail"
                             style="color:#fff;font-size:0.9rem;font-weight:500;letter-spacing:0.02em;">&#x2014;</div>
+                    </div>
+
+                    <!-- Change Password Section -->
+                    <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,0.06);">
+                        <div style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-bottom:12px;letter-spacing:0.02em;">
+                            Authentication
+                        </div>
+                        <form id="changePasswordForm" style="display:flex;flex-direction:column;gap:12px;">
+                            <input type="password" id="currentPasswordInput" placeholder="Current Password" required
+                                class="form-control" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);color:#fff;font-size:0.85rem;padding:8px 12px;">
+                            
+                            <div style="display: flex; gap: 0.5rem;">
+                                <div class="dropdown-wrapper">
+                                    <button type="button" class="dropdown-btn" id="cpKeyTypeBtn" style="height:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:6px;">
+                                        <span>4-Digit PIN</span>
+                                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                            style="opacity: 1;">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    <div class="dropdown-menu" id="cpKeyTypeMenu">
+                                        <button type="button" class="dropdown-item" data-val="4-Digit PIN"
+                                            data-ph="****">4-Digit PIN</button>
+                                        <button type="button" class="dropdown-item" data-val="6-Digit PIN"
+                                            data-ph="******">6-Digit PIN</button>
+                                        <button type="button" class="dropdown-item" data-val="Alphabetical"
+                                            data-ph="Enter alphabetical key">Alphabetical</button>
+                                        <button type="button" class="dropdown-item" data-val="Numeric"
+                                            data-ph="Enter numeric key">Numeric</button>
+                                        <button type="button" class="dropdown-item" data-val="Custom"
+                                            data-ph="Enter custom key">Custom</button>
+                                    </div>
+                                </div>
+                                <input type="password" id="newPasswordInput" placeholder="New Password (****)" required
+                                    class="form-control" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);color:#fff;font-size:0.85rem;padding:8px 12px;flex:1;">
+                            </div>
+                            
+                            <input type="password" id="confirmNewPasswordInput" placeholder="Confirm New Password" required
+                                class="form-control" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);color:#fff;font-size:0.85rem;padding:8px 12px;">
+                            
+                            <button type="submit" 
+                                style="margin-top:4px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:8px;border-radius:6px;font-size:0.85rem;font-weight:500;cursor:pointer;transition:all 0.2s;">
+                                Update Password
+                            </button>
+                        </form>
                     </div>
 
                     <div>
