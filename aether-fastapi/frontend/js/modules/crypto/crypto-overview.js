@@ -227,65 +227,73 @@ function renderCryptoOverview() {
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3">
                 <!-- Total Crypto Value -->
                 <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden h-100 d-flex flex-column justify-content-center"
-                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                        <div class="d-flex flex-column gap-2">
-                            <div class="text-white-50 mb-1">${ICONS.wallet}</div>
-                            <div>
-                                <p class="small text-uppercase text-white-50 mb-1" style="letter-spacing: 0.1em; font-size: 0.65rem;">Total Crypto Value</p>
-                                <h3 class="h4 fw-light text-white-90 mb-1">${formatCurrency(metrics.total_value)}</h3>
-                                <p class="small fw-light ${metrics.change_24h_percent >= 0 ? 'text-success' : 'text-danger'}" style="font-size: 0.75rem;">
-                                    ${metrics.change_24h_percent >= 0 ? '+' : ''}${metrics.change_24h_percent.toFixed(2)}% Last 24h
-                                </p>
-                            </div>
-                        </div>
+                    <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
+                         style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                         onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                         onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                         
+                         <div class="d-flex justify-content-between align-items-start mb-3">
+                             <div class="text-white-50">${ICONS.wallet}</div>
+                             <span class="badge rounded-pill ${metrics.change_24h_percent >= 0 ? 'text-success' : 'text-danger'}" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">${metrics.change_24h_percent >= 0 ? '+' : ''}${metrics.change_24h_percent.toFixed(2)}% (24h)</span>
+                         </div>
+                         <div>
+                             <div class="h4 mb-0 fw-light text-white">${formatCurrency(metrics.total_value)}</div>
+                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Crypto Value</div>
+                         </div>
                     </div>
                 </div>
 
                 <!-- Portfolio Return -->
                 <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden h-100 d-flex flex-column justify-content-center"
-                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                        <div class="d-flex flex-column gap-2">
-                            <div class="text-white-50 mb-1">${ICONS.trending}</div>
-                            <div>
-                                <p class="small text-uppercase text-white-50 mb-1" style="letter-spacing: 0.1em; font-size: 0.65rem;">Portfolio Return</p>
-                                <h3 class="h4 fw-light mb-1" style="color: ${metrics.avg_portfolio_return >= 0 ? '#10b981' : '#ef4444'}">
-                                    ${metrics.avg_portfolio_return >= 0 ? '+' : ''}${metrics.avg_portfolio_return.toFixed(1)}%
-                                </h3>
-                                <p class="small fw-light text-white-50" style="font-size: 0.75rem;">All-time weighted</p>
-                            </div>
-                        </div>
+                    <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
+                         style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                         onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                         onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                         
+                         <div class="d-flex justify-content-between align-items-start mb-3">
+                             <div class="text-white-50">${ICONS.trending}</div>
+                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Weighted</span>
+                         </div>
+                         <div>
+                             <div class="h4 mb-0 fw-light" style="color: ${metrics.avg_portfolio_return >= 0 ? '#10b981' : '#ef4444'}">${metrics.avg_portfolio_return >= 0 ? '+' : ''}${metrics.avg_portfolio_return.toFixed(1)}%</div>
+                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Portfolio Return</div>
+                         </div>
                     </div>
                 </div>
 
                 <!-- Active Assets -->
                 <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden h-100 d-flex flex-column justify-content-center"
-                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                        <div class="d-flex flex-column gap-2">
-                            <div class="text-white-50 mb-1">${ICONS.chart}</div>
-                            <div>
-                                <p class="small text-uppercase text-white-50 mb-1" style="letter-spacing: 0.1em; font-size: 0.65rem;">Active Assets</p>
-                                <h3 class="h4 fw-light text-white-90 mb-1">${metrics.total_assets_count}</h3>
-                                <p class="small fw-light text-white-50" style="font-size: 0.75rem;">Across 3 networks</p>
-                            </div>
-                        </div>
+                    <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
+                         style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                         onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                         onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                         
+                         <div class="d-flex justify-content-between align-items-start mb-3">
+                             <div class="text-white-50">${ICONS.chart}</div>
+                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Active</span>
+                         </div>
+                         <div>
+                             <div class="h4 mb-0 fw-light text-white">${metrics.total_assets_count}</div>
+                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Active Assets</div>
+                         </div>
                     </div>
                 </div>
 
                 <!-- Network Status -->
                 <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden h-100 d-flex flex-column justify-content-center"
-                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                        <div class="d-flex flex-column gap-2">
-                            <div class="text-white-50 mb-1">${ICONS.activity}</div>
-                            <div>
-                                <p class="small text-uppercase text-white-50 mb-1" style="letter-spacing: 0.1em; font-size: 0.65rem;">Network Status</p>
-                                <h3 class="h4 fw-light text-success mb-1">Online</h3>
-                                <p class="small fw-light text-white-50" style="font-size: 0.75rem;">All nodes synced</p>
-                            </div>
-                        </div>
+                    <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
+                         style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                         onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                         onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                         
+                         <div class="d-flex justify-content-between align-items-start mb-3">
+                             <div class="text-white-50">${ICONS.activity}</div>
+                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Synced</span>
+                         </div>
+                         <div>
+                             <div class="h4 mb-0 fw-light text-success">Online</div>
+                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Network Status</div>
+                         </div>
                     </div>
                 </div>
             </div>

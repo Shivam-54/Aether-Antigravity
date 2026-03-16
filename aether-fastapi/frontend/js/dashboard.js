@@ -1663,76 +1663,91 @@ function renderRealEstateDashboard() {
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-5 g-3">
                 <!-- Total Properties -->
                 <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
-                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                        <div class="position-relative z-1 d-flex flex-column gap-2">
-                            <div class="text-white-50 mb-1">${ICONS.home}</div>
-                            <div>
-                                <p class="small text-uppercase text-white-50 mb-1" style="letter-spacing: 0.1em; font-size: 0.65rem;">Total Properties</p>
-                                <h3 class="h4 fw-light text-white-90 mb-1">${metrics.totalProperties}</h3>
-                                <p class="small fw-light text-white-50" style="font-size: 0.75rem;">Actively held assets</p>
-                            </div>
-                        </div>
+                    <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
+                         style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                         onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                         onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                         
+                         <div class="d-flex justify-content-between align-items-start mb-3">
+                             <div class="text-white-50">${ICONS.home}</div>
+                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Active</span>
+                         </div>
+                         <div>
+                             <div class="h4 mb-0 fw-light text-white">${metrics.totalProperties}</div>
+                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Properties</div>
+                         </div>
                     </div>
                 </div>
 
                 <!-- Total Valuation -->
                  <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
-                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                        <div class="position-relative z-1 d-flex flex-column gap-2">
-                            <div class="text-white-50 mb-1">${ICONS.trending}</div>
-                            <div>
-                                <p class="small text-uppercase text-white-50 mb-1" style="letter-spacing: 0.1em; font-size: 0.65rem;">Total Valuation</p>
-                                <h3 class="h4 fw-light text-white-90 mb-1">${formatCurrency(metrics.totalValuation)}</h3>
-                                <p class="small fw-light text-white-50" style="font-size: 0.75rem;">Current market value</p>
-                            </div>
-                        </div>
+                    <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
+                         style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                         onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                         onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                         
+                         <div class="d-flex justify-content-between align-items-start mb-3">
+                             <div class="text-white-50">${ICONS.trending}</div>
+                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Current</span>
+                         </div>
+                         <div>
+                             <div class="h4 mb-0 fw-light text-white">${formatCurrency(metrics.totalValuation)}</div>
+                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Valuation</div>
+                         </div>
                     </div>
                 </div>
 
                 <!-- Total Equity -->
                  <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
-                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                        <div class="position-relative z-1 d-flex flex-column gap-2">
-                            <div class="text-white-50 mb-1">${ICONS.wallet}</div>
-                            <div>
-                                <p class="small text-uppercase text-white-50 mb-1" style="letter-spacing: 0.1em; font-size: 0.65rem;">Total Equity</p>
-                                <h3 class="h4 fw-light text-white-90 mb-1">${formatCurrency(metrics.totalEquity)}</h3>
-                                <p class="small fw-light text-white-50" style="font-size: 0.75rem;">Owned capital</p>
-                            </div>
-                        </div>
+                    <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
+                         style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                         onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                         onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                         
+                         <div class="d-flex justify-content-between align-items-start mb-3">
+                             <div class="text-white-50">${ICONS.wallet}</div>
+                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Owned</span>
+                         </div>
+                         <div>
+                             <div class="h4 mb-0 fw-light text-white">${formatCurrency(metrics.totalEquity)}</div>
+                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Equity</div>
+                         </div>
                     </div>
                 </div>
 
                 <!-- Appreciation -->
                  <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
-                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                        <div class="position-relative z-1 d-flex flex-column gap-2">
-                            <div class="text-white-50 mb-1">${ICONS.piggyBank}</div>
-                            <div>
-                                <p class="small text-uppercase text-white-50 mb-1" style="letter-spacing: 0.1em; font-size: 0.65rem;">Appreciation</p>
-                                <h3 class="h4 fw-light mb-1" style="color: ${metrics.avgAppreciation >= 0 ? '#10b981' : '#ef4444'}">${metrics.avgAppreciation >= 0 ? '+' : ''}${metrics.avgAppreciation.toFixed(1)}%</h3>
-                                <p class="small fw-light text-white-50" style="font-size: 0.75rem;">Since acquisition</p>
-                            </div>
-                        </div>
+                    <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
+                         style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                         onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                         onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                         
+                         <div class="d-flex justify-content-between align-items-start mb-3">
+                             <div class="text-white-50">${ICONS.piggyBank}</div>
+                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Since Acq</span>
+                         </div>
+                         <div>
+                             <div class="h4 mb-0 fw-light" style="color: ${metrics.avgAppreciation >= 0 ? '#10b981' : '#ef4444'}">${metrics.avgAppreciation >= 0 ? '+' : ''}${metrics.avgAppreciation.toFixed(1)}%</div>
+                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Appreciation</div>
+                         </div>
                     </div>
                 </div>
 
                 <!-- Monthly Rent -->
                  <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
-                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                        <div class="position-relative z-1 d-flex flex-column gap-2">
-                            <div class="text-white-50 mb-1">${ICONS.wallet}</div>
-                            <div>
-                                <p class="small text-uppercase text-white-50 mb-1" style="letter-spacing: 0.1em; font-size: 0.65rem;">Monthly Rent</p>
-                                <h3 class="h4 fw-light text-white-90 mb-1">${formatCurrency(metrics.monthlyRentalIncome)}</h3>
-                                <p class="small fw-light text-white-50" style="font-size: 0.75rem;">Recurring income</p>
-                            </div>
-                        </div>
+                    <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
+                         style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                         onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                         onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                         
+                         <div class="d-flex justify-content-between align-items-start mb-3">
+                             <div class="text-white-50">${ICONS.wallet}</div>
+                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Recurring</span>
+                         </div>
+                         <div>
+                             <div class="h4 mb-0 fw-light text-white">${formatCurrency(metrics.monthlyRentalIncome)}</div>
+                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Monthly Rent</div>
+                         </div>
                     </div>
                 </div>
             </div>

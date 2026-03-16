@@ -128,65 +128,73 @@ function renderSharesOverview() {
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3">
                 <!-- Total Value -->
                 <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
-                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                        <div class="position-relative z-1 d-flex flex-column gap-2">
-                            <div class="text-white-50 mb-1">${ICONS.wallet}</div>
-                            <div>
-                                <p class="small text-uppercase text-white-50 mb-1" style="letter-spacing: 0.1em; font-size: 0.65rem;">Total Value</p>
-                                <h3 class="h4 fw-light text-white-90 mb-1">${formatCurrency(metrics.total_value)}</h3>
-                                <p class="small fw-light text-white-50" style="font-size: 0.75rem;">Current holdings</p>
-                            </div>
-                        </div>
+                    <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
+                         style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                         onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                         onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                         
+                         <div class="d-flex justify-content-between align-items-start mb-3">
+                             <div class="text-white-50">${ICONS.wallet}</div>
+                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Current holdings</span>
+                         </div>
+                         <div>
+                             <div class="h4 mb-0 fw-light text-white">${formatCurrency(metrics.total_value)}</div>
+                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Value</div>
+                         </div>
                     </div>
                 </div>
 
                 <!-- Total Invested -->
                 <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
-                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                        <div class="position-relative z-1 d-flex flex-column gap-2">
-                            <div class="text-white-50 mb-1">${ICONS.dollar}</div>
-                            <div>
-                                <p class="small text-uppercase text-white-50 mb-1" style="letter-spacing: 0.1em; font-size: 0.65rem;">Total Invested</p>
-                                <h3 class="h4 fw-light text-white-90 mb-1">${formatCurrency(metrics.total_invested)}</h3>
-                                <p class="small fw-light text-white-50" style="font-size: 0.75rem;">Capital deployed</p>
-                            </div>
-                        </div>
+                    <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
+                         style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                         onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                         onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                         
+                         <div class="d-flex justify-content-between align-items-start mb-3">
+                             <div class="text-white-50">${ICONS['wallet-2']}</div>
+                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Capital deployed</span>
+                         </div>
+                         <div>
+                             <div class="h4 mb-0 fw-light text-white">${formatCurrency(metrics.total_invested)}</div>
+                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Invested</div>
+                         </div>
                     </div>
                 </div>
 
                 <!-- Gain/Loss -->
                 <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
-                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                        <div class="position-relative z-1 d-flex flex-column gap-2">
-                            <div class="text-white-50 mb-1">${ICONS.trending}</div>
-                            <div>
-                                <p class="small text-uppercase text-white-50 mb-1" style="letter-spacing: 0.1em; font-size: 0.65rem;">Total Gain/Loss</p>
-                                <h3 class="h4 fw-light mb-1" style="color: ${metrics.total_gain_loss >= 0 ? '#10b981' : '#ef4444'}">
-                                    ${metrics.total_gain_loss >= 0 ? '+' : ''}${formatCurrency(metrics.total_gain_loss)}
-                                </h3>
-                                <p class="small fw-light" style="font-size: 0.75rem; color: ${metrics.total_gain_loss_percent >= 0 ? '#10b981' : '#ef4444'}">
-                                    ${metrics.total_gain_loss_percent >= 0 ? '+' : ''}${metrics.total_gain_loss_percent.toFixed(2)}%
-                                </p>
-                            </div>
-                        </div>
+                    <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
+                         style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                         onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                         onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                         
+                         <div class="d-flex justify-content-between align-items-start mb-3">
+                             <div class="text-white-50">${ICONS.trending}</div>
+                             <span class="badge rounded-pill ${metrics.total_gain_loss_percent >= 0 ? 'text-success' : 'text-danger'}" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">${metrics.total_gain_loss_percent >= 0 ? '+' : ''}${metrics.total_gain_loss_percent.toFixed(2)}%</span>
+                         </div>
+                         <div>
+                             <div class="h4 mb-0 fw-light" style="color: ${metrics.total_gain_loss >= 0 ? '#10b981' : '#ef4444'}">${metrics.total_gain_loss >= 0 ? '+' : ''}${formatCurrency(metrics.total_gain_loss)}</div>
+                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Gain/Loss</div>
+                         </div>
                     </div>
                 </div>
 
                 <!-- Active Shares -->
                 <div class="col">
-                    <div class="position-relative p-4 rounded-4 overflow-hidden group transition-all h-100 d-flex flex-column justify-content-center"
-                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                        <div class="position-relative z-1 d-flex flex-column gap-2">
-                            <div class="text-white-50 mb-1">${ICONS.chart}</div>
-                            <div>
-                                <p class="small text-uppercase text-white-50 mb-1" style="letter-spacing: 0.1em; font-size: 0.65rem;">Active Shares</p>
-                                <h3 class="h4 fw-light text-white-90 mb-1">${metrics.active_shares_count}</h3>
-                                <p class="small fw-light text-white-50" style="font-size: 0.75rem;">${metrics.sold_shares_count} sold</p>
-                            </div>
-                        </div>
+                    <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
+                         style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                         onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                         onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                         
+                         <div class="d-flex justify-content-between align-items-start mb-3">
+                             <div class="text-white-50">${ICONS.chart}</div>
+                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">0 sold</span>
+                         </div>
+                         <div>
+                             <div class="h4 mb-0 fw-light text-white">${metrics.active_shares_count}</div>
+                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Active Shares</div>
+                         </div>
                     </div>
                 </div>
             </div>
