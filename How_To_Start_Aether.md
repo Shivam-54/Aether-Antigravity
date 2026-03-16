@@ -23,10 +23,16 @@ cd /Users/shivampatel/aether-isle/aether-fastapi/backend
 ## Step 3: Start the Python Backend Server
 Now you need to turn on the virtual environment (which holds your ML libraries) and start the FastAPI server.
 
-**Type this EXACTLY and press Enter:**
-```bash
-source venv/bin/activate && ./start_dev.sh
-```
+> [!IMPORTANT]
+> ### 🚀 MAIN BACKEND COMMAND
+> **Type this EXACTLY and press Enter:**
+> ```text
+> ╔════════════════════════════════════════════════════╗
+> ║                                                    ║
+> ║     source venv/bin/activate && ./start_dev.sh     ║
+> ║                                                    ║
+> ╚════════════════════════════════════════════════════╝
+> ```
 
 ### 👉 What the Output WILL Look Like:
 If you did it correctly, your terminal will print out a bunch of lines that look like this:
@@ -65,10 +71,16 @@ cd /Users/shivampatel/aether-isle/aether-fastapi/frontend
 ## Step 6: Start the Frontend Web Server
 Now we turn on the simple web server that serves your dashboard to the browser.
 
-**Type this EXACTLY and press Enter:**
-```bash
-python3 -m http.server 3000
-```
+> [!IMPORTANT]
+> ### 🌐 MAIN FRONTEND COMMAND
+> **Type this EXACTLY and press Enter:**
+> ```text
+> ╔═════════════════════════════════════════╗
+> ║                                         ║
+> ║       python3 -m http.server 3000       ║
+> ║                                         ║
+> ╚═════════════════════════════════════════╝
+> ```
 
 ### 👉 What the Output WILL Look Like:
 If you did it correctly, your terminal will instantly print *only one line*:
