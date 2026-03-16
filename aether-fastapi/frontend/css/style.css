@@ -576,6 +576,29 @@ body::after {
         0 0 30px rgba(255, 255, 255, 0.15);
 }
 
+/* ==================== REACT BITS: GRADIENT TEXT ==================== */
+.text-gradient-accent {
+    /* Create a 3-stop gradient so it loops seamlessly */
+    background-image: linear-gradient(
+        to right,
+        var(--accent-1),
+        var(--accent-2),
+        var(--accent-1)
+    ) !important;
+    background-size: 300% auto !important;
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    animation: gradientText 4s linear infinite !important;
+}
+
+@keyframes gradientText {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
 /* Loading Spinner */
 .spinner {
     border: 3px solid rgba(255, 255, 255, 0.1);

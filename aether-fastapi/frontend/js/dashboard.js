@@ -163,7 +163,7 @@ const SIDEBAR_CONFIG = {
         { icon: 'receipt', text: 'Rental / S...', id: 'rental-sale' },
         { icon: 'document', text: 'Documents', id: 'documents' },
         { icon: 'trending', text: 'Valuation', id: 'valuation' },
-        { icon: 'flask', text: 'AI Lab', id: 'ai-lab' },
+        { icon: 'flask', text: 'AI Lab', id: 'ai-lab', className: 'text-gradient-accent' },
         { divider: true },
         { icon: 'arrow-up', text: 'Upgrade', id: 'upgrade' },
         { icon: 'help', text: 'Help', id: 'help' },
@@ -174,7 +174,7 @@ const SIDEBAR_CONFIG = {
         { icon: 'wallet', text: 'Holdings', id: 'holdings' },
         { icon: 'activity', text: 'On-Chain...', id: 'on-chain' },
         { icon: 'wallet-2', text: 'Wallets', id: 'wallets' },
-        { icon: 'flask', text: 'AI Lab', id: 'ai-lab' },
+        { icon: 'flask', text: 'AI Lab', id: 'ai-lab', className: 'text-gradient-accent' },
         { divider: true },
         { icon: 'arrow-up', text: 'Upgrade', id: 'upgrade' },
         { icon: 'help', text: 'Help', id: 'help' },
@@ -185,7 +185,7 @@ const SIDEBAR_CONFIG = {
         { icon: 'wallet', text: 'Holdings', id: 'holdings' },
         { icon: 'trending', text: 'Market Act...', id: 'market-activity' },
         { icon: 'chart', text: 'Performan...', id: 'performance' },
-        { icon: 'flask', text: 'AI Lab', id: 'ai-lab' },
+        { icon: 'flask', text: 'AI Lab', id: 'ai-lab', className: 'text-gradient-accent' },
         { divider: true },
         { icon: 'arrow-up', text: 'Upgrade', id: 'upgrade' },
         { icon: 'help', text: 'Help', id: 'help' },
@@ -197,7 +197,7 @@ const SIDEBAR_CONFIG = {
         { icon: 'calendar', text: 'Maturity S...', id: 'maturity' },
         { icon: 'chart', text: 'Bond Alloc...', id: 'bond-allocation' },
         { icon: 'trending', text: 'Yield Analysis', id: 'yield-analysis' },
-        { icon: 'flask', text: 'AI Lab', id: 'ai-lab' },
+        { icon: 'flask', text: 'AI Lab', id: 'ai-lab', className: 'text-gradient-accent' },
         { divider: true },
         { icon: 'arrow-up', text: 'Upgrade', id: 'upgrade' },
         { icon: 'help', text: 'Help', id: 'help' },
@@ -210,7 +210,7 @@ const SIDEBAR_CONFIG = {
 
         { icon: 'receipt', text: 'Statements', id: 'statements' },
         { icon: 'document', text: 'Documents', id: 'documentation' },
-        { icon: 'flask', text: 'AI Lab', id: 'ai-lab' },
+        { icon: 'flask', text: 'AI Lab', id: 'ai-lab', className: 'text-gradient-accent' },
         { divider: true },
         { icon: 'arrow-up', text: 'Upgrade', id: 'upgrade' },
         { icon: 'help', text: 'Help', id: 'help' },
@@ -1614,7 +1614,7 @@ function renderRealEstateDashboard() {
             <div class="mb-4 rounded-4 overflow-hidden position-relative" 
                  style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 2rem;">
                  <div class="mb-4">
-                    <h2 class="h4 fw-light text-white-90 mb-1">Portfolio Value Trend</h2>
+                    <h2 class="h4 fw-light text-gradient-accent mb-1">Portfolio Value Trend</h2>
                     <p class="small fw-light text-white-50">Value movement across owned real estate assets over time</p>
                  </div>
                  <div style="height: 300px; position: relative; width: 100%;">
@@ -1627,7 +1627,7 @@ function renderRealEstateDashboard() {
                 <!-- Asset Type Distribution -->
                 <div class="col-md-4">
                     <div class="p-4 h-100 rounded-4" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                        <h4 class="h6 fw-light text-white-90 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Asset Allocation</h4>
+                        <h4 class="h6 fw-light text-gradient-accent mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Asset Allocation</h4>
                         <div style="height: 200px; position: relative;">
                             <canvas id="chartAssetType"></canvas>
                         </div>
@@ -1637,7 +1637,7 @@ function renderRealEstateDashboard() {
                 <!-- Location Distribution -->
                 <div class="col-md-4">
                     <div class="p-4 h-100 rounded-4" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                        <h4 class="h6 fw-light text-white-90 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Geographic Exposure</h4>
+                        <h4 class="h6 fw-light text-gradient-accent mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Geographic Exposure</h4>
                         <div style="height: 200px; position: relative;">
                             <canvas id="chartLocation"></canvas>
                         </div>
@@ -1647,7 +1647,7 @@ function renderRealEstateDashboard() {
                 <!-- Occupancy Rate -->
                 <div class="col-md-4">
                     <div class="p-4 h-100 d-flex flex-column align-items-center justify-content-center text-center rounded-4" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 30px 0 rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                         <h4 class="h6 fw-light text-white-90 mb-3 align-self-start text-uppercase small" style="letter-spacing: 0.1em;">Occupancy Rate</h4>
+                         <h4 class="h6 fw-light text-gradient-accent mb-3 align-self-start text-uppercase small" style="letter-spacing: 0.1em;">Occupancy Rate</h4>
                         <div style="height: 140px; width: 140px; position: relative;" class="mb-3">
                            <canvas id="chartOccupancy"></canvas>
                            <div class="position-absolute top-50 start-50 translate-middle">
