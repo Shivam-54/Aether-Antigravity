@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 from datetime import date
 from uuid import UUID
@@ -60,7 +60,7 @@ def get_bonds(db: Session = Depends(get_db), current_user: User = Depends(get_cu
     bonds = db.query(Bond).filter(Bond.user_id == current_user.id).all()
     
     # Calculate annual_income for each bond
-    result = []
+    result: List[Dict[str, Any]] = []
     for bond in bonds:
         bond_dict = {
             "id": bond.id,

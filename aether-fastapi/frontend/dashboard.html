@@ -19,7 +19,7 @@
         rel="stylesheet">
 
     <!-- Custom CSS -->
-    <link href="css/style.css?v=92" rel="stylesheet">
+    <link href="css/style.css?v=220" rel="stylesheet">
 
 
     <style>
@@ -3258,7 +3258,7 @@
                         <div class="glass-panel p-4 mb-4" style="min-height: 400px;">
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <div>
-                                    <h3 class="h5 fw-light mb-1">Fixed Income Trend</h3>
+                                    <h2 class="h4 fw-light text-white-90 mb-1">Fixed Income Trend</h2>
                                     <p class="text-white-50 small mb-0">Projected monthly coupon
                                         payments</p>
                                 </div>
@@ -3281,7 +3281,7 @@
                             <!-- Bond Type Allocation (Left) -->
                             <div class="col-lg-6">
                                 <div class="glass-panel p-4 h-100">
-                                    <h3 class="h5 fw-light mb-4">Bond Allocation by Type</h3>
+                                    <h4 class="h6 fw-light text-white-70 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Bond Allocation by Type</h4>
                                     <div style="height: 250px; width: 100%;">
                                         <canvas id="bondsTypeChart"></canvas>
                                     </div>
@@ -3290,7 +3290,7 @@
                             <!-- Top Bond Holdings (Right) -->
                             <div class="col-lg-6">
                                 <div class="glass-panel p-4 h-100">
-                                    <h3 class="h5 fw-light mb-4">Top Bond Holdings</h3>
+                                    <h4 class="h6 fw-light text-white-70 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Top Bond Holdings</h4>
                                     <div style="height: 250px; width: 100%;">
                                         <canvas id="bondsTopHoldingsChart"></canvas>
                                     </div>
@@ -3844,7 +3844,7 @@
                                 <div>
                                     <h3 class="small fw-medium text-white-70 text-uppercase tracking-wider mb-1">
                                         Performance</h3>
-                                    <h2 class="text-gradient-accent h3 fw-light mb-0">Revenue & Profit</h2>
+                                    <h2 class="text-white-90 h3 fw-light mb-0">Revenue & Profit</h2>
                                 </div>
                                 <div class="d-flex gap-2">
                                     <button
@@ -3869,7 +3869,7 @@
 
                         <!-- Business Grid Overview -->
                         <div class="glass-card p-4">
-                            <h3 class="h5 fw-light text-white mb-4">Business Portfolio</h3>
+                            <h4 class="h6 fw-light text-white-70 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Business Portfolio</h4>
                             <div id="business-dashboard-grid" class="row g-4">
                                 <!-- Injected via JS -->
                             </div>
@@ -3997,28 +3997,211 @@
 
                     <!-- 5. AI Insights Section -->
                     <div id="business-section-ai-lab" class="business-section" style="display: none;">
+                        <!-- AI Lab Header -->
                         <div class="glass-header mb-4">
-                            <h2 class="h3 fw-light mb-2 text-gradient-accent">AI Lab</h2>
-                            <p class="text-white-50 fw-light">Decision intelligence powered by your business data</p>
+                            <div class="d-flex align-items-center gap-3 mb-2">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" class="text-primary">
+                                    <path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2" />
+                                    <path d="M8.5 2h7" />
+                                    <path d="M7 16h10" />
+                                </svg>
+                                <h2 class="h3 fw-light mb-0 text-gradient-accent">AI Lab</h2>
+                                <span class="badge bg-primary bg-opacity-10 text-primary">Experimental</span>
+                            </div>
+                            <p class="text-white-50 fw-light mb-0">Decision intelligence and advisory powered by your business data</p>
                         </div>
 
-                        <!-- Coming Soon Placeholder -->
-                        <div class="glass-card p-5 text-center"
-                            style="min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                            <div class="mb-4" style="opacity: 0.4;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path
-                                        d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-                                </svg>
+                        <!-- Sub-Tab Navigation -->
+                        <div class="glass-card mb-4 p-3" id="biz-ai-lab-tabs">
+                            <div class="d-flex align-items-center justify-content-between mb-3 px-1">
+                                <span class="text-white-50 small fw-medium"
+                                    style="letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.65rem;">Select Feature</span>
                             </div>
-                            <h3 class="h4 fw-light text-white mb-2">Coming Soon</h3>
-                            <p class="text-white-50 small mb-0" style="max-width: 340px;">
-                                AI-powered business analytics, intelligent trend forecasting, and operational
-                                recommendations are coming soon.
-                            </p>
+                            <div class="ai-lab-tab-grid">
+                                <!-- Tab 1: AI Financial Analyst -->
+                                <button type="button" class="ai-lab-tab active" data-tab="biz-financial-analyst"
+                                    onclick="switchBizAILabTab('biz-financial-analyst')">
+                                    <div class="tab-icon-wrap">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="tab-content">
+                                        <span class="tab-title">Financial Analyst</span>
+                                        <span class="tab-desc">P&amp;L insights + Cash flow analysis</span>
+                                    </div>
+                                    <span class="tab-badge" style="background: rgba(118,75,162,0.3); color: #c4b5fd;">AI</span>
+                                </button>
+
+                                <!-- Tab 2: AI Board Member Chat -->
+                                <button type="button" class="ai-lab-tab" data-tab="biz-board-chat"
+                                    onclick="switchBizAILabTab('biz-board-chat')">
+                                    <div class="tab-icon-wrap">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="tab-content">
+                                        <span class="tab-title">AI Board Member</span>
+                                        <span class="tab-desc">Chat with your business data</span>
+                                    </div>
+                                    <span class="tab-badge" style="background: rgba(245,158,11,0.3); color: #fcd34d;">AI</span>
+                                </button>
+
+                                <!-- Tab 3: Coming Soon -->
+                                <button type="button" class="ai-lab-tab" data-tab="biz-coming-soon"
+                                    onclick="switchBizAILabTab('biz-coming-soon')">
+                                    <div class="tab-icon-wrap">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="tab-content">
+                                        <span class="tab-title">Predictive Engine</span>
+                                        <span class="tab-desc">Forecasting + scenario planning</span>
+                                    </div>
+                                </button>
+                            </div>
                         </div>
+
+                        <!-- ============================================================ -->
+                        <!-- Tab 1: AI Financial Analyst                                  -->
+                        <!-- ============================================================ -->
+                        <div class="ai-lab-panel active" id="biz-ai-lab-panel-financial-analyst">
+                            <!-- Generate Report Button -->
+                            <div class="glass-card p-3 mb-4">
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-md-4">
+                                        <label class="text-white-70 small mb-1">Analysis Period:</label>
+                                        <select id="bizAnalysisPeriod" class="modal-glass-input form-select-sm">
+                                            <option value="3">Last 3 Months</option>
+                                            <option value="6" selected>Last 6 Months</option>
+                                            <option value="12">Last 12 Months</option>
+                                            <option value="all">All Time</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="text-white-70 small mb-1">Focus Area:</label>
+                                        <select id="bizFocusArea" class="modal-glass-input form-select-sm">
+                                            <option value="overall" selected>Overall Portfolio</option>
+                                            <option value="revenue">Revenue Growth</option>
+                                            <option value="profitability">Profitability</option>
+                                            <option value="cashflow">Cash Flow</option>
+                                            <option value="risk">Risk Assessment</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="text-white-70 small mb-1">&nbsp;</label>
+                                        <button onclick="runBizFinancialAnalysis()" class="glass-button w-100 btn-sm">
+                                            🧠 Generate Analysis
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Analysis Output -->
+                            <div id="biz-financial-analysis-output">
+                                <!-- Initial empty state -->
+                                <div class="glass-card p-5 text-center" style="min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                    <div class="mb-3" style="opacity: 0.4;">
+                                        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                        </svg>
+                                    </div>
+                                    <h4 class="h5 fw-light text-white mb-2">Ready to Analyse</h4>
+                                    <p class="text-white-50 small mb-0" style="max-width: 300px;">Select your analysis period and focus area above, then click Generate Analysis to get AI-powered financial insights.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ============================================================ -->
+                        <!-- Tab 2: AI Board Member Chat                                  -->
+                        <!-- ============================================================ -->
+                        <div class="ai-lab-panel" id="biz-ai-lab-panel-board-chat" style="display:none;">
+                            <div class="glass-card p-4" style="min-height: 520px; display: flex; flex-direction: column;">
+                                <!-- Chat Header -->
+                                <div class="d-flex align-items-center gap-3 mb-4 pb-3" style="border-bottom: 1px solid rgba(255,255,255,0.07);">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:40px;height:40px;background:rgba(118,75,162,0.2);border:1px solid rgba(118,75,162,0.4);">
+                                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-1"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="text-white fw-medium small">Aether AI Board Member</div>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <div style="width:6px;height:6px;border-radius:50%;background:#22c55e;"></div>
+                                            <span class="text-white-50" style="font-size:0.7rem;">Online · Powered by Gemini</span>
+                                        </div>
+                                    </div>
+                                    <button class="ms-auto glass-button btn-sm px-2 py-1" onclick="clearBizChat()" style="font-size:0.7rem;">Clear Chat</button>
+                                </div>
+
+                                <!-- Suggested Questions -->
+                                <div id="biz-chat-suggestions" class="mb-3">
+                                    <div class="text-white-50 small mb-2" style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;">Try asking:</div>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button class="badge px-2 py-1 text-start" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:0.72rem;cursor:pointer;font-weight:400;" onclick="bizChatAsk('Why did my revenue change last month?')">Why did revenue change last month?</button>
+                                        <button class="badge px-2 py-1 text-start" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:0.72rem;cursor:pointer;font-weight:400;" onclick="bizChatAsk('Which venture is most profitable?')">Which venture is most profitable?</button>
+                                        <button class="badge px-2 py-1 text-start" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:0.72rem;cursor:pointer;font-weight:400;" onclick="bizChatAsk('Give me an executive summary of my portfolio.')">Executive portfolio summary</button>
+                                        <button class="badge px-2 py-1 text-start" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:0.72rem;cursor:pointer;font-weight:400;" onclick="bizChatAsk('What are my biggest financial risks?')">What are my biggest risks?</button>
+                                    </div>
+                                </div>
+
+                                <!-- Chat Messages -->
+                                <div id="biz-chat-messages" class="flex-grow-1 overflow-y-auto custom-scrollbar mb-3" style="min-height:200px;max-height:350px;display:flex;flex-direction:column;gap:12px;">
+                                    <!-- Welcome message -->
+                                    <div class="d-flex gap-3 align-items-start">
+                                        <div class="rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center" style="width:28px;height:28px;background:rgba(118,75,162,0.2);border:1px solid rgba(118,75,162,0.4);">
+                                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-1"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="p-3 rounded-3" style="background:rgba(118,75,162,0.1);border:1px solid rgba(118,75,162,0.2);max-width:85%;">
+                                            <div class="text-white small" style="line-height:1.5;">Hello! I'm your AI Board Member, powered by Gemini. I have full visibility into your business portfolio — ventures, revenue, expenses, and cash flow. Ask me anything about your business performance.</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Chat Input -->
+                                <div class="d-flex gap-2 align-items-end" style="border-top:1px solid rgba(255,255,255,0.07);padding-top:12px;">
+                                    <textarea id="biz-chat-input" class="modal-glass-input flex-grow-1" rows="2"
+                                        placeholder="Ask anything about your business..."
+                                        style="resize:none;font-size:0.85rem;"
+                                        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendBizChat();}"></textarea>
+                                    <button onclick="sendBizChat()" class="glass-button px-3 py-2 flex-shrink-0" style="height:fit-content;">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ============================================================ -->
+                        <!-- Tab 3: Coming Soon                                           -->
+                        <!-- ============================================================ -->
+                        <div class="ai-lab-panel" id="biz-ai-lab-panel-coming-soon" style="display:none;">
+                            <div class="glass-card p-5 text-center"
+                                style="min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                <div class="mb-4" style="opacity: 0.4;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                                    </svg>
+                                </div>
+                                <h3 class="h4 fw-light text-white mb-2">Coming Soon</h3>
+                                <p class="text-white-50 small mb-0" style="max-width: 340px;">
+                                    AI-powered predictive forecasting, revenue modelling, and scenario planning are currently in development.
+                                </p>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -4052,17 +4235,18 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <!-- Main Dashboard Logic (must load first so modules can override its functions) -->
-    <script src="js/dashboard.js?v=236" defer></script>
+    <script src="js/dashboard.js?v=240" defer></script>
     <script src="js/real-estate-ai.js?v=13" defer></script>
     <script src="js/share-transactions.js?v=1" defer></script>
     <script src="js/modules/crypto/crypto-wallets.js?v=5" defer></script>
     <script src="js/analytics-utils.js" defer></script> <!-- NEW: Analytics Logic -->
-    <script src="js/shares-module.js?v=16" defer></script>
+    <script src="js/shares-module.js?v=20" defer></script>
     <script src="js/shares-performance.js?v=2" defer></script>
     <script src="js/shares-ai-v2.js" defer></script> <!-- NEW: AI Lab price predictions -->
+    <script src="js/business-ai.js?v=1" defer></script> <!-- Business AI Lab -->
 
     <!-- Crypto Modules (loaded AFTER dashboard.js so they override its duplicate functions) -->
-    <script src="js/modules/crypto/crypto-overview.js?v=6" defer></script>
+    <script src="js/modules/crypto/crypto-overview.js?v=10" defer></script>
     <script src="js/modules/crypto/crypto-transactions.js?v=3" defer></script>
     <script src="js/modules/crypto/crypto-insights.js" defer></script>
 

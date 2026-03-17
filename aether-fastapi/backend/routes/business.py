@@ -1,13 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 from datetime import date
 from uuid import UUID
+import asyncio
 from database import get_db
 from models.user import User
 from models.business import Business, BusinessTransaction
 from .auth import get_current_user
+from ml.business.business_ai import BusinessFinancialAnalyst, BusinessBoardMember
 
 
 router = APIRouter(prefix="/api/business", tags=["business"])
@@ -113,6 +115,126 @@ def create_business(business_data: BusinessCreate, db: Session = Depends(get_db)
     
     return new_business
 
+
+# ==================== AI Lab Endpoints ====================
+# IMPORTANT: These MUST come before the /{business_id} wildcard routes.
+# Otherwise FastAPI matches 'ai' as a business_id UUID and returns HTTP 500.
+
+# Pydantic model for chat request body
+class BizChatRequest(BaseModel):
+    message: str
+    history: Optional[list] = []
+
+
+@router.get("/ai/financial-analysis")
+async def get_business_financial_analysis(
+    period: str = Query("6", description="Period in months or 'all'"),
+    focus: str = Query("overall", description="Focus area: overall|revenue|profitability|cashflow|risk"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    AI-powered P&L and financial insights for the user's business portfolio.
+    Uses Google Gemini 2.0 Flash with live DB data.
+    """
+    try:
+        businesses = db.query(Business).filter(Business.user_id == current_user.id).all()
+        transactions = db.query(BusinessTransaction).filter(BusinessTransaction.user_id == current_user.id).all()
+
+        biz_list: List[Dict[str, Any]] = [
+            {
+                "name":            b.name,
+                "industry":        b.industry,
+                "description":     b.description,
+                "ownership":       float(b.ownership or 0),
+                "valuation":       float(b.valuation or 0),
+                "annual_revenue":  float(b.annual_revenue or 0),
+                "annual_profit":   float(b.annual_profit or 0),
+                "monthly_revenue": float(b.monthly_revenue or 0),
+                "monthly_profit":  float(b.monthly_profit or 0),
+                "cash_flow":       float(b.cash_flow or 0),
+                "status":          b.status,
+                "founded":         str(b.founded) if b.founded else None,
+            }
+            for b in businesses
+        ]
+
+        tx_list: List[Dict[str, Any]] = [
+            {
+                "date":     str(t.date),
+                "amount":   float(t.amount or 0),
+                "type":     t.type,
+                "category": t.category,
+                "notes":    t.notes,
+            }
+            for t in transactions
+        ]
+
+        period_months = 12 if period == "all" else int(period)
+        analyst = BusinessFinancialAnalyst()
+        result = await asyncio.to_thread(
+            analyst.generate_analysis, biz_list, tx_list, period_months, focus
+        )
+        return result
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Business AI analysis error: {str(e)}")
+
+
+@router.post("/ai/chat")
+async def business_ai_chat(
+    body: BizChatRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    AI Board Member conversational endpoint.
+    Injects live business portfolio context into every Gemini call.
+    """
+    try:
+        businesses = db.query(Business).filter(Business.user_id == current_user.id).all()
+        transactions = db.query(BusinessTransaction).filter(BusinessTransaction.user_id == current_user.id).all()
+
+        biz_list: List[Dict[str, Any]] = [
+            {
+                "name":           b.name,
+                "industry":       b.industry,
+                "annual_revenue": float(b.annual_revenue or 0),
+                "annual_profit":  float(b.annual_profit  or 0),
+                "cash_flow":      float(b.cash_flow      or 0),
+                "valuation":      float(b.valuation      or 0),
+                "status":         b.status,
+            }
+            for b in businesses
+        ]
+
+        biz_name_map = {str(b.id): b.name for b in businesses}
+        tx_list: List[Dict[str, Any]] = [
+            {
+                "date":          str(t.date),
+                "amount":        float(t.amount or 0),
+                "type":          t.type,
+                "category":      t.category,
+                "business_name": biz_name_map.get(str(t.business_id), "Unknown"),
+            }
+            for t in transactions
+        ]
+
+        board_member = BusinessBoardMember()
+        reply = await asyncio.to_thread(
+            board_member.chat, body.message, biz_list, tx_list, body.history
+        )
+        return {"reply": reply}
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Business AI chat error: {str(e)}")
+
+
+# ==================== Business CRUD: Single Venture ====================
 
 @router.get("/{business_id}", response_model=BusinessResponse)
 def get_business(business_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

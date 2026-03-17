@@ -151,7 +151,7 @@ function renderCryptoOverview() {
         <div class="d-flex flex-column gap-4">
             <div class="glass-header mb-2 d-flex justify-content-between align-items-center">
                 <div>
-                    <h2 class="h4 fw-light text-white-90 mb-1">Crypto Overview</h2>
+                    <h2 class="h4 fw-light text-gradient-accent mb-1">Crypto Overview</h2>
                     <p class="small fw-light text-white-50">Real-time market exposure and network activity.</p>
                 </div>
             </div>
@@ -163,7 +163,7 @@ function renderCryptoOverview() {
                     <div class="rounded-4 overflow-hidden position-relative h-100 d-flex flex-column" 
                          style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); min-height: 320px; padding: 1.5rem;">
                         <div class="d-flex align-items-center justify-content-between mb-3">
-                            <h3 class="small fw-medium text-white-70 mb-0">Portfolio Performance</h3>
+                            <h2 class="h4 fw-light text-white-90 mb-1">Portfolio Performance</h2>
                             <div class="d-flex gap-2" id="perfRangeBtns">
                                 ${['1D', '1W', '1M', '1Y', 'ALL'].map((range, i) => `
                                     <button
@@ -188,7 +188,7 @@ function renderCryptoOverview() {
                 <div class="col-lg-4">
                     <div class="rounded-4 overflow-hidden position-relative h-100 d-flex flex-column" 
                          style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); min-height: 320px; padding: 1.5rem;">
-                        <h3 class="small fw-medium text-white-70 mb-4">Network Correlation</h3>
+                        <h4 class="h6 fw-light text-white-70 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Network Correlation</h4>
                         <div class="flex-grow-1 d-flex align-items-center justify-content-center position-relative" id="network-correlation-container">
                             <!-- Ambient vignette overlay -->
                             <div style="position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 50% 50%, transparent 30%, rgba(0,0,0,0.4) 100%); pointer-events: none; z-index: 1;"></div>
@@ -205,7 +205,7 @@ function renderCryptoOverview() {
                 <div class="col-lg-6">
                     <div class="rounded-4 overflow-hidden position-relative p-4 h-100" 
                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);">
-                        <h3 class="small fw-medium text-white-70 mb-4">Allocation by Network</h3>
+                        <h4 class="h6 fw-light text-white-70 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Allocation by Network</h4>
                         <div style="height: 250px; width: 100%;">
                             <canvas id="cryptoNetworkChart"></canvas>
                         </div>
@@ -215,7 +215,7 @@ function renderCryptoOverview() {
                 <div class="col-lg-6">
                     <div class="rounded-4 overflow-hidden position-relative p-4 h-100" 
                         style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);">
-                        <h3 class="small fw-medium text-white-70 mb-4">Top Assets (by Value)</h3>
+                        <h4 class="h6 fw-light text-white-70 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Top Assets (by Value)</h4>
                         <div style="height: 250px; width: 100%;">
                             <canvas id="cryptoTopAssetsChart"></canvas>
                         </div>

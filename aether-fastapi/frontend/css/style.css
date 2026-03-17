@@ -590,7 +590,7 @@ body::after {
     -webkit-text-fill-color: transparent !important;
     -webkit-background-clip: text !important;
     background-clip: text !important;
-    animation: gradientText 4s linear infinite !important;
+    animation: gradientText 3s linear infinite !important;
 }
 
 @keyframes gradientText {

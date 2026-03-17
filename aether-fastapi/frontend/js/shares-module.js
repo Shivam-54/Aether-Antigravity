@@ -61,7 +61,7 @@ function renderSharesOverview() {
         <div class="d-flex flex-column gap-4">
             <div class="glass-header mb-2 d-flex justify-content-between align-items-center">
                 <div>
-                    <h2 class="h4 fw-light text-white-90 mb-1">Shares Overview</h2>
+                    <h2 class="h4 fw-light text-gradient-accent mb-1">Shares Overview</h2>
                     <p class="small fw-light text-white-50">Equity portfolio performance and metrics</p>
                 </div>
             </div>
@@ -71,7 +71,7 @@ function renderSharesOverview() {
                  style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 2rem;">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <div>
-                        <h3 class="small fw-medium text-white-70 mb-0">Portfolio Performance</h3>
+                        <h2 class="h4 fw-light text-white-90 mb-1">Portfolio Performance</h2>
                         <div id="shares-perf-subtitle" class="text-white-40" style="font-size:0.7rem;margin-top:2px;">Loading...</div>
                     </div>
                     <div class="d-flex gap-2">
@@ -105,7 +105,7 @@ function renderSharesOverview() {
                 <div class="col-lg-6">
                     <div class="rounded-4 overflow-hidden position-relative p-4 h-100" 
                          style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);">
-                        <h3 class="small fw-medium text-white-70 mb-4">Sector Allocation</h3>
+                        <h4 class="h6 fw-light text-white-70 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Sector Allocation</h4>
                         <div style="height: 250px; width: 100%;">
                             <canvas id="sharesSectorChart"></canvas>
                         </div>
@@ -116,7 +116,7 @@ function renderSharesOverview() {
                 <div class="col-lg-6">
                     <div class="rounded-4 overflow-hidden position-relative p-4 h-100" 
                          style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);">
-                        <h3 class="small fw-medium text-white-70 mb-4">Top Holdings (by Value)</h3>
+                        <h4 class="h6 fw-light text-white-70 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Top Holdings (by Value)</h4>
                         <div style="height: 250px; width: 100%;">
                             <canvas id="sharesTopHoldingsChart"></canvas>
                         </div>
