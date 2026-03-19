@@ -10386,28 +10386,28 @@ function setAccentColor(c1, c2, showToast = true) {
     const rgb = _hexToRgbStr(c1);
     document.documentElement.style.setProperty('--accent-rgb', rgb);
 
-    // ── 1b. Accent-3: a vivid bright highlight for the gradient text shimmer ─
-    //    Each accent gets a hand-curated punchy highlight so the dark→bright→dark
-    //    sweep is dramatic and immediately visible on dark backgrounds.
+    // ── 1b. Accent-3: light tint of same hue for the gradient text shimmer ──
+    //    Gradient sweeps: dark shade (c2) → mid (c1) → light tint (c3) → mid → dark
+    //    Keeps everything in the same color family for a cohesive look.
     const _accentHighlights = {
         // ❄️ Cold
-        '#cceeff': '#ffffff',  // Arctic      → pure white flash
-        '#1e3a8a': '#60a5fa',  // Obsidian    → bright sky blue
-        '#94a3b8': '#f1f5f9',  // Titanium    → near-white silver
-        '#e8e8f0': '#ffffff',  // Ivory       → pure white
-        '#1e0e51': '#818cf8',  // Midnight    → bright indigo
+        '#cceeff': '#e8f8ff',  // Arctic      → icy pale blue
+        '#1e3a8a': '#93c5fd',  // Obsidian    → light sky blue
+        '#94a3b8': '#e2e8f0',  // Titanium    → light silver-blue
+        '#e8e8f0': '#f8f8ff',  // Ivory       → ghostly lavender-white
+        '#1e0e51': '#a5b4fc',  // Midnight    → soft lavender
         // 🌸 Vivid
-        '#ff677d': '#ffd6db',  // Crimson     → bright blush pink
-        '#c084fc': '#f0abfc',  // Wisteria    → bright orchid
-        '#fdba74': '#fef3c7',  // Peach       → warm cream flash
-        '#14b8a6': '#99f6e4',  // Ocean Teal  → bright mint
+        '#ff677d': '#ffb3bc',  // Crimson     → light rose pink
+        '#c084fc': '#e9c6ff',  // Wisteria    → light orchid
+        '#fdba74': '#ffe8c8',  // Peach       → light peach cream
+        '#14b8a6': '#5eead4',  // Ocean Teal  → light aqua-teal
         // 🌿 Earthy
-        '#106b3e': '#4ade80',  // Malachite   → bright lime green
-        '#492201': '#d97706',  // Espresso    → warm amber
+        '#106b3e': '#6ee7a0',  // Malachite   → light mint green
+        '#492201': '#b45309',  // Espresso    → warm amber-orange
         // ⚡ Metallic
-        '#f4d17b': '#fefce8',  // Amber       → bright champagne
+        '#f4d17b': '#fef9e7',  // Amber       → light champagne gold
     };
-    const c3 = _accentHighlights[c1.toLowerCase()] || '#ffffff';
+    const c3 = _accentHighlights[c1.toLowerCase()] || c1;
     document.documentElement.style.setProperty('--accent-3', c3);
 
     // ── 2. Get/create the injected style tag ───────────────────────────────
