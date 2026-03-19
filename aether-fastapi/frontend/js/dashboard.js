@@ -10386,6 +10386,30 @@ function setAccentColor(c1, c2, showToast = true) {
     const rgb = _hexToRgbStr(c1);
     document.documentElement.style.setProperty('--accent-rgb', rgb);
 
+    // ── 1b. Accent-3: a vivid bright highlight for the gradient text shimmer ─
+    //    Each accent gets a hand-curated punchy highlight so the dark→bright→dark
+    //    sweep is dramatic and immediately visible on dark backgrounds.
+    const _accentHighlights = {
+        // ❄️ Cold
+        '#cceeff': '#ffffff',  // Arctic      → pure white flash
+        '#1e3a8a': '#60a5fa',  // Obsidian    → bright sky blue
+        '#94a3b8': '#f1f5f9',  // Titanium    → near-white silver
+        '#e8e8f0': '#ffffff',  // Ivory       → pure white
+        '#1e0e51': '#818cf8',  // Midnight    → bright indigo
+        // 🌸 Vivid
+        '#ff677d': '#ffd6db',  // Crimson     → bright blush pink
+        '#c084fc': '#f0abfc',  // Wisteria    → bright orchid
+        '#fdba74': '#fef3c7',  // Peach       → warm cream flash
+        '#14b8a6': '#99f6e4',  // Ocean Teal  → bright mint
+        // 🌿 Earthy
+        '#106b3e': '#4ade80',  // Malachite   → bright lime green
+        '#492201': '#d97706',  // Espresso    → warm amber
+        // ⚡ Metallic
+        '#f4d17b': '#fefce8',  // Amber       → bright champagne
+    };
+    const c3 = _accentHighlights[c1.toLowerCase()] || '#ffffff';
+    document.documentElement.style.setProperty('--accent-3', c3);
+
     // ── 2. Get/create the injected style tag ───────────────────────────────
     const style = document.getElementById('_accentStyle') || (() => {
         const s = document.createElement('style');
