@@ -945,6 +945,7 @@
                 transform: translateX(0);
             }
         }
+
         /* Dropdowns */
         .dropdown-wrapper {
             position: relative;
@@ -1162,7 +1163,8 @@
                                                     d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                             </svg>
                                         </div>
-                                        <h2 class="text-gradient-accent" style="font-size: 1.5rem; font-weight: 500; margin-bottom: 4px; letter-spacing: -0.01em;">
+                                        <h2 class="text-gradient-accent"
+                                            style="font-size: 1.5rem; font-weight: 500; margin-bottom: 4px; letter-spacing: -0.01em;">
                                             Property Valuations
                                         </h2>
                                     </div>
@@ -3273,7 +3275,9 @@
                                 </button>
                             </div>
                             <!-- Reserved for Chart -->
-                            <div id="bonds-trend-chart" style="height: 300px; width: 100%;"></div>
+                            <div style="height: 300px; width: 100%; position: relative;">
+                                <canvas id="bonds-trend-chart"></canvas>
+                            </div>
                         </div>
 
                         <!-- Bond Allocation Charts -->
@@ -3281,7 +3285,8 @@
                             <!-- Bond Type Allocation (Left) -->
                             <div class="col-lg-6">
                                 <div class="glass-panel p-4 h-100">
-                                    <h4 class="h6 fw-light text-white-70 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Bond Allocation by Type</h4>
+                                    <h4 class="h6 fw-light text-white-70 mb-3 text-uppercase small"
+                                        style="letter-spacing: 0.1em;">Bond Allocation by Type</h4>
                                     <div style="height: 250px; width: 100%;">
                                         <canvas id="bondsTypeChart"></canvas>
                                     </div>
@@ -3290,7 +3295,8 @@
                             <!-- Top Bond Holdings (Right) -->
                             <div class="col-lg-6">
                                 <div class="glass-panel p-4 h-100">
-                                    <h4 class="h6 fw-light text-white-70 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Top Bond Holdings</h4>
+                                    <h4 class="h6 fw-light text-white-70 mb-3 text-uppercase small"
+                                        style="letter-spacing: 0.1em;">Top Bond Holdings</h4>
                                     <div style="height: 250px; width: 100%;">
                                         <canvas id="bondsTopHoldingsChart"></canvas>
                                     </div>
@@ -3303,110 +3309,134 @@
                             <!-- Metric 1 -->
                             <div class="col-md-3 col-lg-2dot4">
                                 <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
-                                     style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
-                                     onmouseover="this.style.background='rgba(255,255,255,0.04)'"
-                                     onmouseout="this.style.background='rgba(255,255,255,0.03)'">
-                                     <div class="d-flex justify-content-between align-items-start mb-3">
-                                         <div class="text-white-50">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                                    onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                                    onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="text-white-50">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
                                                 <rect width="20" height="14" x="2" y="5" rx="2" />
                                                 <line x1="2" x2="22" y1="10" y2="10" />
                                             </svg>
-                                         </div>
-                                         <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Current</span>
-                                     </div>
-                                     <div>
-                                         <div class="h4 mb-0 fw-light text-white" id="bonds-overview-total-value">--</div>
-                                         <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Bond Value</div>
-                                     </div>
+                                        </div>
+                                        <span class="badge rounded-pill text-white-30"
+                                            style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Current</span>
+                                    </div>
+                                    <div>
+                                        <div class="h4 mb-0 fw-light text-white" id="bonds-overview-total-value">--
+                                        </div>
+                                        <div class="small text-white-30 text-uppercase tracking-wider mt-1"
+                                            style="font-size: 0.65rem;">Total Bond Value</div>
+                                    </div>
                                 </div>
                             </div>
                             <!-- Metric 2 -->
                             <div class="col-md-3 col-lg-2dot4">
                                 <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
-                                     style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
-                                     onmouseover="this.style.background='rgba(255,255,255,0.04)'"
-                                     onmouseout="this.style.background='rgba(255,255,255,0.03)'">
-                                     <div class="d-flex justify-content-between align-items-start mb-3">
-                                         <div class="text-white-50">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                                    onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                                    onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="text-white-50">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
                                                 <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
                                                 <line x1="16" x2="16" y1="2" y2="6" />
                                                 <line x1="8" x2="8" y1="2" y2="6" />
                                                 <line x1="3" x2="21" y1="10" y2="10" />
                                             </svg>
-                                         </div>
-                                         <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Projected</span>
-                                     </div>
-                                     <div>
-                                         <div class="h4 mb-0 fw-light text-white" id="bonds-overview-annual-income">--</div>
-                                         <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Annual Fixed Income</div>
-                                     </div>
+                                        </div>
+                                        <span class="badge rounded-pill text-white-30"
+                                            style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Projected</span>
+                                    </div>
+                                    <div>
+                                        <div class="h4 mb-0 fw-light text-white" id="bonds-overview-annual-income">--
+                                        </div>
+                                        <div class="small text-white-30 text-uppercase tracking-wider mt-1"
+                                            style="font-size: 0.65rem;">Annual Fixed Income</div>
+                                    </div>
                                 </div>
                             </div>
                             <!-- Metric 3 -->
                             <div class="col-md-3 col-lg-2dot4">
                                 <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
-                                     style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
-                                     onmouseover="this.style.background='rgba(255,255,255,0.04)'"
-                                     onmouseout="this.style.background='rgba(255,255,255,0.03)'">
-                                     <div class="d-flex justify-content-between align-items-start mb-3">
-                                         <div class="text-white-50">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                                    onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                                    onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="text-white-50">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
                                                 <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
                                                 <polyline points="16 7 22 7 22 13" />
                                             </svg>
-                                         </div>
-                                         <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Weighted</span>
-                                     </div>
-                                     <div>
-                                         <div class="h4 mb-0 fw-light text-white" id="bonds-overview-avg-yield">--</div>
-                                         <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Average Yield</div>
-                                     </div>
+                                        </div>
+                                        <span class="badge rounded-pill text-white-30"
+                                            style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Weighted</span>
+                                    </div>
+                                    <div>
+                                        <div class="h4 mb-0 fw-light text-white" id="bonds-overview-avg-yield">--</div>
+                                        <div class="small text-white-30 text-uppercase tracking-wider mt-1"
+                                            style="font-size: 0.65rem;">Average Yield</div>
+                                    </div>
                                 </div>
                             </div>
                             <!-- Metric 4 -->
                             <div class="col-md-3 col-lg-2dot4">
                                 <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
-                                     style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
-                                     onmouseover="this.style.background='rgba(255,255,255,0.04)'"
-                                     onmouseout="this.style.background='rgba(255,255,255,0.03)'">
-                                     <div class="d-flex justify-content-between align-items-start mb-3">
-                                         <div class="text-white-50">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                                    onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                                    onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="text-white-50">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
                                                 <circle cx="12" cy="12" r="10" />
                                                 <polyline points="12 6 12 12 16 14" />
                                             </svg>
-                                         </div>
-                                         <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);" id="bonds-overview-next-maturity-date">Upcoming</span>
-                                     </div>
-                                     <div>
-                                         <div class="h4 mb-0 fw-light text-white" id="bonds-overview-next-maturity">--</div>
-                                         <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Next Maturity</div>
-                                     </div>
+                                        </div>
+                                        <span class="badge rounded-pill text-white-30"
+                                            style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);"
+                                            id="bonds-overview-next-maturity-date">Upcoming</span>
+                                    </div>
+                                    <div>
+                                        <div class="h4 mb-0 fw-light text-white" id="bonds-overview-next-maturity">--
+                                        </div>
+                                        <div class="small text-white-30 text-uppercase tracking-wider mt-1"
+                                            style="font-size: 0.65rem;">Next Maturity</div>
+                                    </div>
                                 </div>
                             </div>
                             <!-- Metric 5 -->
                             <div class="col-md-3 col-lg-2dot4">
                                 <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden group hover-lift transition-colors"
-                                     style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
-                                     onmouseover="this.style.background='rgba(255,255,255,0.04)'"
-                                     onmouseout="this.style.background='rgba(255,255,255,0.03)'">
-                                     <div class="d-flex justify-content-between align-items-start mb-3">
-                                         <div class="text-white-50">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    style="transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.08);"
+                                    onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+                                    onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="text-white-50">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                                                 <circle cx="9" cy="7" r="4" />
                                                 <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
                                                 <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                                             </svg>
-                                         </div>
-                                         <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Active</span>
-                                     </div>
-                                     <div>
-                                         <div class="h4 mb-0 fw-light text-white" id="bonds-overview-total-count">0</div>
-                                         <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Active Bonds</div>
-                                     </div>
+                                        </div>
+                                        <span class="badge rounded-pill text-white-30"
+                                            style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Active</span>
+                                    </div>
+                                    <div>
+                                        <div class="h4 mb-0 fw-light text-white" id="bonds-overview-total-count">0</div>
+                                        <div class="small text-white-30 text-uppercase tracking-wider mt-1"
+                                            style="font-size: 0.65rem;">Active Bonds</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -3869,7 +3899,8 @@
 
                         <!-- Business Grid Overview -->
                         <div class="glass-card p-4">
-                            <h4 class="h6 fw-light text-white-70 mb-3 text-uppercase small" style="letter-spacing: 0.1em;">Business Portfolio</h4>
+                            <h4 class="h6 fw-light text-white-70 mb-3 text-uppercase small"
+                                style="letter-spacing: 0.1em;">Business Portfolio</h4>
                             <div id="business-dashboard-grid" class="row g-4">
                                 <!-- Injected via JS -->
                             </div>
@@ -4002,62 +4033,73 @@
                             <div class="d-flex align-items-center gap-3 mb-2">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2" class="text-primary">
-                                    <path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2" />
+                                    <path
+                                        d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2" />
                                     <path d="M8.5 2h7" />
                                     <path d="M7 16h10" />
                                 </svg>
                                 <h2 class="h3 fw-light mb-0 text-gradient-accent">AI Lab</h2>
                                 <span class="badge bg-primary bg-opacity-10 text-primary">Experimental</span>
                             </div>
-                            <p class="text-white-50 fw-light mb-0">Decision intelligence and advisory powered by your business data</p>
+                            <p class="text-white-50 fw-light mb-0">Decision intelligence and advisory powered by your
+                                business data</p>
                         </div>
 
                         <!-- Sub-Tab Navigation -->
                         <div class="glass-card mb-4 p-3" id="biz-ai-lab-tabs">
                             <div class="d-flex align-items-center justify-content-between mb-3 px-1">
                                 <span class="text-white-50 small fw-medium"
-                                    style="letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.65rem;">Select Feature</span>
+                                    style="letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.65rem;">Select
+                                    Feature</span>
                             </div>
                             <div class="ai-lab-tab-grid">
                                 <!-- Tab 1: AI Financial Analyst -->
                                 <button type="button" class="ai-lab-tab active" data-tab="biz-financial-analyst"
                                     onclick="switchBizAILabTab('biz-financial-analyst')">
                                     <div class="tab-icon-wrap">
-                                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                                            </path>
                                         </svg>
                                     </div>
                                     <div class="tab-content">
                                         <span class="tab-title">Financial Analyst</span>
                                         <span class="tab-desc">P&amp;L insights + Cash flow analysis</span>
                                     </div>
-                                    <span class="tab-badge" style="background: rgba(118,75,162,0.3); color: #c4b5fd;">AI</span>
+                                    <span class="tab-badge"
+                                        style="background: rgba(118,75,162,0.3); color: #c4b5fd;">AI</span>
                                 </button>
 
                                 <!-- Tab 2: AI Board Member Chat -->
                                 <button type="button" class="ai-lab-tab" data-tab="biz-board-chat"
                                     onclick="switchBizAILabTab('biz-board-chat')">
                                     <div class="tab-icon-wrap">
-                                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                                                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
+                                            </path>
                                         </svg>
                                     </div>
                                     <div class="tab-content">
                                         <span class="tab-title">AI Board Member</span>
                                         <span class="tab-desc">Chat with your business data</span>
                                     </div>
-                                    <span class="tab-badge" style="background: rgba(245,158,11,0.3); color: #fcd34d;">AI</span>
+                                    <span class="tab-badge"
+                                        style="background: rgba(245,158,11,0.3); color: #fcd34d;">AI</span>
                                 </button>
 
                                 <!-- Tab 3: Coming Soon -->
                                 <button type="button" class="ai-lab-tab" data-tab="biz-coming-soon"
                                     onclick="switchBizAILabTab('biz-coming-soon')">
                                     <div class="tab-icon-wrap">
-                                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg width="18" height="18" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                                                d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z">
+                                            </path>
                                         </svg>
                                     </div>
                                     <div class="tab-content">
@@ -4106,15 +4148,20 @@
                             <!-- Analysis Output -->
                             <div id="biz-financial-analysis-output">
                                 <!-- Initial empty state -->
-                                <div class="glass-card p-5 text-center" style="min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                <div class="glass-card p-5 text-center"
+                                    style="min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                                     <div class="mb-3" style="opacity: 0.4;">
-                                        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg width="48" height="48" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
-                                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                                            </path>
                                         </svg>
                                     </div>
                                     <h4 class="h5 fw-light text-white mb-2">Ready to Analyse</h4>
-                                    <p class="text-white-50 small mb-0" style="max-width: 300px;">Select your analysis period and focus area above, then click Generate Analysis to get AI-powered financial insights.</p>
+                                    <p class="text-white-50 small mb-0" style="max-width: 300px;">Select your analysis
+                                        period and focus area above, then click Generate Analysis to get AI-powered
+                                        financial insights.</p>
                                 </div>
                             </div>
                         </div>
@@ -4123,59 +4170,95 @@
                         <!-- Tab 2: AI Board Member Chat                                  -->
                         <!-- ============================================================ -->
                         <div class="ai-lab-panel" id="biz-ai-lab-panel-board-chat" style="display:none;">
-                            <div class="glass-card p-4" style="min-height: 520px; display: flex; flex-direction: column;">
+                            <div class="glass-card p-4"
+                                style="min-height: 520px; display: flex; flex-direction: column;">
                                 <!-- Chat Header -->
-                                <div class="d-flex align-items-center gap-3 mb-4 pb-3" style="border-bottom: 1px solid rgba(255,255,255,0.07);">
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:40px;height:40px;background:rgba(118,75,162,0.2);border:1px solid rgba(118,75,162,0.4);">
-                                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-1"></path>
+                                <div class="d-flex align-items-center gap-3 mb-4 pb-3"
+                                    style="border-bottom: 1px solid rgba(255,255,255,0.07);">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center"
+                                        style="width:40px;height:40px;background:rgba(118,75,162,0.2);border:1px solid rgba(118,75,162,0.4);">
+                                        <svg width="20" height="20" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-1">
+                                            </path>
                                         </svg>
                                     </div>
                                     <div>
                                         <div class="text-white fw-medium small">Aether AI Board Member</div>
                                         <div class="d-flex align-items-center gap-1">
-                                            <div style="width:6px;height:6px;border-radius:50%;background:#22c55e;"></div>
-                                            <span class="text-white-50" style="font-size:0.7rem;">Online · Powered by Gemini</span>
+                                            <div style="width:6px;height:6px;border-radius:50%;background:#22c55e;">
+                                            </div>
+                                            <span class="text-white-50" style="font-size:0.7rem;">Online · Powered by
+                                                Gemini</span>
                                         </div>
                                     </div>
-                                    <button class="ms-auto glass-button btn-sm px-2 py-1" onclick="clearBizChat()" style="font-size:0.7rem;">Clear Chat</button>
+                                    <button class="ms-auto glass-button btn-sm px-2 py-1" onclick="clearBizChat()"
+                                        style="font-size:0.7rem;">Clear Chat</button>
                                 </div>
 
                                 <!-- Suggested Questions -->
                                 <div id="biz-chat-suggestions" class="mb-3">
-                                    <div class="text-white-50 small mb-2" style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;">Try asking:</div>
+                                    <div class="text-white-50 small mb-2"
+                                        style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;">Try
+                                        asking:</div>
                                     <div class="d-flex flex-wrap gap-2">
-                                        <button class="badge px-2 py-1 text-start" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:0.72rem;cursor:pointer;font-weight:400;" onclick="bizChatAsk('Why did my revenue change last month?')">Why did revenue change last month?</button>
-                                        <button class="badge px-2 py-1 text-start" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:0.72rem;cursor:pointer;font-weight:400;" onclick="bizChatAsk('Which venture is most profitable?')">Which venture is most profitable?</button>
-                                        <button class="badge px-2 py-1 text-start" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:0.72rem;cursor:pointer;font-weight:400;" onclick="bizChatAsk('Give me an executive summary of my portfolio.')">Executive portfolio summary</button>
-                                        <button class="badge px-2 py-1 text-start" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:0.72rem;cursor:pointer;font-weight:400;" onclick="bizChatAsk('What are my biggest financial risks?')">What are my biggest risks?</button>
+                                        <button class="badge px-2 py-1 text-start"
+                                            style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:0.72rem;cursor:pointer;font-weight:400;"
+                                            onclick="bizChatAsk('Why did my revenue change last month?')">Why did
+                                            revenue change last month?</button>
+                                        <button class="badge px-2 py-1 text-start"
+                                            style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:0.72rem;cursor:pointer;font-weight:400;"
+                                            onclick="bizChatAsk('Which venture is most profitable?')">Which venture is
+                                            most profitable?</button>
+                                        <button class="badge px-2 py-1 text-start"
+                                            style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:0.72rem;cursor:pointer;font-weight:400;"
+                                            onclick="bizChatAsk('Give me an executive summary of my portfolio.')">Executive
+                                            portfolio summary</button>
+                                        <button class="badge px-2 py-1 text-start"
+                                            style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:0.72rem;cursor:pointer;font-weight:400;"
+                                            onclick="bizChatAsk('What are my biggest financial risks?')">What are my
+                                            biggest risks?</button>
                                     </div>
                                 </div>
 
                                 <!-- Chat Messages -->
-                                <div id="biz-chat-messages" class="flex-grow-1 overflow-y-auto custom-scrollbar mb-3" style="min-height:200px;max-height:350px;display:flex;flex-direction:column;gap:12px;">
+                                <div id="biz-chat-messages" class="flex-grow-1 overflow-y-auto custom-scrollbar mb-3"
+                                    style="min-height:200px;max-height:350px;display:flex;flex-direction:column;gap:12px;">
                                     <!-- Welcome message -->
                                     <div class="d-flex gap-3 align-items-start">
-                                        <div class="rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center" style="width:28px;height:28px;background:rgba(118,75,162,0.2);border:1px solid rgba(118,75,162,0.4);">
-                                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-1"></path>
+                                        <div class="rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center"
+                                            style="width:28px;height:28px;background:rgba(118,75,162,0.2);border:1px solid rgba(118,75,162,0.4);">
+                                            <svg width="14" height="14" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-1">
+                                                </path>
                                             </svg>
                                         </div>
-                                        <div class="p-3 rounded-3" style="background:rgba(118,75,162,0.1);border:1px solid rgba(118,75,162,0.2);max-width:85%;">
-                                            <div class="text-white small" style="line-height:1.5;">Hello! I'm your AI Board Member, powered by Gemini. I have full visibility into your business portfolio — ventures, revenue, expenses, and cash flow. Ask me anything about your business performance.</div>
+                                        <div class="p-3 rounded-3"
+                                            style="background:rgba(118,75,162,0.1);border:1px solid rgba(118,75,162,0.2);max-width:85%;">
+                                            <div class="text-white small" style="line-height:1.5;">Hello! I'm your AI
+                                                Board Member, powered by Gemini. I have full visibility into your
+                                                business portfolio — ventures, revenue, expenses, and cash flow. Ask me
+                                                anything about your business performance.</div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Chat Input -->
-                                <div class="d-flex gap-2 align-items-end" style="border-top:1px solid rgba(255,255,255,0.07);padding-top:12px;">
+                                <div class="d-flex gap-2 align-items-end"
+                                    style="border-top:1px solid rgba(255,255,255,0.07);padding-top:12px;">
                                     <textarea id="biz-chat-input" class="modal-glass-input flex-grow-1" rows="2"
                                         placeholder="Ask anything about your business..."
                                         style="resize:none;font-size:0.85rem;"
                                         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendBizChat();}"></textarea>
-                                    <button onclick="sendBizChat()" class="glass-button px-3 py-2 flex-shrink-0" style="height:fit-content;">
-                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                    <button onclick="sendBizChat()" class="glass-button px-3 py-2 flex-shrink-0"
+                                        style="height:fit-content;">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                                         </svg>
                                     </button>
                                 </div>
@@ -4192,12 +4275,14 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24"
                                         fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"
                                         stroke-linejoin="round">
-                                        <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                                        <path
+                                            d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
                                     </svg>
                                 </div>
                                 <h3 class="h4 fw-light text-white mb-2">Coming Soon</h3>
                                 <p class="text-white-50 small mb-0" style="max-width: 340px;">
-                                    AI-powered predictive forecasting, revenue modelling, and scenario planning are currently in development.
+                                    AI-powered predictive forecasting, revenue modelling, and scenario planning are
+                                    currently in development.
                                 </p>
                             </div>
                         </div>
@@ -5466,9 +5551,11 @@
                             <input type="text" id="share-search-input" class="form-control glass-input shadow-none py-3"
                                 placeholder="Select a sector first"
                                 style="width: 100%; padding-top: 12px; padding-bottom: 12px; padding-right: 16px; padding-left: 48px !important; border-radius: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: white; outline: none; transition: border-color 0.2s;"
-                                oninput="handleShareSearch(event)" onclick="handleShareSearch(event)" autocomplete="off" disabled>
+                                oninput="handleShareSearch(event)" onclick="handleShareSearch(event)" autocomplete="off"
+                                disabled>
 
-                            <div id="share-search-results" class="position-absolute w-100 mt-2 rounded-3 custom-scrollbar hidden"
+                            <div id="share-search-results"
+                                class="position-absolute w-100 mt-2 rounded-3 custom-scrollbar hidden"
                                 style="background: rgba(18, 18, 18, 0.98); border: 1px solid rgba(255,255,255,0.08); max-height: 280px; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
                             </div>
                         </div>
@@ -5814,11 +5901,14 @@
     <div id="add-bond-modal" class="position-fixed top-0 start-0 w-100 h-100 hidden"
         style="z-index: 9999; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); display: none;">
         <div class="d-flex align-items-center justify-content-center h-100 p-4">
-            <div class="glass-card rounded-4 p-5" style="max-width: 600px; width: 100%;">
+            <div class="glass-card rounded-4 p-5" style="max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; scrollbar-width: none;">
+                <style>
+                    #add-bond-modal .glass-card::-webkit-scrollbar { display: none; }
+                </style>
                 <div class="d-flex justify-content-between align-items-start mb-4">
                     <div>
                         <h3 class="h4 fw-light text-white mb-2">Add New Bond</h3>
-                        <p class="small text-white-50 mb-0">Step <span id="bond-step-number">1</span> of 3</p>
+                        <p class="small text-white-50 mb-0">Step <span id="bond-step-number">1</span> of 2</p>
                     </div>
                     <button onclick="closeAddBondModal()" class="btn-close btn-close-white" aria-label="Close"></button>
                 </div>
@@ -5848,63 +5938,64 @@
 
                     <!-- Step 2: Bond Details -->
                     <div id="bond-step-2" class="bond-step" style="display: none;">
-                        <div class="mb-3">
-                            <label class="form-label small text-white-50">Bond Ticker / Name <span
+                        <div class="mb-4 position-relative dropdown-wrapper">
+                            <label class="form-label small text-white-50">Search Bonds <span
                                     class="text-danger">*</span></label>
-                            <input type="text" id="bond-ticker" class="form-control glass-input"
-                                placeholder="e.g. GOI-2030" required>
+                            <div class="position-relative">
+                                <i class="position-absolute top-50 translate-middle-y text-white-50"
+                                    style="left: 16px; z-index: 10;">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </i>
+                                <input type="text" id="bond-ticker" class="form-control glass-input shadow-none py-3"
+                                    style="padding-left: 45px !important;" placeholder="e.g. GOI-2030" autocomplete="off" required>
+                            </div>
+                            
+                            <!-- Search Results Dropdown -->
+                            <ul id="bond-autocomplete-results" class="dropdown-menu glass-dropdown w-100 mt-2 p-2 shadow-lg"
+                                style="display: none; position: absolute; max-height: 250px; overflow-y: auto; background: rgba(20,20,25,0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; z-index: 1050;">
+                            </ul>
                         </div>
                         <div class="mb-3">
                             <label class="form-label small text-white-50">Issuer Name <span
                                     class="text-danger">*</span></label>
                             <input type="text" id="bond-issuer" class="form-control glass-input"
-                                placeholder="e.g. Government of India" required>
+                                placeholder="e.g. Government of India" readonly style="opacity: 0.7;" required>
                         </div>
                         <div class="row g-3 mb-4">
                             <div class="col-6">
                                 <label class="form-label small text-white-50">Face Value (₹)</label>
                                 <input type="number" id="bond-face-value" class="form-control glass-input"
-                                    placeholder="10000" required oninput="updateBondCalculations()">
+                                    placeholder="10000" readonly style="opacity: 0.7;" required oninput="updateBondCalculations()">
                             </div>
                             <div class="col-6">
                                 <label class="form-label small text-white-50">Coupon Rate (%)</label>
                                 <input type="number" id="bond-coupon" class="form-control glass-input" placeholder="7.5"
-                                    step="0.01" required oninput="updateBondCalculations()">
+                                    step="0.01" readonly style="opacity: 0.7;" required oninput="updateBondCalculations()">
                             </div>
                             <div class="col-12">
                                 <label class="form-label small text-white-50">Maturity Date</label>
-                                <input type="date" id="bond-maturity" class="form-control glass-input" required>
+                                <input type="date" id="bond-maturity" class="form-control glass-input" readonly style="opacity: 0.7;" required>
                             </div>
-                        </div>
-
-                        <!-- Purchase Date -->
-                        <div class="mb-3">
-                            <label class="form-label small text-white-50">Purchase Date</label>
-                            <input type="date" id="bond-purchase-date" class="form-control glass-input"
-                                style="color-scheme: dark;">
-                        </div>
-
-                        <div class="d-flex gap-3">
-                            <button type="button" class="btn glass-button flex-fill"
-                                onclick="handleBondStep(1)">Back</button>
-                            <button type="button" class="btn btn-primary glass-button flex-fill"
-                                onclick="handleBondStep(3)">Next: Purchase</button>
-                        </div>
-                    </div>
-
-                    <!-- Step 3: Purchase Details -->
-                    <div id="bond-step-3" class="bond-step" style="display: none;">
-                        <div class="row g-3 mb-4">
                             <div class="col-6">
-                                <label class="form-label small text-white-50">Quantity</label>
+                                <label class="form-label small text-white-50">Quantity <span class="text-danger">*</span></label>
                                 <input type="number" id="bond-quantity" class="form-control glass-input"
                                     placeholder="10" required oninput="updateBondCalculations()">
                             </div>
                             <div class="col-6">
-                                <label class="form-label small text-white-50">Purchase Price (₹)</label>
+                                <label class="form-label small text-white-50">Purchase Price (₹) <span class="text-danger">*</span></label>
                                 <input type="number" id="bond-price" class="form-control glass-input"
                                     placeholder="10050" required oninput="updateBondCalculations()">
                             </div>
+                        </div>
+
+                        <!-- Purchase Date -->
+                        <div class="mb-4">
+                            <label class="form-label small text-white-50">Purchase Date <span class="text-danger">*</span></label>
+                            <input type="date" id="bond-purchase-date" class="form-control glass-input"
+                                style="color-scheme: dark;" required>
                         </div>
 
                         <!-- Preview Box -->
@@ -5922,9 +6013,8 @@
 
                         <div class="d-flex gap-3">
                             <button type="button" class="btn glass-button flex-fill"
-                                onclick="handleBondStep(2)">Back</button>
-                            <button type="submit" class="btn btn-primary glass-button flex-fill">Complete
-                                Purchase</button>
+                                onclick="handleBondStep(1)">Back</button>
+                            <button type="submit" class="btn btn-primary glass-button flex-fill">Complete Purchase</button>
                         </div>
                     </div>
                 </form>
@@ -6888,19 +6978,22 @@
 
                     <!-- Change Password Section -->
                     <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,0.06);">
-                        <div style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-bottom:12px;letter-spacing:0.02em;">
+                        <div
+                            style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-bottom:12px;letter-spacing:0.02em;">
                             Authentication
                         </div>
                         <form id="changePasswordForm" style="display:flex;flex-direction:column;gap:12px;">
                             <input type="password" id="currentPasswordInput" placeholder="Current Password" required
-                                class="form-control" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);color:#fff;font-size:0.85rem;padding:8px 12px;">
-                            
+                                class="form-control"
+                                style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);color:#fff;font-size:0.85rem;padding:8px 12px;">
+
                             <div style="display: flex; gap: 0.5rem;">
                                 <div class="dropdown-wrapper">
-                                    <button type="button" class="dropdown-btn" id="cpKeyTypeBtn" style="height:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:6px;">
+                                    <button type="button" class="dropdown-btn" id="cpKeyTypeBtn"
+                                        style="height:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:6px;">
                                         <span>4-Digit PIN</span>
-                                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                            style="opacity: 1;">
+                                        <svg width="12" height="12" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" style="opacity: 1;">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M19 9l-7 7-7-7" />
                                         </svg>
@@ -6919,13 +7012,15 @@
                                     </div>
                                 </div>
                                 <input type="password" id="newPasswordInput" placeholder="New Password (****)" required
-                                    class="form-control" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);color:#fff;font-size:0.85rem;padding:8px 12px;flex:1;">
+                                    class="form-control"
+                                    style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);color:#fff;font-size:0.85rem;padding:8px 12px;flex:1;">
                             </div>
-                            
-                            <input type="password" id="confirmNewPasswordInput" placeholder="Confirm New Password" required
-                                class="form-control" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);color:#fff;font-size:0.85rem;padding:8px 12px;">
-                            
-                            <button type="submit" 
+
+                            <input type="password" id="confirmNewPasswordInput" placeholder="Confirm New Password"
+                                required class="form-control"
+                                style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);color:#fff;font-size:0.85rem;padding:8px 12px;">
+
+                            <button type="submit"
                                 style="margin-top:4px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:8px;border-radius:6px;font-size:0.85rem;font-weight:500;cursor:pointer;transition:all 0.2s;">
                                 Update Password
                             </button>
@@ -7270,7 +7365,8 @@
                             style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);cursor:pointer;position:relative;transition:all 0.2s;">
                             <input type="radio" name="defaultPage" value="home" class="form-check-input"
                                 style="opacity:0; width:0; height:0; position:absolute;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
                                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                                 <polyline points="9 22 9 12 15 12 15 22"></polyline>
                             </svg>
@@ -7303,7 +7399,8 @@
                                 style="opacity:0; width:0; height:0; position:absolute;">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8">
-                                <path d="M11.767 19.089c4.924.868 6.14-6.025 1.216-6.894m-1.216 6.894L5.86 18.047m5.908 1.042-.347 1.97m1.563-8.864c4.924.869 6.14-6.025 1.215-6.893m-1.215 6.893-3.94-.694m5.155-6.2L8.29 4.355m5.908 1.042.348-1.97M7.48 20.364l3.126-17.727"/>
+                                <path
+                                    d="M11.767 19.089c4.924.868 6.14-6.025 1.216-6.894m-1.216 6.894L5.86 18.047m5.908 1.042-.347 1.97m1.563-8.864c4.924.869 6.14-6.025 1.215-6.893m-1.215 6.893-3.94-.694m5.155-6.2L8.29 4.355m5.908 1.042.348-1.97M7.48 20.364l3.126-17.727" />
                             </svg>
                             <span class="text-white fw-medium">Crypto</span>
                         </label>

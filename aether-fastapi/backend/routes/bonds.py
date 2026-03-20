@@ -8,6 +8,7 @@ from database import get_db
 from models.user import User
 from models.bonds import Bond
 from .auth import get_current_user
+from services.indian_bonds import search_indian_bonds
 
 
 router = APIRouter(prefix="/api/bonds", tags=["bonds"])
@@ -79,6 +80,17 @@ def get_bonds(db: Session = Depends(get_db), current_user: User = Depends(get_cu
         result.append(bond_dict)
     
     return result
+
+
+@router.get("/search")
+def search_bonds(q: str = "", bond_type: Optional[str] = None):
+    """Search available predefined bonds based on type and query"""
+    try:
+        results = search_indian_bonds(query=q, bond_type=bond_type)
+        return results
+    except Exception as e:
+        print(f"Error searching bonds: {e}")
+        return []
 
 
 @router.post("/", response_model=BondResponse, status_code=status.HTTP_201_CREATED)

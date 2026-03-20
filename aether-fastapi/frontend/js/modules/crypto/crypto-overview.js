@@ -30,8 +30,8 @@ async function fetchCryptoData() {
             CRYPTO_DATA.holdings = await holdingsResponse.json();
         } else if (holdingsResponse.status === 401) {
             console.warn('Unauthorized - logging out');
-            logout();
-            return;
+            if (typeof handle401 === 'function') { return handle401(); }
+            else { logout(); return; }
         }
 
         // Fetch metrics

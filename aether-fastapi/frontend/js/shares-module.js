@@ -31,10 +31,14 @@ async function fetchSharesData() {
 
         if (holdingsResponse.ok) {
             SHARES_DATA.holdings = await holdingsResponse.json();
+        } else if (holdingsResponse.status === 401) {
+            if (typeof handle401 === 'function') { return handle401(); }
         }
 
         if (metricsResponse.ok) {
             SHARES_DATA.metrics = await metricsResponse.json();
+        } else if (metricsResponse.status === 401) {
+            if (typeof handle401 === 'function') { return handle401(); }
         }
 
         renderSharesOverview();

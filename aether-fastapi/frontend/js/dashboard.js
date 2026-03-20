@@ -1794,9 +1794,9 @@ function renderRealEstateDashboard() {
             const firstVal = REAL_ESTATE_DATA.performance[0].value;
             const lastVal = REAL_ESTATE_DATA.performance[REAL_ESTATE_DATA.performance.length - 1].value;
             const isProfit = lastVal >= firstVal;
-            
+
             const lineColor = isProfit ? '#10b981' : '#ef4444';
-            
+
             const ctx2d = ctx.getContext('2d');
             const gradient = ctx2d.createLinearGradient(0, 0, 0, 300);
             if (isProfit) {
@@ -1815,7 +1815,7 @@ function renderRealEstateDashboard() {
                         label: 'Portfolio Value',
                         data: REAL_ESTATE_DATA.performance.map(d => d.value),
                         borderColor: lineColor,
-                         backgroundColor: gradient,
+                        backgroundColor: gradient,
                         borderWidth: 2,
                         fill: true,
                         tension: 0.4,
@@ -3202,7 +3202,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ── STEP 4: Token confirmed — now safe to load data ─────────────────
     let _savedDefault = localStorage.getItem('aether_default_page') || 'realestate';
     if (_savedDefault === 'real-estate') _savedDefault = 'realestate';
-    
+
     // Explicit safety check: if _savedDefault is somehow unsupported, fallback to realestate
     if (!['realestate', 'crypto', 'shares', 'bonds', 'business', 'home'].includes(_savedDefault)) {
         console.warn(`Fallback to realestate for unrecognized default page: ${_savedDefault}`);
@@ -6222,7 +6222,110 @@ function renderBondsOverview() {
             else if (diffDays < 365) nextMaturityLabel = `${Math.floor(diffDays / 30)} months left`;
             else nextMaturityLabel = `${(diffDays / 365).toFixed(1)} years left`;
         }
+        
         // --- RENDER BOND CHARTS ---
+
+        // 0. Fixed Income Trend (12 Month Projection)
+        const trendCtx = document.getElementById('bonds-trend-chart');
+        if (trendCtx) {
+            if (window.bondsTrendChartInstance) window.bondsTrendChartInstance.destroy();
+            
+            const months = [];
+            const projectedIncome = [];
+            const d = new Date();
+            
+            // Build next 12 months array
+            for (let i = 0; i < 12; i++) {
+                const stepDate = new Date(d.getFullYear(), d.getMonth() + i, 1);
+                months.push(stepDate.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }));
+                projectedIncome.push(0);
+            }
+            
+            // Calculate income for each portfolio bond
+            BONDS_DATA.forEach(bond => {
+                if (!bond.maturityDate) return;
+                const matDate = new Date(bond.maturityDate);
+                const matMonth = matDate.getMonth(); // 0-11
+                // Annual income distribution calculation
+                const face = bond.faceValue || 0;
+                const qty = bond.quantity || 1;
+                const rate = bond.couponRate || 0;
+                const halfCoupon = (face * qty * (rate / 100)) / 2;
+                
+                for (let i = 0; i < 12; i++) {
+                    const stepMonth = new Date(d.getFullYear(), d.getMonth() + i, 1).getMonth();
+                    // Semi-annual assumption: pays in maturity month and offset by 6 months
+                    if (stepMonth === matMonth || stepMonth === (matMonth + 6) % 12) {
+                        projectedIncome[i] += halfCoupon;
+                    }
+                }
+            });
+
+            const ctxLine = trendCtx.getContext('2d');
+            const gradientLine = ctxLine.createLinearGradient(0, 0, 0, 300);
+            gradientLine.addColorStop(0, 'rgba(99, 102, 241, 0.3)'); // Aether accent indigo
+            gradientLine.addColorStop(1, 'rgba(99, 102, 241, 0)');
+
+            window.bondsTrendChartInstance = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Projected Coupon Income (₹)',
+                        data: projectedIncome,
+                        borderColor: '#6366f1',
+                        backgroundColor: gradientLine,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#141419',
+                        pointBorderColor: '#6366f1',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(20, 20, 25, 0.95)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return '₹' + context.parsed.y.toLocaleString('en-IN') + ' Coupon';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false, drawBorder: false },
+                            ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 11 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                            ticks: { 
+                                color: 'rgba(255,255,255,0.5)', 
+                                font: { size: 11 },
+                                callback: function(value) {
+                                    if(value >= 1000) return '₹' + (value/1000).toFixed(0) + 'k';
+                                    return '₹' + value;
+                                }
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
 
         // 1. Bond Allocation by Type (Pie Chart)
         const typeCounts = {};
@@ -7011,6 +7114,88 @@ function closeAddBondModal() {
     }
 }
 
+// Setup Auto complete for Bonds
+document.addEventListener('DOMContentLoaded', () => {
+    const bondTickerInput = document.getElementById('bond-ticker');
+    const autocompleteResults = document.getElementById('bond-autocomplete-results');
+    
+    if (!bondTickerInput || !autocompleteResults) return;
+
+    let debounceTimer;
+
+    const handleBondSearch = (e) => {
+        clearTimeout(debounceTimer);
+        const query = e.target.value.trim();
+        const bondType = document.getElementById('bond-type').value;
+
+        debounceTimer = setTimeout(async () => {
+            try {
+                const url = new URL(`${API_BASE_URL}/bonds/search`);
+                url.searchParams.append('q', query);
+                if (bondType) {
+                    url.searchParams.append('bond_type', bondType);
+                }
+
+                const response = await fetch(url.toString(), {
+                    headers: getAuthHeaders()
+                });
+                
+                if (response.ok) {
+                    const results = await response.json();
+                    autocompleteResults.innerHTML = '';
+
+                    if (results.length > 0) {
+                        results.forEach(bond => {
+                            const li = document.createElement('li');
+                            li.className = 'dropdown-item px-3 py-2 text-white-90 border-bottom border-white-10 text-wrap lh-sm';
+                            li.style.cursor = 'pointer';
+                            li.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                            li.innerHTML = `
+                                <div class="fw-semibold text-primary mb-1">${bond.ticker}</div>
+                                <div class="small text-white-50">${bond.name} &middot; ${bond.issuer}</div>
+                                <div class="x-small text-white-40 mt-1">Matures: ${bond.maturity_date} | Coupon: ${bond.coupon_rate}%</div>
+                            `;
+                            
+                            li.addEventListener('click', () => {
+                                // Auto-fill fields
+                                document.getElementById('bond-ticker').value = bond.ticker;
+                                document.getElementById('bond-issuer').value = bond.issuer;
+                                document.getElementById('bond-face-value').value = bond.face_value;
+                                document.getElementById('bond-coupon').value = bond.coupon_rate;
+                                
+                                // Maturity date might be named bond-maturity or maturityDate
+                                const maturityInput = document.getElementById('bond-maturity');
+                                if(maturityInput) maturityInput.value = bond.maturity_date;
+                                
+                                autocompleteResults.style.display = 'none';
+                                updateBondCalculations();
+                            });
+                            
+                            autocompleteResults.appendChild(li);
+                        });
+                        autocompleteResults.style.display = 'block';
+                    } else {
+                        autocompleteResults.innerHTML = '<li class="dropdown-item text-white-50 px-3 py-2">No active bonds found.</li>';
+                        autocompleteResults.style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching bonds:", error);
+            }
+        }, 300);
+    };
+
+    bondTickerInput.addEventListener('input', handleBondSearch);
+    bondTickerInput.addEventListener('focus', handleBondSearch);
+
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (e.target !== bondTickerInput && e.target !== autocompleteResults) {
+            autocompleteResults.style.display = 'none';
+        }
+    });
+});
+
 function handleBondStep(step) {
     // Hide all steps
     document.querySelectorAll('.bond-step').forEach(el => el.style.display = 'none');
@@ -7022,6 +7207,15 @@ function handleBondStep(step) {
     // Update counter
     const counter = document.getElementById('bond-step-number');
     if (counter) counter.textContent = step;
+
+    // Immediately fetch and show bonds when stepping to 2
+    if (step === 2) {
+        const bondTickerInput = document.getElementById('bond-ticker');
+        if (bondTickerInput) {
+            bondTickerInput.value = ''; 
+            bondTickerInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    }
 }
 
 function updateBondCalculations() {
@@ -10160,7 +10354,7 @@ const validateAuthKey = (key, keyType = '4-Digit PIN') => {
 
 document.addEventListener('DOMContentLoaded', () => {
     const changePasswordForm = document.getElementById('changePasswordForm');
-    
+
     // Setup Change Password Dropdown
     let cpSelectedKeyType = '4-Digit PIN';
     const newPasswordInput = document.getElementById('newPasswordInput');
@@ -10175,7 +10369,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (changePasswordForm) {
         changePasswordForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const currentPassword = document.getElementById('currentPasswordInput').value;
             const newPassword = document.getElementById('newPasswordInput').value;
             const confirmNewPassword = document.getElementById('confirmNewPasswordInput').value;
@@ -10227,7 +10421,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (err) {
                 console.error('Password change error:', err);
                 _showSettingsToast(err.message, 'error');
-                
+
                 const btn = changePasswordForm.querySelector('button[type="submit"]');
                 if (btn) {
                     btn.textContent = 'Update Password';
