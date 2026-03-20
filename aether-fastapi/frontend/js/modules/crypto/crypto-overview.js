@@ -691,11 +691,22 @@ function renderCryptoHoldings() {
                     ${gainLoss >= 0 ? '+' : ''}${gainLossPercent.toFixed(2)}%
                 </div>
             </div>
-            <!--Action (8%)-->
-            <div class="text-center" style="width: 8%">
-                <button class="btn btn-sm btn-icon-glass text-white-50 hover-white" onclick="safeOnClick('openCryptoActionModal', '${holding.id}', '${holding.symbol}')">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
-                </button>
+            <!--Actions (8%)-->
+            <div class="text-end" style="width: 8%">
+                <div class="holding-actions d-flex gap-2 justify-content-end">
+                    <button onclick="${safeOnClick('openSellCryptoModal', holding.id)}"
+                        class="btn-icon-glass" title="Sell">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </button>                                    
+                    <button onclick="${safeOnClick('openRemoveCryptoModal', holding.id)}"
+                        class="btn-icon-glass text-danger" title="Remove">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
         `;

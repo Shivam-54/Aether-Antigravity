@@ -9399,38 +9399,23 @@ async function initSimilarBondSeedSelect() {
     if (!sel) return;
     // Don't reload if already populated
     if (sel.options.length > 1) return;
-    try {
-        const token = localStorage.getItem('access_token');
-        const res = await fetch('/api/bonds/holdings', { headers: { 'Authorization': `Bearer ${token}` } });
-        if (!res.ok) throw new Error('API unavailable');
-        const data = await res.json();
-        const holdings = data.holdings || data || [];
-        holdings.forEach(b => {
-            const opt = document.createElement('option');
-            opt.value = JSON.stringify({
-                name: b.name || b.bond_name || 'Unknown',
-                yield: parseFloat(b.yield || b.coupon_rate || 5),
-                duration: parseFloat(b.duration || b.maturity_years || 5),
-                rating: b.credit_rating || b.rating || 'BBB',
-                sector: b.sector || 'Government'
-            });
-            opt.textContent = `${b.name || b.bond_name} · ${b.credit_rating || b.rating || '—'} · ${b.sector || ''}`;
-            sel.appendChild(opt);
-        });
-    } catch (e) {
-        // Fallback demo holdings so the UI always works
-        const demos = [
-            { name: 'US Treasury 10Y', yield: 4.3, duration: 9.8, rating: 'AAA', sector: 'Government' },
-            { name: 'Apple Inc 5Y', yield: 4.8, duration: 4.6, rating: 'AA+', sector: 'Technology' },
-            { name: 'Ford Motor 7Y', yield: 6.2, duration: 6.4, rating: 'BB+', sector: 'Automotive' },
-        ];
-        demos.forEach(b => {
-            const opt = document.createElement('option');
-            opt.value = JSON.stringify(b);
-            opt.textContent = `${b.name} · ${b.rating} · ${b.sector}`;
-            sel.appendChild(opt);
-        });
+    
+    if (!BONDS_DATA || BONDS_DATA.length === 0) {
+        return; // No bonds in portfolio
     }
+    
+    BONDS_DATA.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = JSON.stringify({
+            name: b.issuer || b.ticker || 'Unknown Bond',
+            yield: parseFloat(b.yieldToMaturity || b.couponRate || 5),
+            duration: parseFloat(b.duration || 5),
+            rating: b.creditRating || 'BBB',
+            sector: b.type || 'Bond'
+        });
+        opt.textContent = `${b.issuer || b.ticker} · ${b.type || ''}`;
+        sel.appendChild(opt);
+    });
 }
 
 // Cosine-style similarity on normalised feature vector [yield, duration, ratingGrade]
@@ -9462,24 +9447,16 @@ async function renderSimilarBondRecommender() {
 
     const seed = JSON.parse(sel.value);
 
-    // Universe of comparable bonds (augmented by API if available)
-    let universe = [
-        { name: 'US Treasury 10Y', yield: 4.3, duration: 9.8, rating: 'AAA', sector: 'Government', isin: 'US912810TM56' },
-        { name: 'US Treasury 2Y', yield: 4.9, duration: 1.9, rating: 'AAA', sector: 'Government', isin: 'US91282CLQ20' },
-        { name: 'Germany Bund 10Y', yield: 2.5, duration: 9.6, rating: 'AAA', sector: 'Government', isin: 'DE0001102580' },
-        { name: 'Apple Inc 5Y', yield: 4.8, duration: 4.6, rating: 'AA+', sector: 'Technology', isin: 'US037833DV96' },
-        { name: 'Microsoft Corp 7Y', yield: 5.0, duration: 6.8, rating: 'AAA', sector: 'Technology', isin: 'US594918BW87' },
-        { name: 'Goldman Sachs 5Y', yield: 5.4, duration: 4.7, rating: 'A+', sector: 'Finance', isin: 'US38141GXB15' },
-        { name: 'JP Morgan 10Y', yield: 5.2, duration: 8.9, rating: 'A-', sector: 'Finance', isin: 'US46647PAZ34' },
-        { name: 'Ford Motor 7Y', yield: 6.2, duration: 6.4, rating: 'BB+', sector: 'Automotive', isin: 'US345370CW35' },
-        { name: 'Toyota Finance 5Y', yield: 4.7, duration: 4.8, rating: 'A+', sector: 'Automotive', isin: 'US89236THP89' },
-        { name: 'Amazon.com 10Y', yield: 4.6, duration: 9.2, rating: 'AA', sector: 'Technology', isin: 'US023135BW50' },
-        { name: 'Walmart Inc 5Y', yield: 4.4, duration: 4.9, rating: 'AA', sector: 'Retail', isin: 'US931142EK81' },
-        { name: 'ExxonMobil 7Y', yield: 5.1, duration: 6.7, rating: 'AA-', sector: 'Energy', isin: 'US30231GAV29' },
-        { name: 'UK Gilt 10Y', yield: 4.1, duration: 9.5, rating: 'AA', sector: 'Government', isin: 'GB00BN65R313' },
-        { name: 'Italy BTP 5Y', yield: 3.7, duration: 4.8, rating: 'BBB', sector: 'Government', isin: 'IT0005467558' },
-        { name: 'Pfizer Inc 7Y', yield: 5.3, duration: 6.6, rating: 'A', sector: 'Healthcare', isin: 'US717081EB27' },
-    ];
+    // Universe of comparable bonds - Strictly from User Portfolio as requested
+    let universe = (BONDS_DATA || []).map(b => ({
+        name: b.issuer || b.ticker || 'Unknown Bond',
+        yield: parseFloat(b.yieldToMaturity || b.couponRate || 5),
+        duration: parseFloat(b.duration || 5),
+        rating: b.creditRating || 'BBB',
+        sector: b.type || 'Bond',
+        isin: b.isin || '—'
+    }));
+
 
     // Remove seed itself from universe
     universe = universe.filter(b => b.name !== seed.name);

@@ -69,21 +69,49 @@ function switchAILabTab(tabName) {
  * Load user's shares to populate ticker dropdown
  */
 async function loadSharesForPrediction() {
+    // Fast path: use already-loaded SHARES_DATA from shares-module.js
+    // NOTE: holdings use 's.symbol', NOT 's.ticker' — API field name is 'symbol'
+    if (typeof SHARES_DATA !== 'undefined' && SHARES_DATA.holdings && SHARES_DATA.holdings.length > 0) {
+        const seen = new Set();
+        const unique = SHARES_DATA.holdings.filter(s => {
+            const key = s.symbol;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return !!key;
+        });
+        currentTicker = unique[0].symbol;
+        updateTickerDropdown(unique.map(s => ({
+            ticker: s.symbol,
+            name: s.company_name || s.symbol
+        })));
+        loadPricePrediction(currentTicker, currentHorizon);
+        return;
+    }
+
+    // Fallback: fetch from API (field is 'symbol', not 'ticker')
     try {
-        const userId = localStorage.getItem('userId');
-        if (userId) {
-            const response = await fetch(`${API_BASE_URL}/shares?user_id=${userId}`);
-            if (response.ok) {
-                const shares = await response.json();
-                if (shares && shares.length > 0) {
-                    const tickers = [...new Set(shares.map(s => s.ticker))];
-                    currentTicker = tickers[0];
-                    updateTickerDropdown(tickers);
-                }
+        const response = await fetch(`${API_BASE_URL}/shares/holdings`, {
+            headers: getAuthHeaders()
+        });
+        if (response.ok) {
+            const shares = await response.json();
+            if (shares && shares.length > 0) {
+                const seen = new Set();
+                const unique = shares.filter(s => {
+                    const key = s.symbol;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return !!key;
+                });
+                currentTicker = unique[0].symbol;
+                updateTickerDropdown(unique.map(s => ({
+                    ticker: s.symbol,
+                    name: s.company_name || s.symbol
+                })));
             }
         }
     } catch (error) {
-        console.error('Error loading shares:', error);
+        console.error('Error loading shares for prediction:', error);
     }
 
     // Load prediction for current ticker
@@ -97,12 +125,13 @@ function updateTickerDropdown(tickers) {
     const select = document.getElementById('ticker-select');
     if (!select) return;
 
-    // Add user tickers first
     select.innerHTML = '';
-    tickers.forEach(ticker => {
+    tickers.forEach(item => {
+        const ticker = typeof item === 'string' ? item : item.ticker;
+        const name = typeof item === 'string' ? item : (item.name || item.ticker);
         const option = document.createElement('option');
         option.value = ticker;
-        option.textContent = ticker;
+        option.textContent = name && name !== ticker ? `${ticker} - ${name}` : ticker;
         select.appendChild(option);
     });
 }
@@ -240,7 +269,7 @@ function displayPredictionChart(data) {
                 tooltip: {
                     callbacks: {
                         label: function (context) {
-                            return context.dataset.label + ': $' + context.parsed.y.toFixed(2);
+                            return context.dataset.label + ': ₹' + context.parsed.y.toFixed(2);
                         }
                     }
                 }
@@ -254,7 +283,7 @@ function displayPredictionChart(data) {
                     ticks: {
                         color: '#ccc',
                         callback: function (value) {
-                            return '$' + value.toFixed(2);
+                            return '₹' + value.toFixed(2);
                         }
                     },
                     grid: { color: 'rgba(255,255,255,0.1)' }
@@ -270,12 +299,12 @@ function displayPredictionChart(data) {
 function displayPredictionMetrics(data) {
     const currentPriceEl = document.getElementById('current-price-value');
     if (currentPriceEl) {
-        currentPriceEl.textContent = '$' + data.current_price.toFixed(2);
+        currentPriceEl.textContent = '₹' + data.current_price.toFixed(2);
     }
 
     const predictedPriceEl = document.getElementById('predicted-price-value');
     if (predictedPriceEl) {
-        predictedPriceEl.textContent = '$' + data.predicted_price.toFixed(2);
+        predictedPriceEl.textContent = '₹' + data.predicted_price.toFixed(2);
     }
 
     const changePctEl = document.getElementById('change-pct-value');
@@ -404,13 +433,13 @@ function displayRiskMetrics(data) {
     // VaR 95%
     const var95El = document.getElementById('var-95-value');
     if (var95El) {
-        var95El.textContent = '$' + data.risk_metrics.var_95.toLocaleString();
+        var95El.textContent = '₹' + data.risk_metrics.var_95.toLocaleString();
     }
 
     // CVaR 95%
     const cvar95El = document.getElementById('cvar-95-value');
     if (cvar95El) {
-        cvar95El.textContent = '$' + data.risk_metrics.cvar_95.toLocaleString();
+        cvar95El.textContent = '₹' + data.risk_metrics.cvar_95.toLocaleString();
     }
 
     // Sharpe Ratio

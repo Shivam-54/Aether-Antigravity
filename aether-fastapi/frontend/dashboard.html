@@ -2078,7 +2078,7 @@
                                 <div style="width: 13%">Current Price</div>
                                 <div style="width: 14%">Total Valuation</div>
                                 <div style="width: 14%">Gain/Loss</div>
-                                <div class="text-center" style="width: 8%">Action</div>
+                                <div class="text-end" style="width: 8%">Actions</div>
                             </div>
                             <div id="crypto-holdings-list">
                                 <!-- Injected by JS -->
@@ -2453,12 +2453,7 @@
                                         <label class="form-label text-white-80 small mb-1">Stock Ticker</label>
                                         <select id="ticker-select" class="form-select glass-input"
                                             onchange="onTickerChange(this.value)">
-                                            <option value="AAPL">AAPL - Apple Inc.</option>
-                                            <option value="MSFT">MSFT - Microsoft</option>
-                                            <option value="GOOGL">GOOGL - Alphabet</option>
-                                            <option value="AMZN">AMZN - Amazon</option>
-                                            <option value="TSLA">TSLA - Tesla</option>
-                                            <option value="NVDA">NVDA - NVIDIA</option>
+                                            <option value="">— select a stock from your portfolio —</option>
                                         </select>
                                     </div>
                                     <div class="col-md-4">
@@ -3023,7 +3018,6 @@
 
                             </div>
                         </div>
-                    </div>
                     <!-- Tab Panel: Anomaly & Correlation -->
                     <div class="ai-lab-panel" id="ai-lab-panel-anomaly-correlation" style="display: none;">
 
@@ -3245,6 +3239,7 @@
                         </div>
 
                     </div>
+                    </div> <!-- Added closing tag for shares-section-ai-lab -->
                 </div>
 
                 <div class="module-content" id="module-bonds">
