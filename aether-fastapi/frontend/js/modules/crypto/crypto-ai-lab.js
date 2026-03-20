@@ -1083,7 +1083,8 @@ class CryptoAILab {
             let portfolioValue = null;
 
             try {
-                const holdingsResponse = await fetch('/api/crypto/holdings', {
+                const _aiLabApiBase = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000/api';
+                const holdingsResponse = await fetch(`${_aiLabApiBase}/crypto/holdings`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
                 });
                 if (holdingsResponse.ok) {

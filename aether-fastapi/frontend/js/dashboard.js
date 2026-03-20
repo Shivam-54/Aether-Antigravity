@@ -9663,7 +9663,7 @@ async function renderBondsPortfolioInsights() {
 
     try {
         const token = localStorage.getItem('access_token');
-        const response = await fetch('/api/bonds/ml/insights', {
+        const response = await fetch(`${API_BASE_URL}/bonds/ml/insights`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -9735,7 +9735,10 @@ async function renderBondsSentimentNews() {
         </div>`;
 
     try {
-        const response = await fetch('/api/bonds/ml/sentiment');
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(`${API_BASE_URL}/bonds/ml/sentiment`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (!response.ok) throw new Error(`API ${response.status}`);
 
         const json = await response.json();

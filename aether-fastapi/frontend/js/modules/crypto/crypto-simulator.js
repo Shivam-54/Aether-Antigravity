@@ -70,7 +70,8 @@ async function runSimulation(percent) {
     }
 
     try {
-        const response = await fetch('/api/crypto/ml/simulate', {
+        const apiBase = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000/api';
+        const response = await fetch(`${apiBase}/crypto/ml/simulate`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
