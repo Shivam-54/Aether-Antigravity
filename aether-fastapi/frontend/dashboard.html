@@ -4240,7 +4240,7 @@
     <script src="js/share-transactions.js?v=1" defer></script>
     <script src="js/modules/crypto/crypto-wallets.js?v=5" defer></script>
     <script src="js/analytics-utils.js" defer></script> <!-- NEW: Analytics Logic -->
-    <script src="js/shares-module.js?v=20" defer></script>
+    <script src="js/shares-module.js?v=21" defer></script>
     <script src="js/shares-performance.js?v=2" defer></script>
     <script src="js/shares-ai-v2.js" defer></script> <!-- NEW: AI Lab price predictions -->
     <script src="js/business-ai.js?v=1" defer></script> <!-- Business AI Lab -->
@@ -5411,7 +5411,6 @@
                         <select id="share-sector-select" class="form-select glass-input shadow-none py-3"
                             style="width: 100%; padding: 12px 16px; border-radius: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: white; outline: none;"
                             onchange="onSectorChange()" required>
-                            onchange="onSectorChange()" required>
                             <option value="">Select sector first...</option>
 
                             <!-- GICS Sectors -->
@@ -5467,10 +5466,10 @@
                             <input type="text" id="share-search-input" class="form-control glass-input shadow-none py-3"
                                 placeholder="Select a sector first"
                                 style="width: 100%; padding-top: 12px; padding-bottom: 12px; padding-right: 16px; padding-left: 48px !important; border-radius: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: white; outline: none; transition: border-color 0.2s;"
-                                oninput="handleShareSearch(event)" autocomplete="off" disabled>
+                                oninput="handleShareSearch(event)" onclick="handleShareSearch(event)" autocomplete="off" disabled>
 
-                            <div id="share-search-results" class="position-relative w-100 mt-2 rounded-3 hidden"
-                                style="background: #0a0a0a; border: 1px solid rgba(255,255,255,0.1); max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+                            <div id="share-search-results" class="position-absolute w-100 mt-2 rounded-3 custom-scrollbar hidden"
+                                style="background: rgba(18, 18, 18, 0.98); border: 1px solid rgba(255,255,255,0.08); max-height: 280px; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
                             </div>
                         </div>
                     </div>

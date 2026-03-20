@@ -727,6 +727,7 @@ function onSectorChange() {
     if (selectedSector) {
         // Enable search input
         searchInput.disabled = false;
+        searchInput.value = '';
         searchInput.placeholder = `Search ${selectedSector} stocks...`;
         sectorHint.textContent = `(${selectedSector})`;
 
@@ -735,37 +736,67 @@ function onSectorChange() {
 
         // Clear previous selection
         clearSelectedStock();
+
+        // Immediately load all stocks for the selected sector
+        loadSectorStocks(selectedSector);
     } else {
         // Disable search input
         searchInput.disabled = true;
         searchInput.placeholder = 'Select a sector first';
         sectorHint.textContent = '(Select sector first)';
+        document.getElementById('share-search-results').classList.add('hidden');
     }
 }
 
-// Step 2: Stock Search (filtered by sector)
+// Immediately loads all stocks for a sector (no debounce, fires on sector select)
+async function loadSectorStocks(sector) {
+    const container = document.getElementById('share-search-results');
+    // Show loading indicator right away
+    container.innerHTML = `<div class="p-3 text-white-50 small text-center"><span class="spinner-border spinner-border-sm me-2" role="status"></span>Loading ${sector} stocks...</div>`;
+    container.classList.remove('hidden');
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/shares/stock-search?q=&sector=${encodeURIComponent(sector)}`, {
+            headers: getAuthHeaders()
+        });
+
+        if (response.ok) {
+            const results = await response.json();
+            displayShareSearchResults(results);
+        } else {
+            container.innerHTML = `<div class="p-3 text-white-50 small text-center">Could not load ${sector} stocks</div>`;
+        }
+    } catch (error) {
+        console.error('Error loading sector stocks:', error);
+        container.innerHTML = `<div class="p-3 text-white-50 small text-center">Error loading stocks</div>`;
+    }
+}
+
+// Step 2: Stock Search — filters the results while user types
 let searchTimeout;
 async function handleShareSearch(event) {
-    const query = event.target.value.trim();
+    const query = event.target ? event.target.value.trim() : '';
 
     // If user is typing, clear previous selection
-    selectedStock = null;
-    document.getElementById('selected-share-symbol').value = '';
-    document.getElementById('selected-share-name').value = '';
-
-    if (!query) {
-        document.getElementById('share-search-results').classList.add('hidden');
-        return;
+    if (event.type === 'input') {
+        selectedStock = null;
+        document.getElementById('selected-share-symbol').value = '';
+        document.getElementById('selected-share-name').value = '';
     }
 
     if (!selectedSector) {
         return;
     }
 
+    // If empty query, reload the full sector list
+    if (query === '') {
+        loadSectorStocks(selectedSector);
+        return;
+    }
+
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(async () => {
         try {
-            // Search with sector filter
             const response = await fetch(`${API_BASE_URL}/shares/stock-search?q=${encodeURIComponent(query)}&sector=${encodeURIComponent(selectedSector)}`, {
                 headers: getAuthHeaders()
             });
@@ -777,7 +808,7 @@ async function handleShareSearch(event) {
         } catch (error) {
             console.error('Error searching stocks:', error);
         }
-    }, 500);
+    }, 300);
 }
 
 function displayShareSearchResults(results) {
