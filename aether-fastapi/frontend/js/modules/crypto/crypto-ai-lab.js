@@ -129,18 +129,31 @@ class CryptoAILab {
         const container = document.getElementById('ai-lab-content');
         if (!container) return;
 
+        let optionsHtml = '';
+        let defaultSymbol = null;
+
+        if (window.CRYPTO_DATA && window.CRYPTO_DATA.holdings && window.CRYPTO_DATA.holdings.length > 0) {
+            // Filter only active holdings if there's a status, otherwise get all
+            const uniqueHoldings = Array.from(new Map(window.CRYPTO_DATA.holdings.filter(h => h.status === 'active' || !h.status).map(h => [h.symbol, h])).values());
+            if (uniqueHoldings.length > 0) {
+                optionsHtml = uniqueHoldings.map(h => `<option value="${h.symbol}">${h.name} (${h.symbol})</option>`).join('');
+                defaultSymbol = uniqueHoldings[0].symbol;
+            } else {
+                optionsHtml = `<option value="" disabled selected>No active assets found</option>`;
+            }
+        } else {
+            optionsHtml = `<option value="" disabled selected>No crypto assets found</option>`;
+        }
+
         container.innerHTML = `
             <div class="d-flex flex-column gap-4">
                 <!-- Model Selector -->
                 <div class="d-flex gap-3 align-items-center">
                     <label class="text-white-50 small">Select Asset:</label>
-                    <select id="aiLabSymbolSelector" class="form-select form-select-sm" style="width: 150px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
-                        <option value="BTC">Bitcoin (BTC)</option>
-                        <option value="ETH">Ethereum (ETH)</option>
-                        <option value="SOL">Solana (SOL)</option>
-                        <option value="ADA">Cardano (ADA)</option>
+                    <select id="aiLabSymbolSelector" class="form-select form-select-sm" style="width: 150px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;" ${!defaultSymbol ? 'disabled' : ''}>
+                        ${optionsHtml}
                     </select>
-                    <button id="runPredictionBtn" class="btn btn-sm btn-primary">
+                    <button id="runPredictionBtn" class="btn btn-sm btn-primary" ${!defaultSymbol ? 'disabled' : ''}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             <path d="M9 12l2 2 4-4"/>
@@ -307,9 +320,10 @@ class CryptoAILab {
             this.fetchAndDisplayRiskAnalysis(symbol);
         });
 
-        // Auto-load BTC
-        this.fetchAndDisplayPredictions('BTC');
-        this.fetchAndDisplayRiskAnalysis('BTC');
+        if (defaultSymbol) {
+            this.fetchAndDisplayPredictions(defaultSymbol);
+            this.fetchAndDisplayRiskAnalysis(defaultSymbol);
+        }
     }
 
     async fetchAndDisplayPredictions(symbol) {
@@ -854,6 +868,21 @@ class CryptoAILab {
         const container = document.getElementById('ai-lab-content');
         if (!container) return;
 
+        let optionsHtml = '';
+        let defaultSymbol = null;
+
+        if (window.CRYPTO_DATA && window.CRYPTO_DATA.holdings && window.CRYPTO_DATA.holdings.length > 0) {
+            const uniqueHoldings = Array.from(new Map(window.CRYPTO_DATA.holdings.filter(h => h.status === 'active' || !h.status).map(h => [h.symbol, h])).values());
+            if (uniqueHoldings.length > 0) {
+                optionsHtml = uniqueHoldings.map(h => `<option value="${h.symbol}">${h.name} (${h.symbol})</option>`).join('');
+                defaultSymbol = uniqueHoldings[0].symbol;
+            } else {
+                optionsHtml = `<option value="" disabled selected>No active assets found</option>`;
+            }
+        } else {
+            optionsHtml = `<option value="" disabled selected>No crypto assets found</option>`;
+        }
+
         container.innerHTML = `
             <div class="d-flex flex-column gap-4">
                 <!-- ═══ Section 1: AI-Generated Insights ═══ -->
@@ -951,13 +980,10 @@ class CryptoAILab {
                 <!-- ═══ Section 2: News Sentiment ═══ -->
                 <div class="d-flex gap-3 align-items-center">
                     <label class="text-white-50 small">Select Asset:</label>
-                    <select id="sentimentSymbolSelector" class="form-select form-select-sm" style="width: 150px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
-                        <option value="BTC">Bitcoin (BTC)</option>
-                        <option value="ETH">Ethereum (ETH)</option>
-                        <option value="SOL">Solana (SOL)</option>
-                        <option value="ADA">Cardano (ADA)</option>
+                    <select id="sentimentSymbolSelector" class="form-select form-select-sm" style="width: 150px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;" ${!defaultSymbol ? 'disabled' : ''}>
+                        ${optionsHtml}
                     </select>
-                    <button id="analyzeSentimentBtn" class="btn btn-sm btn-primary">
+                    <button id="analyzeSentimentBtn" class="btn btn-sm btn-primary" ${!defaultSymbol ? 'disabled' : ''}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="10"/>
                             <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
@@ -1061,7 +1087,9 @@ class CryptoAILab {
 
         // Auto-load both sections
         this.loadCryptoInsights();
-        this.fetchAndDisplaySentiment('BTC');
+        if (defaultSymbol) {
+            this.fetchAndDisplaySentiment(defaultSymbol);
+        }
     }
 
     async loadCryptoInsights() {
@@ -1362,18 +1390,30 @@ class CryptoAILab {
         const container = document.getElementById('ai-lab-content');
         if (!container) return;
 
+        let optionsHtml = '';
+        let defaultSymbol = null;
+
+        if (window.CRYPTO_DATA && window.CRYPTO_DATA.holdings && window.CRYPTO_DATA.holdings.length > 0) {
+            const uniqueHoldings = Array.from(new Map(window.CRYPTO_DATA.holdings.filter(h => h.status === 'active' || !h.status).map(h => [h.symbol, h])).values());
+            if (uniqueHoldings.length > 0) {
+                optionsHtml = uniqueHoldings.map(h => `<option value="${h.symbol}">${h.name} (${h.symbol})</option>`).join('');
+                defaultSymbol = uniqueHoldings[0].symbol;
+            } else {
+                optionsHtml = `<option value="" disabled selected>No active assets found</option>`;
+            }
+        } else {
+            optionsHtml = `<option value="" disabled selected>No crypto assets found</option>`;
+        }
+
         container.innerHTML = `
             <div class="d-flex flex-column gap-4">
                 <!-- Asset Selector -->
                 <div class="d-flex gap-3 align-items-center">
                     <label class="text-white-50 small">Select Asset:</label>
-                    <select id="performanceSymbolSelector" class="form-select form-select-sm" style="width: 150px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
-                        <option value="BTC">Bitcoin (BTC)</option>
-                        <option value="ETH">Ethereum (ETH)</option>
-                        <option value="SOL">Solana (SOL)</option>
-                        <option value="ADA">Cardano (ADA)</option>
+                    <select id="performanceSymbolSelector" class="form-select form-select-sm" style="width: 150px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;" ${!defaultSymbol ? 'disabled' : ''}>
+                        ${optionsHtml}
                     </select>
-                    <button id="loadPerformanceBtn" class="btn btn-sm btn-primary">
+                    <button id="loadPerformanceBtn" class="btn btn-sm btn-primary" ${!defaultSymbol ? 'disabled' : ''}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             <path d="M9 12l2 2 4-4"/>
@@ -1469,8 +1509,9 @@ class CryptoAILab {
             this.fetchAndDisplayPerformance(symbol);
         });
 
-        // Auto-load BTC performance
-        this.fetchAndDisplayPerformance('BTC');
+        if (defaultSymbol) {
+            this.fetchAndDisplayPerformance(defaultSymbol);
+        }
     }
 
     async fetchAndDisplayPerformance(symbol) {

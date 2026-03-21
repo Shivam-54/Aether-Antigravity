@@ -75,7 +75,10 @@ function renderSharesOverview() {
                  style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 50px 0 rgba(255, 255, 255, 0.05), inset 0 0 20px 0 rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 2rem;">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <div>
-                        <h2 class="h4 fw-light text-white-90 mb-1">Portfolio Performance</h2>
+                        <div class="d-flex align-items-center gap-3 mb-1">
+                            <h2 class="h4 fw-light text-white-90 mb-0">Portfolio Performance</h2>
+                            <span id="market-status-badge" class="badge rounded-pill px-2 py-1" style="display:none; font-size: 0.65rem; font-weight: 400; font-family: 'Inter', sans-serif; letter-spacing: 0.03em;"></span>
+                        </div>
                         <div id="shares-perf-subtitle" class="text-white-40" style="font-size:0.7rem;margin-top:2px;">Loading...</div>
                     </div>
                     <div class="d-flex gap-2">
@@ -138,12 +141,12 @@ function renderSharesOverview() {
                          onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                          
                          <div class="d-flex justify-content-between align-items-start mb-3">
-                             <div class="text-white-50">${ICONS.wallet}</div>
-                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Current holdings</span>
+                             <div class="text-white">${ICONS.wallet}</div>
+                             <span class="badge rounded-pill text-white-75" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Current holdings</span>
                          </div>
                          <div>
                              <div class="h4 mb-0 fw-light text-white">${formatCurrency(metrics.total_value)}</div>
-                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Value</div>
+                             <div class="small text-white-75 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Value</div>
                          </div>
                     </div>
                 </div>
@@ -156,12 +159,12 @@ function renderSharesOverview() {
                          onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                          
                          <div class="d-flex justify-content-between align-items-start mb-3">
-                             <div class="text-white-50">${ICONS['wallet-2']}</div>
-                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Capital deployed</span>
+                             <div class="text-white">${ICONS['wallet-2']}</div>
+                             <span class="badge rounded-pill text-white-75" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Capital deployed</span>
                          </div>
                          <div>
                              <div class="h4 mb-0 fw-light text-white">${formatCurrency(metrics.total_invested)}</div>
-                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Invested</div>
+                             <div class="small text-white-75 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Invested</div>
                          </div>
                     </div>
                 </div>
@@ -174,12 +177,12 @@ function renderSharesOverview() {
                          onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                          
                          <div class="d-flex justify-content-between align-items-start mb-3">
-                             <div class="text-white-50">${ICONS.trending}</div>
+                             <div class="text-white">${ICONS.trending}</div>
                              <span class="badge rounded-pill ${metrics.total_gain_loss_percent >= 0 ? 'text-success' : 'text-danger'}" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">${metrics.total_gain_loss_percent >= 0 ? '+' : ''}${metrics.total_gain_loss_percent.toFixed(2)}%</span>
                          </div>
                          <div>
                              <div class="h4 mb-0 fw-light" style="color: ${metrics.total_gain_loss >= 0 ? '#10b981' : '#ef4444'}">${metrics.total_gain_loss >= 0 ? '+' : ''}${formatCurrency(metrics.total_gain_loss)}</div>
-                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Gain/Loss</div>
+                             <div class="small text-white-75 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Gain/Loss</div>
                          </div>
                     </div>
                 </div>
@@ -192,12 +195,12 @@ function renderSharesOverview() {
                          onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                          
                          <div class="d-flex justify-content-between align-items-start mb-3">
-                             <div class="text-white-50">${ICONS.chart}</div>
-                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">0 sold</span>
+                             <div class="text-white">${ICONS.chart}</div>
+                             <span class="badge rounded-pill text-white-75" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">0 sold</span>
                          </div>
                          <div>
                              <div class="h4 mb-0 fw-light text-white">${metrics.active_shares_count}</div>
-                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Active Shares</div>
+                             <div class="small text-white-75 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Active Shares</div>
                          </div>
                     </div>
                 </div>
@@ -414,6 +417,44 @@ async function loadSharesPerformanceChart(period) {
         if (subtitle) {
             subtitle.textContent = `${isPositive ? '+' : ''}${changePct.toFixed(2)}%  ·  ₹${Math.abs(change).toLocaleString('en-IN', {maximumFractionDigits: 0})} ${isPositive ? '▲' : '▼'}  over ${period}`;
             subtitle.style.color = isPositive ? '#22d399' : '#ef4444';
+        }
+
+        const statusBadge = document.getElementById('market-status-badge');
+        if (statusBadge && chartData.length > 0) {
+            const lastPoint = chartData[chartData.length - 1];
+            const dateString = lastPoint.date.split(' ')[0];
+            const lastDate = new Date(dateString);
+            const formattedDate = lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const todayStr = `${year}-${month}-${day}`;
+            
+            const isToday = (dateString === todayStr);
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const currentTimeVal = hours * 60 + minutes;
+            const marketOpenVal = 9 * 60 + 15;
+            const marketCloseVal = 15 * 60 + 30;
+            const isWeekday = now.getDay() >= 1 && now.getDay() <= 5;
+            
+            const isMarketOpen = isToday && isWeekday && currentTimeVal >= marketOpenVal && currentTimeVal <= marketCloseVal;
+            
+            if (isMarketOpen) {
+                statusBadge.innerHTML = `<span class="text-success me-1">●</span> Open - ${formattedDate}`;
+                statusBadge.style.background = 'rgba(16, 185, 129, 0.1)';
+                statusBadge.style.border = '1px solid rgba(16, 185, 129, 0.2)';
+                statusBadge.style.color = '#fff';
+            } else {
+                statusBadge.innerHTML = `<span class="text-white-50 me-1">●</span> Closed - ${formattedDate}`;
+                statusBadge.style.background = 'rgba(255, 255, 255, 0.05)';
+                statusBadge.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+                statusBadge.style.color = 'rgba(255,255,255,0.7)';
+            }
+            statusBadge.style.display = 'inline-flex';
+            statusBadge.style.alignItems = 'center';
         }
 
         // Destroy old chart

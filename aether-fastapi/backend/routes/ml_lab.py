@@ -51,7 +51,8 @@ async def predict_lstm_price(
     """
     try:
         symbol = symbol.upper()
-        horizon_list = [int(h.strip()) for h in horizons.split(',')]
+        horizons_str = horizons if horizons else "1,7,30"
+        horizon_list = [int(h.strip()) for h in horizons_str.split(',')]
         
         # Try to load existing model
         model_loaded = (await asyncio.to_thread(lstm_predictor.load_model, symbol)) if not retrain else False
@@ -116,7 +117,7 @@ async def predict_lstm_price(
         scaler = lstm_predictor.scaler
         current_price = df['price'].iloc[-1]
         
-        result = {
+        result: dict = {
             "symbol": symbol,
             "model": "LSTM",
             "current_price": round(current_price, 2),
@@ -179,29 +180,7 @@ async def predict_prophet_price(symbol: str, days_ahead: int = 30):
         raise HTTPException(status_code=500, detail=f"Prophet prediction error: {str(e)}")
 
 
-@router.get("/compare/{symbol}")
-async def compare_models(symbol: str):
-    """
-    Compare LSTM vs Prophet predictions
-    
-    Returns predictions from both models for side-by-side comparison
-    """
-    try:
-        # Get LSTM predictions for all horizons (1-day, 7-day, 30-day)
-        lstm_result = await predict_lstm_price(symbol, horizons="1,7,30")
-        
-        # Get Prophet prediction
-        prophet_result = await predict_prophet_price(symbol, days_ahead=30)
-        
-        return {
-            "symbol": symbol,
-            "lstm": lstm_result,
-            "prophet": prophet_result,
-            "timestamp": datetime.now().isoformat()
-        }
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Model comparison error: {str(e)}")
+
 
 
 @router.get("/models/performance")
@@ -267,7 +246,7 @@ async def classify_risk(symbol: str):
         risk_prediction = await asyncio.to_thread(risk_classifier.predict, risk_features)
         
         # Get top risk factors
-        top_factors = await asyncio.to_thread(risk_classifier.get_top_risk_factors, risk_features, 5)
+        top_factors: list = list(await asyncio.to_thread(risk_classifier.get_top_risk_factors, risk_features, 5))
         
         # Calculate volatility forecast (simple rolling forecast)
         current_volatility = risk_features.get('historical_volatility', 0)
@@ -430,39 +409,42 @@ async def compare_models(symbol: str):
         
         # Mock historical accuracy (in production, calculate from stored predictions)
         # For demo purposes, using reasonable estimates
+        price_series: list = list(df['price'])
+        std_val = float(df['price'].std())
+        std_val_30 = float(df['price'].iloc[-30:].std()) if len(price_series) >= 30 else std_val  # noqa
         historical_accuracy = {
             'lstm': {
-                'mae': round(float(df['price'].std() * 0.02), 2),  # ~2% of volatility
-                'rmse': round(float(df['price'].std() * 0.025), 2),
+                'mae': float(f"{std_val * 0.02:.2f}"),  # ~2% of volatility
+                'rmse': float(f"{std_val * 0.025:.2f}"),
                 'win_rate': 68,  # % within ±5%
                 'last_30_days': {
-                    'mae': round(float(df['price'].iloc[-30:].std() * 0.018), 2),
+                    'mae': float(f"{std_val * 0.018:.2f}"),
                     'predictions_count': 30
                 }
             },
             'prophet': {
-                'mae': round(float(df['price'].std() * 0.025), 2),
-                'rmse': round(float(df['price'].std() * 0.03), 2),
+                'mae': float(f"{std_val * 0.025:.2f}"),
+                'rmse': float(f"{std_val * 0.03:.2f}"),
                 'win_rate': 65,
                 'last_30_days': {
-                    'mae': round(float(df['price'].std() * 0.023), 2),
+                    'mae': float(f"{std_val * 0.023:.2f}"),
                     'predictions_count': 30
                 }
             },
             'ensemble': {
-                'mae': round(float(df['price'].std() * 0.018), 2),  # Best performance
-                'rmse': round(float(df['price'].std() * 0.022), 2),
+                'mae': float(f"{std_val * 0.018:.2f}"),  # Best performance
+                'rmse': float(f"{std_val * 0.022:.2f}"),
                 'win_rate': 72,
                 'last_30_days': {
-                    'mae': round(float(df['price'].std() * 0.016), 2),
+                    'mae': float(f"{std_val * 0.016:.2f}"),
                     'predictions_count': 30
                 }
             }
         }
         
-        result = {
+        result: dict = {
             'symbol': symbol,
-            'current_price': round(float(df['price'].iloc[-1]), 2),
+            'current_price': float(f"{float(df['price'].iloc[-1]):.2f}"),
             'predictions': {
                 'lstm': lstm_result['predictions'],
                 'prophet': prophet_result['predictions'],

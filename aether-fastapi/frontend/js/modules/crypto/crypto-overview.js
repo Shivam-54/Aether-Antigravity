@@ -233,12 +233,12 @@ function renderCryptoOverview() {
                          onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                          
                          <div class="d-flex justify-content-between align-items-start mb-3">
-                             <div class="text-white-50">${ICONS.wallet}</div>
+                             <div class="text-white">${ICONS.wallet}</div>
                              <span class="badge rounded-pill ${metrics.change_24h_percent >= 0 ? 'text-success' : 'text-danger'}" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">${metrics.change_24h_percent >= 0 ? '+' : ''}${metrics.change_24h_percent.toFixed(2)}% (24h)</span>
                          </div>
                          <div>
                              <div class="h4 mb-0 fw-light text-white">${formatCurrency(metrics.total_value)}</div>
-                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Crypto Value</div>
+                             <div class="small text-white-75 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Crypto Value</div>
                          </div>
                     </div>
                 </div>
@@ -251,12 +251,12 @@ function renderCryptoOverview() {
                          onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                          
                          <div class="d-flex justify-content-between align-items-start mb-3">
-                             <div class="text-white-50">${ICONS.trending}</div>
-                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Weighted</span>
+                             <div class="text-white">${ICONS.trending}</div>
+                             <span class="badge rounded-pill text-white-75" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Weighted</span>
                          </div>
                          <div>
                              <div class="h4 mb-0 fw-light" style="color: ${metrics.avg_portfolio_return >= 0 ? '#10b981' : '#ef4444'}">${metrics.avg_portfolio_return >= 0 ? '+' : ''}${metrics.avg_portfolio_return.toFixed(1)}%</div>
-                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Portfolio Return</div>
+                             <div class="small text-white-75 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Portfolio Return</div>
                          </div>
                     </div>
                 </div>
@@ -269,12 +269,12 @@ function renderCryptoOverview() {
                          onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                          
                          <div class="d-flex justify-content-between align-items-start mb-3">
-                             <div class="text-white-50">${ICONS.chart}</div>
-                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Active</span>
+                             <div class="text-white">${ICONS.chart}</div>
+                             <span class="badge rounded-pill text-white-75" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Active</span>
                          </div>
                          <div>
                              <div class="h4 mb-0 fw-light text-white">${metrics.total_assets_count}</div>
-                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Active Assets</div>
+                             <div class="small text-white-75 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Active Assets</div>
                          </div>
                     </div>
                 </div>
@@ -287,12 +287,12 @@ function renderCryptoOverview() {
                          onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                          
                          <div class="d-flex justify-content-between align-items-start mb-3">
-                             <div class="text-white-50">${ICONS.activity}</div>
-                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Synced</span>
+                             <div class="text-white">${ICONS.activity}</div>
+                             <span class="badge rounded-pill text-white-75" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Synced</span>
                          </div>
                          <div>
                              <div class="h4 mb-0 fw-light text-success">Online</div>
-                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Network Status</div>
+                             <div class="small text-white-75 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Network Status</div>
                          </div>
                     </div>
                 </div>

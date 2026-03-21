@@ -1487,7 +1487,7 @@ async function fetchRealEstateData() {
 Object.assign(ICONS, {
     eye: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>',
     plus: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>',
-    piggyBank: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8.6-3.8 1.5l-2.5 2.5c-.3.3-.7.5-1.1.6a3 3 0 0 0-1.9 2.8c0 .9.5 1.7 1.2 2.2l.4.3c.3.5.1 1.1-.3 1.5L9 18c-.4.4-1 .6-1.5.6H5a2 2 0 0 1-2-2v-1.1c0-.4.2-.8.6-1.1l2.6-2.6c.3-.4.5-1 .5-1.5 0-.9-.6-1.7-1.4-2.2l-1.1-.9C3 6 4 5 5 5h14z"/><path d="M16 8l-2.3 2.3a3 3 0 0 0 0 4.2l3.6 3.6c.4.4.6 1 .6 1.5V21h1a2 2 0 0 0 2-2V9a4 4 0 0 0-4-1z"/><path d="M19 5v4"/><path d="M7 16h8"/></svg>',
+    piggyBank: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7V3h-4"/><path d="M3 21l6-6 4 4 8-8"/></svg>',
     mapPin: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>'
 });
 
@@ -1677,12 +1677,12 @@ function renderRealEstateDashboard() {
                          onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                          
                          <div class="d-flex justify-content-between align-items-start mb-3">
-                             <div class="text-white-50">${ICONS.home}</div>
-                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Active</span>
+                             <div class="text-white">${ICONS.home}</div>
+                             <span class="badge rounded-pill text-white-75" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Active</span>
                          </div>
                          <div>
                              <div class="h4 mb-0 fw-light text-white">${metrics.totalProperties}</div>
-                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Properties</div>
+                             <div class="small text-white-75 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Properties</div>
                          </div>
                     </div>
                 </div>
@@ -1695,12 +1695,12 @@ function renderRealEstateDashboard() {
                          onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                          
                          <div class="d-flex justify-content-between align-items-start mb-3">
-                             <div class="text-white-50">${ICONS.trending}</div>
-                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Current</span>
+                             <div class="text-white">${ICONS.building}</div>
+                             <span class="badge rounded-pill text-white-75" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Current</span>
                          </div>
                          <div>
                              <div class="h4 mb-0 fw-light text-white">${formatCurrency(metrics.totalValuation)}</div>
-                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Valuation</div>
+                             <div class="small text-white-75 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Valuation</div>
                          </div>
                     </div>
                 </div>
@@ -1713,12 +1713,12 @@ function renderRealEstateDashboard() {
                          onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                          
                          <div class="d-flex justify-content-between align-items-start mb-3">
-                             <div class="text-white-50">${ICONS.wallet}</div>
-                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Owned</span>
+                             <div class="text-white">${ICONS.wallet}</div>
+                             <span class="badge rounded-pill text-white-75" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Owned</span>
                          </div>
                          <div>
                              <div class="h4 mb-0 fw-light text-white">${formatCurrency(metrics.totalEquity)}</div>
-                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Equity</div>
+                             <div class="small text-white-75 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Total Equity</div>
                          </div>
                     </div>
                 </div>
@@ -1731,12 +1731,12 @@ function renderRealEstateDashboard() {
                          onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                          
                          <div class="d-flex justify-content-between align-items-start mb-3">
-                             <div class="text-white-50">${ICONS.piggyBank}</div>
-                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Since Acq</span>
+                             <div class="text-white">${ICONS.piggyBank}</div>
+                             <span class="badge rounded-pill text-white-75" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Since Acq</span>
                          </div>
                          <div>
                              <div class="h4 mb-0 fw-light" style="color: ${metrics.avgAppreciation >= 0 ? '#10b981' : '#ef4444'}">${metrics.avgAppreciation >= 0 ? '+' : ''}${metrics.avgAppreciation.toFixed(1)}%</div>
-                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Appreciation</div>
+                             <div class="small text-white-75 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Appreciation</div>
                          </div>
                     </div>
                 </div>
@@ -1749,12 +1749,12 @@ function renderRealEstateDashboard() {
                          onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                          
                          <div class="d-flex justify-content-between align-items-start mb-3">
-                             <div class="text-white-50">${ICONS.wallet}</div>
-                             <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Recurring</span>
+                             <div class="text-white">${ICONS.calendar}</div>
+                             <span class="badge rounded-pill text-white-75" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">Recurring</span>
                          </div>
                          <div>
                              <div class="h4 mb-0 fw-light text-white">${formatCurrency(metrics.monthlyRentalIncome)}</div>
-                             <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Monthly Rent</div>
+                             <div class="small text-white-75 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">Monthly Rent</div>
                          </div>
                     </div>
                 </div>
@@ -7578,12 +7578,12 @@ function renderBusinessDashboard() {
                      onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                      
                      <div class="d-flex justify-content-between align-items-start mb-3">
-                         <div class="text-white-50"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${m.icon}</svg></div>
-                         <span class="badge rounded-pill text-white-30" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">${m.sub}</span>
+                         <div class="text-white"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${m.icon}</svg></div>
+                         <span class="badge rounded-pill text-white-75" style="font-size: 0.6rem; font-weight: 300; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">${m.sub}</span>
                      </div>
                      <div>
                          <div class="h4 mb-0 fw-light ${m.color || 'text-white'}">${m.value}</div>
-                         <div class="small text-white-30 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">${m.label}</div>
+                         <div class="small text-white-75 text-uppercase tracking-wider mt-1" style="font-size: 0.65rem;">${m.label}</div>
                      </div>
                 </div>
             </div>

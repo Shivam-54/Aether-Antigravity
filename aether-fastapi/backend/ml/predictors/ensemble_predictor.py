@@ -94,8 +94,18 @@ class EnsemblePredictor:
             }
         
         # Calculate ensemble confidence (average of model confidences)
-        lstm_r2 = lstm_predictions.get('model_metrics', {}).get('val_rmse', 0)
-        prophet_r2 = prophet_predictions.get('model_metrics', {}).get('r2_score', 0)
+        lstm_r2_raw = lstm_predictions.get('model_metrics', {}).get('val_rmse', 0)
+        prophet_r2_raw = prophet_predictions.get('model_metrics', {}).get('r2_score', 0)
+        
+        try:
+            lstm_r2 = float(lstm_r2_raw)
+        except (ValueError, TypeError):
+            lstm_r2 = 0
+            
+        try:
+            prophet_r2 = float(prophet_r2_raw)
+        except (ValueError, TypeError):
+            prophet_r2 = 0
         
         if lstm_r2 > 0:
             lstm_confidence = 1 / (1 + lstm_r2 / 1000)  # Convert RMSE to confidence
