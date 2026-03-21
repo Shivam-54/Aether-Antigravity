@@ -1013,12 +1013,12 @@ async function submitAddShare(event) {
 
     // Validate that a stock is selected
     if (!selectedStock) {
-        alert('Please search and select a stock first');
+        _showSettingsToast('Please search and select a stock first', 'error');
         return;
     }
 
     if (!selectedSector) {
-        alert('Please select a sector first');
+        _showSettingsToast('Please select a sector first', 'error');
         return;
     }
 
@@ -1069,11 +1069,11 @@ async function submitAddShare(event) {
             await fetchSharesData();
         } else {
             const error = await response.json();
-            alert('Error adding share: ' + (error.detail || 'Unknown error'));
+            _showSettingsToast('Error adding share: ' + (error.detail || 'Unknown error'), 'error');
         }
     } catch (error) {
         console.error('Error adding share:', error);
-        alert('Error adding share');
+        _showSettingsToast('Error adding share', 'error');
     } finally {
         // Re-enable button
         if (submitBtn) {
@@ -1222,11 +1222,11 @@ async function submitSellShare(event) {
             closeSellShareModal();
             await fetchSharesData();
         } else {
-            alert('Error selling share');
+            _showSettingsToast('Error selling share', 'error');
         }
     } catch (error) {
         console.error('Error selling share:', error);
-        alert('Error selling share');
+        _showSettingsToast('Error selling share', 'error');
     }
 }
 
@@ -1270,10 +1270,10 @@ async function confirmRemoveShare() {
             closeRemoveShareModal();
             await fetchSharesData();
         } else {
-            alert('Error removing share');
+            _showSettingsToast('Error removing share', 'error');
         }
     } catch (error) {
         console.error('Error removing share:', error);
-        alert('Error removing share');
+        _showSettingsToast('Error removing share', 'error');
     }
 }

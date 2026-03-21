@@ -383,7 +383,7 @@ function saveTransactionDate() {
 
     const newDate = document.getElementById('edit-transaction-date').value;
     if (!newDate) {
-        alert('Please select a date');
+        _showSettingsToast('Please select a date', 'error');
         return;
     }
 
@@ -391,7 +391,7 @@ function saveTransactionDate() {
     const txnIndex = transactions.findIndex(t => t.id === transactionId);
 
     if (txnIndex === -1) {
-        alert('Transaction not found');
+        _showSettingsToast('Transaction not found', 'error');
         return;
     }
 

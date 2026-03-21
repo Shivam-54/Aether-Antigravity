@@ -11,6 +11,7 @@ from database import get_db
 from models.crypto import CryptoHolding, CryptoTransaction, CryptoWallet
 from models.user import User
 from routes.auth import get_current_user
+from services import coingecko_service
 
 router = APIRouter(prefix="/api/crypto", tags=["Crypto"])
 
@@ -324,7 +325,6 @@ def delete_wallet(
     db.commit()
     return None
 
-
 # --- Portfolio History Route ---
 
 class PortfolioDataPoint(BaseModel):
@@ -332,16 +332,16 @@ class PortfolioDataPoint(BaseModel):
     value: float
 
 @router.get("/portfolio-history", response_model=List[PortfolioDataPoint])
-def get_portfolio_history(
+async def get_portfolio_history(
     period: str = "1mo",
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Reconstruct a cumulative portfolio value timeline from holdings.
-    If period is '1d', returns hourly intraday data for today.
-    Otherwise returns daily data.
+    Real portfolio value history using live CoinGecko price data.
+    Falls back to linear interpolation if CoinGecko is unavailable.
     """
+    import aiohttp, ssl, certifi
     holdings = db.query(CryptoHolding).filter(CryptoHolding.user_id == current_user.id).all()
 
     if not holdings:
@@ -349,105 +349,142 @@ def get_portfolio_history(
 
     today = date.today()
     now_time = datetime.now()
+    timeline_values: dict = {}
 
-    # Build a dict of datetime string -> total_value
-    timeline_values: dict[str, float] = {}
+    period_to_days = {
+        "1d": 1, "1D": 1,
+        "1w": 7,  "1W": 7,
+        "1mo": 30, "1m": 30,
+        "3mo": 90, "3m": 90,
+        "6mo": 180, "6m": 180,
+        "1y": 365, "1Y": 365,
+        "all": 365,
+    }
+    days = period_to_days.get(period, 30)
+    is_intraday = period in ["1d", "1D"]
 
     for holding in holdings:
-        # Use purchase_date if set, otherwise fall back to created_at date
-        if holding.purchase_date:
-            start_date = holding.purchase_date
-        elif holding.created_at:
-            start_date = holding.created_at.date()
-        else:
-            start_date = today
-
-        # Clamp start to today if somehow in the future
-        if start_date > today:
-            start_date = today
-
-        buy_price = holding.purchase_price_avg or 0.0
-        cur_price = holding.current_price or buy_price
+        symbol = holding.symbol.upper()
         qty = holding.quantity or 0.0
+        if qty <= 0:
+            continue
 
-        start_value = qty * buy_price
-        end_value = qty * cur_price
+        coin_id = coingecko_service.get_coin_id(symbol)
+        if not coin_id:
+            _add_flat_fallback(timeline_values, holding, today, now_time, is_intraday)
+            continue
 
-        if period in ["1d", "1D"]:
-            # Generate 24 hourly points for today to simulate intraday flow
-            for hour in range(24):
-                point_time = now_time.replace(hour=hour, minute=0, second=0, microsecond=0)
-                # Don't plot future hours today
-                if point_time > now_time:
-                    break
-                    
-                time_str = point_time.strftime('%Y-%m-%d %H:%M')
-                
-                # Introduce slight random walk for realism in the mock intraday data
-                import random
-                noise = random.uniform(-0.005, 0.005) # +/- 0.5% max hourly volatility
-                hour_value = end_value * (1 + noise)
-                
-                if time_str in timeline_values:
-                    timeline_values[time_str] += hour_value
+        try:
+            ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+            url = f"{coingecko_service.COINGECKO_BASE_URL}/coins/{coin_id}/market_chart"
+            params = {
+                "vs_currency": "inr",
+                "days": str(days),
+                "interval": "hourly" if is_intraday else "daily",
+            }
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params,
+                                       timeout=aiohttp.ClientTimeout(total=15),
+                                       ssl=ssl_ctx) as resp:
+                    resp.raise_for_status()
+                    data = await resp.json()
+
+            for ts_ms, price_inr in data.get("prices", []):
+                pt = datetime.fromtimestamp(ts_ms / 1000)
+                if is_intraday:
+                    if pt.date() != today:
+                        continue
+                    key = pt.strftime('%Y-%m-%d %H:%M')
                 else:
-                    timeline_values[time_str] = hour_value
+                    key = pt.strftime('%Y-%m-%d')
+                timeline_values[key] = timeline_values.get(key, 0.0) + round(qty * price_inr, 2)
 
-        else:
-            # Daily interpolation
-            num_days = (today - start_date).days
-            if num_days < 0:
-                num_days = 0
+        except Exception as e:
+            print(f"[CoinGecko] History failed for {symbol}: {e}. Fallback.")
+            _add_flat_fallback(timeline_values, holding, today, now_time, is_intraday)
 
-            for day_offset in range(num_days + 1):
-                current_day = start_date + timedelta(days=day_offset)
-                if num_days > 0:
-                    t = day_offset / num_days
-                else:
-                    t = 1.0
-                interpolated_value = start_value + t * (end_value - start_value)
-                
-                date_str = current_day.isoformat()
-                if date_str in timeline_values:
-                    timeline_values[date_str] += interpolated_value
-                else:
-                    timeline_values[date_str] = interpolated_value
-
-    # Sort by date/time string and return
-    sorted_keys = sorted(timeline_values.keys())
     return [
-        PortfolioDataPoint(date=k, value=round(timeline_values[k], 2))
-        for k in sorted_keys
+        PortfolioDataPoint(date=k, value=round(v, 2))
+        for k, v in sorted(timeline_values.items())
     ]
+
+
+def _add_flat_fallback(timeline_values, holding, today, now_time, is_intraday):
+    """Linear interpolation fallback when CoinGecko is unavailable."""
+    buy_price = holding.purchase_price_avg or 0.0
+    cur_price = holding.current_price or buy_price
+    qty = holding.quantity or 0.0
+    start_date = (holding.purchase_date
+                  or (holding.created_at.date() if holding.created_at else today))
+    if start_date > today:
+        start_date = today
+    start_val = qty * buy_price
+    end_val = qty * cur_price
+
+    if is_intraday:
+        for hour in range(now_time.hour + 1):
+            key = now_time.replace(hour=hour, minute=0, second=0,
+                                   microsecond=0).strftime('%Y-%m-%d %H:%M')
+            timeline_values[key] = timeline_values.get(key, 0.0) + end_val
+    else:
+        num_days = max((today - start_date).days, 0)
+        for d in range(num_days + 1):
+            day = start_date + timedelta(days=d)
+            t = d / num_days if num_days > 0 else 1.0
+            val = start_val + t * (end_val - start_val)
+            timeline_values[day.isoformat()] = timeline_values.get(day.isoformat(), 0.0) + val
+
 
 
 # --- Metrics Route ---
 
+class CryptoMetrics(BaseModel):
+    total_value: float
+    change_24h_value: float
+    change_24h_percent: float
+    total_assets_count: int
+    avg_portfolio_return: float
+
 @router.get("/metrics", response_model=CryptoMetrics)
-def get_metrics(
+async def get_metrics(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get aggregated crypto portfolio metrics"""
+    """Aggregated crypto portfolio metrics with real-time 24h change from CoinGecko."""
     holdings = db.query(CryptoHolding).filter(CryptoHolding.user_id == current_user.id).all()
-    
+
     total_value = sum(h.quantity * h.current_price for h in holdings)
     total_invested = sum(h.quantity * h.purchase_price_avg for h in holdings)
-    
-    # Calculate portfolio return
-    if total_invested > 0:
-        avg_portfolio_return = ((total_value - total_invested) / total_invested) * 100
-    else:
-        avg_portfolio_return = 0.0
-    
-    # Mock 24h change (would need price history for real calculation)
-    change_24h_percent = 2.85  # Mock value
-    change_24h_value = total_value * (change_24h_percent / 100)
-    
+    avg_portfolio_return = ((total_value - total_invested) / total_invested * 100
+                            if total_invested > 0 else 0.0)
+
+    change_24h_percent = 0.0
+    change_24h_value = 0.0
+
+    if holdings:
+        try:
+            symbols = list(set(h.symbol.upper() for h in holdings))
+            live_prices = await coingecko_service.fetch_current_prices(symbols, vs_currency="inr")
+            if live_prices:
+                weighted_change = 0.0
+                weights_sum = 0.0
+                for h in holdings:
+                    sym = h.symbol.upper()
+                    coin_val = h.quantity * h.current_price
+                    if coin_val > 0 and sym in live_prices:
+                        coin_24h = live_prices[sym].get("change_24h", 0.0) or 0.0
+                        weighted_change += coin_24h * coin_val
+                        weights_sum += coin_val
+                if weights_sum > 0:
+                    change_24h_percent = round(weighted_change / weights_sum, 2)
+                    change_24h_value = round(total_value * change_24h_percent / 100, 2)
+        except Exception as e:
+            print(f"[CoinGecko] Metrics 24h fetch failed: {e}")
+
     return {
-        "total_value": total_value,
+        "total_value": round(total_value, 2),
         "change_24h_value": change_24h_value,
         "change_24h_percent": change_24h_percent,
         "total_assets_count": len(holdings),
-        "avg_portfolio_return": round(avg_portfolio_return, 2)
+        "avg_portfolio_return": round(avg_portfolio_return, 2),
     }

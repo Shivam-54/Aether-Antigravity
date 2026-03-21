@@ -383,11 +383,11 @@ async function deleteDocument(documentId, propertyId) {
             // Update document count if function exists
             if (typeof updatePropertyCounts === 'function') updatePropertyCounts();
         } else {
-            alert('Failed to delete document');
+            _showSettingsToast('Failed to delete document', 'error');
         }
     } catch (error) {
         console.error('Error deleting document:', error);
-        alert('Error deleting document');
+        _showSettingsToast('Error deleting document', 'error');
     }
 }
 
@@ -482,12 +482,12 @@ async function saveValuation() {
     const notes = document.getElementById('valuationNotes').value;
 
     if (!propertyId || !date || !value) {
-        alert('Please fill all required fields');
+        _showSettingsToast('Please fill all required fields', 'error');
         return;
     }
 
     if (parseFloat(value) <= 0) {
-        alert('Value must be greater than zero');
+        _showSettingsToast('Value must be greater than zero', 'error');
         return;
     }
 
@@ -513,7 +513,7 @@ async function saveValuation() {
             throw new Error(error.detail || 'Failed to save valuation');
         }
 
-        alert('Valuation added successfully!');
+        _showSettingsToast('Valuation added ✓', 'success');
         bootstrap.Modal.getInstance(document.getElementById('addValuationModal')).hide();
 
         // Reload valuation table if in detail view
@@ -523,7 +523,7 @@ async function saveValuation() {
 
     } catch (error) {
         console.error('Error saving valuation:', error);
-        alert(error.message);
+        _showSettingsToast(error.message, 'error');
     }
 }
 
@@ -542,7 +542,7 @@ async function deleteValuation(valuationId) {
 
         if (!response.ok) throw new Error('Failed to delete valuation');
 
-        alert('Valuation deleted successfully!');
+        _showSettingsToast('Valuation deleted', 'success');
 
         // Reload if in detail view
         if (currentPropertyForDetail) {
@@ -551,7 +551,7 @@ async function deleteValuation(valuationId) {
 
     } catch (error) {
         console.error('Error deleting valuation:', error);
-        alert(error.message);
+        _showSettingsToast(error.message, 'error');
     }
 }
 
@@ -600,7 +600,7 @@ async function submitUploadDocument(event) {
     event.preventDefault();
 
     if (!currentPropertyForDetail) {
-        alert('No property selected context found.');
+        _showSettingsToast('No property selected', 'error');
         return;
     }
 
@@ -613,11 +613,11 @@ async function submitUploadDocument(event) {
     const description = descriptionInput ? descriptionInput.value : '';
 
     if (!file) {
-        alert('Please select a file.');
+        _showSettingsToast('Please select a file', 'error');
         return;
     }
     if (!docType) {
-        alert('Please select a document type.');
+        _showSettingsToast('Please select a document type', 'error');
         return;
     }
 
@@ -644,11 +644,11 @@ async function submitUploadDocument(event) {
             loadPropertyDocuments(currentPropertyForDetail.id);
         } else {
             const errorData = await response.json();
-            alert(`Upload failed: ${errorData.detail || 'Unknown error'}`);
+            _showSettingsToast(`Upload failed: ${errorData.detail || 'Unknown error'}`, 'error');
         }
     } catch (error) {
         console.error('Error uploading document:', error);
-        alert('An error occurred while uploading. Please try again.');
+        _showSettingsToast('Upload error. Please try again.', 'error');
     }
 }
 

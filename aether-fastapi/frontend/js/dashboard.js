@@ -7416,10 +7416,19 @@ function renderBusinessDashboard() {
     const avgOwnership = BUSINESS_DATA.reduce((sum, b) => sum + b.ownership, 0) / (totalBusinesses || 1);
     const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 
-    let healthStatus = 'Healthy';
-    let healthScore = 92; // Mock score based on margin
-    if (profitMargin < 10) { healthStatus = 'At Risk'; healthScore = 45; }
-    else if (profitMargin < 20) { healthStatus = 'Stable'; healthScore = 75; }
+    // Compute health score from real business metrics
+    let healthStatus, healthScore;
+    if (profitMargin >= 30) {
+        healthStatus = 'Excellent'; healthScore = Math.round(85 + Math.min(profitMargin - 30, 15));
+    } else if (profitMargin >= 20) {
+        healthStatus = 'Healthy'; healthScore = Math.round(70 + (profitMargin - 20) * 1.5);
+    } else if (profitMargin >= 10) {
+        healthStatus = 'Stable'; healthScore = Math.round(50 + (profitMargin - 10) * 2);
+    } else if (profitMargin >= 0) {
+        healthStatus = 'At Risk'; healthScore = Math.round(20 + profitMargin * 3);
+    } else {
+        healthStatus = 'Critical'; healthScore = Math.max(5, Math.round(20 + profitMargin));
+    }
 
     // 0. Render Chart (Premium)
     const chartCtx = document.getElementById('businessRevenueChart');
@@ -10158,27 +10167,38 @@ function exportPortfolioCSV() {
 }
 
 // --- Mini toast for settings feedback ---
-function _showSettingsToast(msg) {
+function _showSettingsToast(msg, type) {
     let toast = document.getElementById('settingsToast');
     if (!toast) {
         toast = document.createElement('div');
         toast.id = 'settingsToast';
-        toast.style.cssText = `
-            position: fixed; bottom: 80px; right: 24px;
-            background: rgba(15,15,20,0.95); border: 1px solid rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.85); font-size: 0.78rem;
-            padding: 10px 16px; border-radius: 10px; z-index: 9999;
-            backdrop-filter: blur(10px);
-            transition: opacity 0.3s; opacity: 0;
-            pointer-events: none;
-        `;
+        toast.style.cssText = [
+            'position:fixed;bottom:80px;right:24px;',
+            'font-size:0.78rem;padding:10px 16px;border-radius:10px;',
+            'z-index:9999;backdrop-filter:blur(10px);',
+            'transition:opacity 0.3s;opacity:0;pointer-events:none;',
+            'display:flex;align-items:center;gap:8px;'
+        ].join('');
         document.body.appendChild(toast);
     }
-    toast.textContent = msg;
+    const isErr = type === 'error';
+    const isOk  = type === 'success';
+    toast.style.background = isErr ? 'rgba(220,38,38,0.92)' :
+                              isOk  ? 'rgba(16,185,129,0.92)' :
+                                      'rgba(15,15,20,0.95)';
+    toast.style.border      = isErr ? '1px solid rgba(255,100,100,0.4)' :
+                              isOk  ? '1px solid rgba(52,211,153,0.4)' :
+                                      '1px solid rgba(255,255,255,0.1)';
+    toast.style.color = 'rgba(255,255,255,0.92)';
+    const icon = isErr ? '✕ ' : isOk ? '✓ ' : '';
+    toast.textContent = icon + msg;
     toast.style.opacity = '1';
     clearTimeout(toast._timer);
-    toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+    toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2800);
 }
+
+// Expose globally so external JS files (valuations.js, shares-module.js) can use it
+window._showSettingsToast = _showSettingsToast;
 
 // ==========================================
 // Restore settings state when drawer opens
