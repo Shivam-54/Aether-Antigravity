@@ -1210,6 +1210,10 @@ function switchSource(source) {
 
 // Navigate to section within source
 function navigateToSection(sectionId, sectionName, btn) {
+    if (sectionId === 'settings') {
+        openSettingsDrawer();
+        return;
+    }
     currentSection = sectionName;
 
     // Update sidebar active state
@@ -9788,6 +9792,29 @@ window.renderBondsPortfolioInsights = renderBondsPortfolioInsights;
 // PROFILE DRAWER
 // ==========================================
 
+function openSettingsDrawer() {
+    const backdrop = document.getElementById('settingsDrawerBackdrop');
+    const drawer = document.getElementById('settingsDrawer');
+    
+    // Ensure the default settings panel opens
+    switchSettingsPanel('privacy');
+
+    backdrop.style.pointerEvents = 'auto';
+    backdrop.style.opacity = '1';
+    drawer.style.transform = 'translateX(0)';
+}
+window.openSettingsDrawer = openSettingsDrawer;
+
+function closeSettingsDrawer() {
+    const backdrop = document.getElementById('settingsDrawerBackdrop');
+    const drawer = document.getElementById('settingsDrawer');
+
+    backdrop.style.opacity = '0';
+    backdrop.style.pointerEvents = 'none';
+    drawer.style.transform = 'translateX(100%)';
+}
+window.closeSettingsDrawer = closeSettingsDrawer;
+
 function openProfileDrawer() {
     const drawer = document.getElementById('profileDrawer');
     const backdrop = document.getElementById('profileDrawerBackdrop');
@@ -10898,7 +10925,7 @@ function setDefaultPage(page) {
     }
 
     // Actually navigate to the selected module immediately
-    if (typeof switchSource === 'function') switchSource(page);
+    // if (typeof switchSource === 'function') switchSource(page);
 
     _showSettingsToast('Default page updated');
 }

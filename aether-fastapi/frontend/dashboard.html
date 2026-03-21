@@ -6677,7 +6677,7 @@
 
     <!-- Profile Slide-in Drawer -->
     <div id="profileDrawer"
-        style="position:fixed;top:0;right:0;height:100vh;width:550px;background:rgba(255, 255, 255, 0.03);border-left:1px solid rgba(255, 255, 255, 0.10);z-index:1001;transform:translateX(100%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;overflow:hidden;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 0 20px rgba(255, 255, 255, 0.02),-10px 0 60px rgba(0, 0, 0, 0.5);">
+        style="position:fixed;top:0;right:0;height:100vh;width:350px;background:rgba(255, 255, 255, 0.03);border-left:1px solid rgba(255, 255, 255, 0.10);z-index:1001;transform:translateX(100%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;overflow:hidden;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 0 20px rgba(255, 255, 255, 0.02),-10px 0 60px rgba(0, 0, 0, 0.5);">
 
         <!-- Header -->
         <div
@@ -6697,6 +6697,29 @@
                 U</div>
             <div id="drawerName" style="color:#fff;font-size:1rem;font-weight:500;margin-bottom:4px;">—</div>
             <div id="drawerEmail" style="color:rgba(255,255,255,0.4);font-size:0.78rem;">—</div>
+        </div>
+
+            </div>
+
+
+<!-- Profile Drawer Backdrop -->
+    <div id="settingsDrawerBackdrop" onclick="closeSettingsDrawer()"
+        style="position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);z-index:1000;opacity:0;pointer-events:none;transition:opacity 0.3s ease;">
+    </div>
+
+    <!-- Profile Slide-in Drawer -->
+    <div id="settingsDrawer"
+        style="position:fixed;top:0;right:0;height:100vh;width:550px;background:rgba(255, 255, 255, 0.03);border-left:1px solid rgba(255, 255, 255, 0.10);z-index:1001;transform:translateX(100%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;overflow:hidden;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 0 20px rgba(255, 255, 255, 0.02),-10px 0 60px rgba(0, 0, 0, 0.5);">
+
+        <!-- Header -->
+        <div
+            style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
+            <span
+                style="color:rgba(255,255,255,0.3);font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;">Settings</span>
+            <button onclick="closeSettingsDrawer()"
+                style="background:none;border:none;color:rgba(255,255,255,0.3);cursor:pointer;font-size:1.1rem;padding:2px 6px;border-radius:4px;transition:color 0.15s;"
+                onmouseover="this.style.color='#fff'"
+                onmouseout="this.style.color='rgba(255,255,255,0.3)'">&#x2715;</button>
         </div>
 
         <!-- Settings Two-Panel -->
@@ -7439,6 +7462,7 @@
             </div>
         </div>
     </div>
+
 
 
 </body>
