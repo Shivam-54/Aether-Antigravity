@@ -4185,7 +4185,7 @@
                                             <div style="width:6px;height:6px;border-radius:50%;background:#22c55e;">
                                             </div>
                                             <span class="text-white-50" style="font-size:0.7rem;">Online · Powered by
-                                                Gemini</span>
+                                                Groq</span>
                                         </div>
                                     </div>
                                     <button class="ms-auto glass-button btn-sm px-2 py-1" onclick="clearBizChat()"
@@ -4234,7 +4234,7 @@
                                         <div class="p-3 rounded-3"
                                             style="background:rgba(118,75,162,0.1);border:1px solid rgba(118,75,162,0.2);max-width:85%;">
                                             <div class="text-white small" style="line-height:1.5;">Hello! I'm your AI
-                                                Board Member, powered by Gemini. I have full visibility into your
+                                                Board Member, powered by Groq. I have full visibility into your
                                                 business portfolio — ventures, revenue, expenses, and cash flow. Ask me
                                                 anything about your business performance.</div>
                                         </div>
@@ -4264,23 +4264,86 @@
                         <!-- Tab 3: Coming Soon                                           -->
                         <!-- ============================================================ -->
                         <div class="ai-lab-panel" id="biz-ai-lab-panel-coming-soon" style="display:none;">
-                            <div class="glass-card p-5 text-center"
-                                style="min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                                <div class="mb-4" style="opacity: 0.4;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <path
-                                            d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-                                    </svg>
+
+                            <!-- Scenario Planner -->
+                            <div class="glass-card p-4 mb-4">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                                    <h4 class="h6 fw-medium text-white mb-0">Scenario Planner</h4>
+                                    <span class="badge ms-1" style="background:rgba(245,158,11,0.2);color:#fcd34d;font-size:0.6rem;">Groq AI</span>
                                 </div>
-                                <h3 class="h4 fw-light text-white mb-2">Coming Soon</h3>
-                                <p class="text-white-50 small mb-0" style="max-width: 340px;">
-                                    AI-powered predictive forecasting, revenue modelling, and scenario planning are
-                                    currently in development.
-                                </p>
+                                <p class="text-white-50 small mb-3" style="font-size:0.78rem;">Describe a what-if scenario and see the projected financial impact across your portfolio.</p>
+
+                                <!-- Example chips -->
+                                <div class="d-flex flex-wrap gap-2 mb-3" id="scenario-chips">
+                                    <button class="badge px-2 py-1" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.65);font-size:0.72rem;cursor:pointer;font-weight:400;"
+                                        onclick="bizScenarioChip(this, 'What if my revenue drops 20%?')">Revenue drops 20%</button>
+                                    <button class="badge px-2 py-1" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.65);font-size:0.72rem;cursor:pointer;font-weight:400;"
+                                        onclick="bizScenarioChip(this, 'What if I add a third manufacturing venture worth ₹20 crore?')">Add a 3rd venture</button>
+                                    <button class="badge px-2 py-1" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.65);font-size:0.72rem;cursor:pointer;font-weight:400;"
+                                        onclick="bizScenarioChip(this, 'What if operating costs increase by 15%?')">Costs up 15%</button>
+                                    <button class="badge px-2 py-1" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.65);font-size:0.72rem;cursor:pointer;font-weight:400;"
+                                        onclick="bizScenarioChip(this, 'What if the embroidery venture shuts down?')">Shut down a venture</button>
+                                    <button class="badge px-2 py-1" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.65);font-size:0.72rem;cursor:pointer;font-weight:400;"
+                                        onclick="bizScenarioChip(this, 'What if I expand into a new city and double the looms business?')">Double the business</button>
+                                </div>
+
+                                <!-- Input + button -->
+                                <div class="d-flex gap-2">
+                                    <textarea id="biz-scenario-input" class="modal-glass-input flex-grow-1" rows="2"
+                                        placeholder="e.g. What if embroidery revenue drops 30% next quarter?"
+                                        style="resize:none;font-size:0.85rem;"></textarea>
+                                    <button onclick="runBizScenario()" id="biz-scenario-btn"
+                                        class="glass-button px-3 flex-shrink-0" style="height:fit-content;align-self:flex-end;">
+                                        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                    </button>
+                                </div>
+
+                                <!-- Scenario output -->
+                                <div id="biz-scenario-output" class="mt-3"></div>
                             </div>
+
+                            <!-- Goal Tracker -->
+                            <div class="glass-card p-4">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <h4 class="h6 fw-medium text-white mb-0">Goal Tracker</h4>
+                                    <span class="badge ms-1" style="background:rgba(34,197,94,0.2);color:#86efac;font-size:0.6rem;">Groq AI</span>
+                                </div>
+                                <p class="text-white-50 small mb-3" style="font-size:0.78rem;">Set revenue and profit targets — AI tells you if you're on track and exactly what needs to change.</p>
+
+                                <!-- Inputs -->
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-4">
+                                        <label class="text-white-50 small mb-1" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;">Revenue Target (₹)</label>
+                                        <input type="number" id="biz-goal-revenue" class="modal-glass-input w-100"
+                                            placeholder="e.g. 60000000" style="font-size:0.85rem;">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="text-white-50 small mb-1" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;">Profit Target (₹)</label>
+                                        <input type="number" id="biz-goal-profit" class="modal-glass-input w-100"
+                                            placeholder="e.g. 30000000" style="font-size:0.85rem;">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="text-white-50 small mb-1" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;">Timeframe (months)</label>
+                                        <select id="biz-goal-months" class="modal-glass-input w-100" style="font-size:0.85rem;">
+                                            <option value="3">3 months</option>
+                                            <option value="6">6 months</option>
+                                            <option value="12" selected>12 months</option>
+                                            <option value="24">24 months</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button onclick="runBizGoalAnalysis()" id="biz-goal-btn" class="glass-button px-4 py-2 w-100 btn-sm">
+                                    🎯 Analyse Goal Progress
+                                </button>
+
+                                <!-- Goal output -->
+                                <div id="biz-goal-output" class="mt-3"></div>
+                            </div>
+
                         </div>
+
 
                     </div>
                 </div>

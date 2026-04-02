@@ -9,7 +9,12 @@ from database import get_db
 from models.user import User
 from models.business import Business, BusinessTransaction
 from .auth import get_current_user
-from ml.business.business_ai import BusinessFinancialAnalyst, BusinessBoardMember
+from ml.business.business_ai import (
+    BusinessFinancialAnalyst,
+    BusinessBoardMember,
+    BusinessScenarioPlanner,
+    BusinessGoalAnalyser,
+)
 
 
 router = APIRouter(prefix="/api/business", tags=["business"])
@@ -125,6 +130,14 @@ class BizChatRequest(BaseModel):
     message: str
     history: Optional[list] = []
 
+class BizScenarioRequest(BaseModel):
+    scenario: str
+
+class BizGoalRequest(BaseModel):
+    revenue_goal: float
+    profit_goal: float
+    months: int = 12
+
 
 @router.get("/ai/financial-analysis")
 async def get_business_financial_analysis(
@@ -234,7 +247,89 @@ async def business_ai_chat(
         raise HTTPException(status_code=500, detail=f"Business AI chat error: {str(e)}")
 
 
-# ==================== Business CRUD: Single Venture ====================
+@router.post("/ai/scenario")
+async def business_ai_scenario(
+    body: BizScenarioRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    What-if scenario planner — models financial impact of a user-described scenario.
+    """
+    try:
+        businesses = db.query(Business).filter(Business.user_id == current_user.id).all()
+        transactions = db.query(BusinessTransaction).filter(BusinessTransaction.user_id == current_user.id).all()
+
+        biz_list = [
+            {
+                "name":           b.name,
+                "industry":       b.industry,
+                "annual_revenue": float(b.annual_revenue or 0),
+                "annual_profit":  float(b.annual_profit  or 0),
+                "cash_flow":      float(b.cash_flow      or 0),
+                "valuation":      float(b.valuation      or 0),
+                "status":         b.status,
+            }
+            for b in businesses
+        ]
+        tx_list = [
+            {
+                "date":     str(t.date),
+                "amount":   float(t.amount or 0),
+                "type":     t.type,
+                "category": t.category,
+            }
+            for t in transactions
+        ]
+
+        planner = BusinessScenarioPlanner()
+        result = await asyncio.to_thread(
+            planner.analyse, body.scenario, biz_list, tx_list
+        )
+        return result
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Scenario analysis error: {str(e)}")
+
+
+@router.post("/ai/goals")
+async def business_ai_goals(
+    body: BizGoalRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Goal tracker — analyses progress towards user-defined revenue/profit targets.
+    """
+    try:
+        businesses = db.query(Business).filter(Business.user_id == current_user.id).all()
+
+        biz_list = [
+            {
+                "name":           b.name,
+                "industry":       b.industry,
+                "annual_revenue": float(b.annual_revenue or 0),
+                "annual_profit":  float(b.annual_profit  or 0),
+                "cash_flow":      float(b.cash_flow      or 0),
+                "status":         b.status,
+            }
+            for b in businesses
+        ]
+
+        analyser = BusinessGoalAnalyser()
+        result = await asyncio.to_thread(
+            analyser.analyse, body.revenue_goal, body.profit_goal, body.months, biz_list
+        )
+        return result
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Goal analysis error: {str(e)}")
+
+
 
 @router.get("/{business_id}", response_model=BusinessResponse)
 def get_business(business_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

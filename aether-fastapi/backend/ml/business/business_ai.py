@@ -1,6 +1,10 @@
 """
 Business AI ML Module
-Gemini-powered financial analysis and board member chat for the Business module
+Groq + Gemini powered AI for the Business module:
+  - BusinessFinancialAnalyst   (Gemini — P&L insights)
+  - BusinessBoardMember        (Groq  — conversational CFO)
+  - BusinessScenarioPlanner    (Groq  — what-if scenario modelling)
+  - BusinessGoalAnalyser       (Groq  — goal tracking + gap analysis)
 """
 
 from google import genai  # type: ignore
@@ -225,14 +229,18 @@ JSON format for each insight:
 
 class BusinessBoardMember:
     """
-    AI Board Member — conversational Gemini agent with full business context.
+    AI Board Member — conversational agent powered by Groq (llama-3.3-70b-versatile).
+    Groq provides ultra-fast inference at no cost on the free tier.
     """
 
+    MODEL = "llama-3.3-70b-versatile"
+
     def __init__(self) -> None:
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
-            raise ValueError("GEMINI_API_KEY not found in environment")
-        self.client = genai.Client(api_key=api_key)
+            raise ValueError("GROQ_API_KEY not found in environment")
+        from groq import Groq
+        self.client = Groq(api_key=api_key)
 
     def chat(
         self,
@@ -243,33 +251,34 @@ class BusinessBoardMember:
     ) -> str:
         """Send a message and return AI reply with business context injected."""
         context = self._build_context(businesses, transactions)
-        system_prompt = f"""You are an experienced AI Board Member and CFO advisor for a private investment portfolio.
-You have full access to the user's business data below. Use it precisely to answer their questions.
-Be concise, specific, and professional. Use ₹ for currency (Indian Rupees). 
-If you reference numbers, use the exact data provided. Be conversational but executive-calibre.
 
-BUSINESS PORTFOLIO CONTEXT:
-{context}"""
+        system_prompt = (
+            "You are an experienced AI Board Member and CFO advisor for a private investment portfolio. "
+            "You have full access to the user's business data below. Use it precisely to answer their questions. "
+            "Be concise, specific, and professional. Use ₹ for currency (Indian Rupees). "
+            "If you reference numbers, use the exact data provided. Be conversational but executive-calibre.\n\n"
+            f"BUSINESS PORTFOLIO CONTEXT:\n{context}"
+        )
 
-        # Build the contents list for Gemini
-        contents = [system_prompt]
+        # Build messages list: system + optional history + new user message
+        messages = [{"role": "system", "content": system_prompt}]
+
         if history:
-            start_idx = max(0, len(history) - 8)
-            for i in range(start_idx, len(history)):
-                entry = history[i]
+            for entry in history[-8:]:  # keep last 8 turns for context
                 role = str(entry.get("role", "user"))
                 content = str(entry.get("content", ""))
-                prefix = "USER: " if role == "user" else "ASSISTANT: "
-                contents.append(f"{prefix}{content}")
-        contents.append(f"USER: {user_message}")
+                if role in ("user", "assistant"):
+                    messages.append({"role": role, "content": content})
 
-        full_prompt = "\n\n".join(contents)
+        messages.append({"role": "user", "content": user_message})
 
-        response = self.client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=full_prompt,
+        response = self.client.chat.completions.create(
+            model=self.MODEL,
+            messages=messages,
+            temperature=0.7,
+            max_tokens=1024,
         )
-        return str(response.text or "").strip()
+        return str(response.choices[0].message.content or "").strip()
 
     def _build_context(self, businesses: List[Dict[str, Any]], transactions: List[Dict[str, Any]]) -> str:
         total_rev = float(sum(float(b.get("annual_revenue", 0.0) or 0.0) for b in businesses))
@@ -298,24 +307,230 @@ BUSINESS PORTFOLIO CONTEXT:
         )
 
         if transactions:
-            all_tx: List[Dict[str, Any]] = sorted(
+            recent_tx = sorted(
                 transactions,
                 key=lambda t: str(t.get("date", "")),
                 reverse=True
-            )
-            
-            recent_tx: List[Dict[str, Any]] = []
-            for tx in all_tx:
-                if len(recent_tx) >= 10:
-                    break
-                recent_tx.append(tx)
-                
-            tx_lines: List[str] = []
-            for t in recent_tx:
-                amt = float(t.get("amount", 0.0) or 0.0)
-                tx_lines.append(
-                    f"- {t.get('date', '?')}: {t.get('type', '?')} ₹{amt:,.0f} [{t.get('category', '?')}] — {t.get('business_name', '?')}"
-                )
+            )[:10]
+            tx_lines = [
+                f"- {t.get('date', '?')}: {t.get('type', '?')} ₹{float(t.get('amount', 0) or 0):,.0f} "
+                f"[{t.get('category', '?')}] — {t.get('business_name', '?')}"
+                for t in recent_tx
+            ]
             summary += "\n\nRECENT TRANSACTIONS (last 10):\n" + "\n".join(tx_lines)
 
         return summary
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Scenario Planner
+# ─────────────────────────────────────────────────────────────────────────────
+
+class BusinessScenarioPlanner:
+    """
+    Models the financial impact of a what-if scenario across the entire portfolio.
+    Uses Groq llama-3.3-70b to return structured JSON impact analysis.
+    """
+
+    MODEL = "llama-3.3-70b-versatile"
+
+    def __init__(self) -> None:
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise ValueError("GROQ_API_KEY not found in environment")
+        from groq import Groq
+        self.client = Groq(api_key=api_key)
+
+    def analyse(
+        self,
+        scenario: str,
+        businesses: List[Dict[str, Any]],
+        transactions: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """Run a what-if scenario and return structured impact analysis."""
+
+        # Build compact portfolio context
+        total_rev = sum(float(b.get("annual_revenue", 0) or 0) for b in businesses)
+        total_prf = sum(float(b.get("annual_profit", 0) or 0) for b in businesses)
+
+        biz_lines = [
+            f"- {b.get('name','?')} | Revenue ₹{float(b.get('annual_revenue',0) or 0):,.0f} "
+            f"| Profit ₹{float(b.get('annual_profit',0) or 0):,.0f} "
+            f"| Cash Flow ₹{float(b.get('cash_flow',0) or 0):,.0f} "
+            f"| Industry: {b.get('industry','?')}"
+            for b in businesses
+        ]
+        portfolio_ctx = (
+            f"PORTFOLIO: {len(businesses)} ventures | "
+            f"Total Revenue ₹{total_rev:,.0f} | Total Profit ₹{total_prf:,.0f}\n\n"
+            "VENTURES:\n" + "\n".join(biz_lines)
+        )
+
+        system = (
+            "You are a CFO-level financial modeller. "
+            "Given a portfolio and a what-if scenario, return ONLY a valid JSON object "
+            "(no markdown, no extra text) with this exact structure:\n"
+            "{\n"
+            '  "scenario_summary": "One sentence restatement of the scenario",\n'
+            '  "overall_impact": "positive|negative|neutral",\n'
+            '  "impact_severity": "low|medium|high",\n'
+            '  "projected_revenue_change_pct": <number>,\n'
+            '  "projected_profit_change_pct": <number>,\n'
+            '  "affected_ventures": [\n'
+            '    { "name": "...", "impact": "...", "revenue_delta": <number>, "profit_delta": <number> }\n'
+            "  ],\n"
+            '  "key_risks": ["risk 1", "risk 2"],\n'
+            '  "recommendations": ["action 1", "action 2", "action 3"]\n'
+            "}\n"
+            "Use ₹ for all monetary values. Be precise and data-driven."
+        )
+
+        response = self.client.chat.completions.create(
+            model=self.MODEL,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": f"PORTFOLIO DATA:\n{portfolio_ctx}\n\nSCENARIO: {scenario}"},
+            ],
+            temperature=0.4,
+            max_tokens=1200,
+        )
+
+        raw = str(response.choices[0].message.content or "").strip()
+
+        # Strip markdown fences if present
+        if raw.startswith("```"):
+            lines = raw.split("\n")
+            raw = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+
+        try:
+            result: Dict[str, Any] = json.loads(raw)
+            result["scenario"] = scenario
+            result["analysed_at"] = datetime.now().isoformat()
+            return result
+        except json.JSONDecodeError:
+            return {
+                "scenario": scenario,
+                "scenario_summary": scenario,
+                "overall_impact": "unknown",
+                "impact_severity": "medium",
+                "projected_revenue_change_pct": 0,
+                "projected_profit_change_pct": 0,
+                "affected_ventures": [],
+                "key_risks": [],
+                "recommendations": [raw[:500]],
+                "analysed_at": datetime.now().isoformat(),
+            }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Goal Analyser
+# ─────────────────────────────────────────────────────────────────────────────
+
+class BusinessGoalAnalyser:
+    """
+    Compares user-defined revenue/profit goals against current portfolio performance.
+    Uses Groq to generate structured progress analysis and actionable gap advice.
+    """
+
+    MODEL = "llama-3.3-70b-versatile"
+
+    def __init__(self) -> None:
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise ValueError("GROQ_API_KEY not found in environment")
+        from groq import Groq
+        self.client = Groq(api_key=api_key)
+
+    def analyse(
+        self,
+        revenue_goal: float,
+        profit_goal: float,
+        months: int,
+        businesses: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """Analyse goal progress and return structured advice."""
+
+        total_rev = sum(float(b.get("annual_revenue", 0) or 0) for b in businesses)
+        total_prf = sum(float(b.get("annual_profit", 0) or 0) for b in businesses)
+
+        # Annualise goal if months != 12
+        annual_rev_goal = revenue_goal * (12 / months) if months != 12 else revenue_goal
+        annual_prf_goal = profit_goal * (12 / months) if months != 12 else profit_goal
+
+        rev_progress = round((total_rev / annual_rev_goal * 100), 1) if annual_rev_goal > 0 else 0
+        prf_progress = round((total_prf / annual_prf_goal * 100), 1) if annual_prf_goal > 0 else 0
+        rev_gap = annual_rev_goal - total_rev
+        prf_gap = annual_prf_goal - total_prf
+
+        biz_lines = [
+            f"- {b.get('name','?')}: Revenue ₹{float(b.get('annual_revenue',0) or 0):,.0f}, "
+            f"Profit ₹{float(b.get('annual_profit',0) or 0):,.0f}"
+            for b in businesses
+        ]
+
+        context = (
+            f"CURRENT PERFORMANCE (annualised):\n"
+            f"  Total Revenue: ₹{total_rev:,.0f} (goal: ₹{annual_rev_goal:,.0f}, {rev_progress}% achieved)\n"
+            f"  Total Profit:  ₹{total_prf:,.0f} (goal: ₹{annual_prf_goal:,.0f}, {prf_progress}% achieved)\n"
+            f"  Revenue Gap:   ₹{rev_gap:,.0f}\n"
+            f"  Profit Gap:    ₹{prf_gap:,.0f}\n"
+            f"  Timeframe:     {months} months\n\n"
+            "VENTURES:\n" + "\n".join(biz_lines)
+        )
+
+        system = (
+            "You are a CFO advising on business goal achievement. "
+            "Return ONLY a valid JSON object (no markdown, no extra text) with:\n"
+            "{\n"
+            '  "overall_status": "on_track|at_risk|off_track",\n'
+            '  "revenue_status": "on_track|at_risk|off_track",\n'
+            '  "profit_status": "on_track|at_risk|off_track",\n'
+            '  "revenue_progress_pct": <number>,\n'
+            '  "profit_progress_pct": <number>,\n'
+            '  "summary": "2-3 sentence executive summary of goal progress",\n'
+            '  "top_actions": ["specific action 1", "specific action 2", "specific action 3"],\n'
+            '  "months_to_goal_at_current_rate": <number or null if unreachable>\n'
+            "}\n"
+            "Be specific, reference actual numbers, use ₹ for currency."
+        )
+
+        response = self.client.chat.completions.create(
+            model=self.MODEL,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": context},
+            ],
+            temperature=0.3,
+            max_tokens=800,
+        )
+
+        raw = str(response.choices[0].message.content or "").strip()
+        if raw.startswith("```"):
+            lines = raw.split("\n")
+            raw = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+
+        try:
+            result: Dict[str, Any] = json.loads(raw)
+        except json.JSONDecodeError:
+            result = {
+                "overall_status": "at_risk",
+                "revenue_status": "at_risk",
+                "profit_status": "at_risk",
+                "revenue_progress_pct": rev_progress,
+                "profit_progress_pct": prf_progress,
+                "summary": raw[:400],
+                "top_actions": [],
+                "months_to_goal_at_current_rate": None,
+            }
+
+        # Always inject the computed metrics for frontend rendering
+        result["revenue_progress_pct"] = rev_progress
+        result["profit_progress_pct"] = prf_progress
+        result["revenue_goal"] = annual_rev_goal
+        result["profit_goal"] = annual_prf_goal
+        result["current_revenue"] = total_rev
+        result["current_profit"] = total_prf
+        result["revenue_gap"] = rev_gap
+        result["profit_gap"] = prf_gap
+        result["analysed_at"] = datetime.now().isoformat()
+        return result

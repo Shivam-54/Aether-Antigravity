@@ -359,10 +359,14 @@ async function loadSharesPerformanceChart(period) {
             btn.style.background = 'rgba(255,255,255,0.15)';
             btn.style.color = 'rgba(255,255,255,0.9)';
             btn.style.border = '1px solid rgba(255,255,255,0.25)';
+            btn.style.outline = 'none';
+            btn.style.boxShadow = 'none';
         } else {
             btn.style.background = 'rgba(255,255,255,0.05)';
             btn.style.color = 'rgba(255,255,255,0.4)';
             btn.style.border = '1px solid transparent';
+            btn.style.outline = 'none';
+            btn.style.boxShadow = 'none';
         }
     });
 

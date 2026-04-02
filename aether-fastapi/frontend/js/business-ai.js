@@ -373,3 +373,274 @@ function formatBizAIText(text) {
     safe = safe.replace(/\n\n+/g, '<br><br>').replace(/\n/g, '<br>');
     return safe;
 }
+
+
+// ─────────────────────────────────────────────────────────────────
+// TAB 3: SCENARIO PLANNER
+// ─────────────────────────────────────────────────────────────────
+
+/** Fill scenario textarea from an example chip */
+window.bizScenarioChip = function (btn, text) {
+    const input = document.getElementById('biz-scenario-input');
+    if (input) input.value = text;
+    // Highlight active chip
+    document.querySelectorAll('#scenario-chips button').forEach(b => {
+        b.style.background = 'rgba(255,255,255,0.06)';
+        b.style.color = 'rgba(255,255,255,0.65)';
+    });
+    btn.style.background = 'rgba(245,158,11,0.15)';
+    btn.style.color = '#fcd34d';
+};
+
+window.runBizScenario = async function () {
+    const input  = document.getElementById('biz-scenario-input');
+    const output = document.getElementById('biz-scenario-output');
+    const btn    = document.getElementById('biz-scenario-btn');
+    if (!input || !output) return;
+
+    const scenario = input.value.trim();
+    if (!scenario) { input.focus(); return; }
+
+    btn.disabled = true;
+    output.innerHTML = `
+        <div class="d-flex align-items-center gap-2 py-3 text-white-50 small">
+            <div class="spinner-border spinner-border-sm" style="width:14px;height:14px;"></div>
+            Groq is modelling the financial impact…
+        </div>`;
+
+    try {
+        const token = localStorage.getItem('access_token');
+        const res = await fetch(`${API_BASE_URL}/business/ai/scenario`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ scenario }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        renderScenarioResult(data);
+    } catch (err) {
+        output.innerHTML = `<div class="text-danger small py-2">Error: ${err.message}</div>`;
+    } finally {
+        btn.disabled = false;
+    }
+};
+
+function renderScenarioResult(d) {
+    const output = document.getElementById('biz-scenario-output');
+    if (!output) return;
+
+    const impactColor = { positive: '#86efac', negative: '#fca5a5', neutral: '#e2e8f0', unknown: '#e2e8f0' };
+    const severityBg  = { low: 'rgba(34,197,94,0.08)', medium: 'rgba(99,102,241,0.08)', high: 'rgba(239,68,68,0.08)' };
+    const severityBorder = { low: 'rgba(34,197,94,0.25)', medium: 'rgba(99,102,241,0.2)', high: 'rgba(239,68,68,0.25)' };
+    const sev = d.impact_severity || 'medium';
+    const imp = d.overall_impact || 'neutral';
+
+    const revSign  = d.projected_revenue_change_pct >= 0 ? '+' : '';
+    const prfSign  = d.projected_profit_change_pct  >= 0 ? '+' : '';
+    const revColor = d.projected_revenue_change_pct >= 0 ? '#86efac' : '#fca5a5';
+    const prfColor = d.projected_profit_change_pct  >= 0 ? '#86efac' : '#fca5a5';
+
+    // Venture impact rows
+    const ventureRows = (d.affected_ventures || []).map(v => {
+        const rdSign = (v.revenue_delta || 0) >= 0 ? '+' : '';
+        const pdSign = (v.profit_delta  || 0) >= 0 ? '+' : '';
+        const rc = (v.revenue_delta || 0) >= 0 ? '#86efac' : '#fca5a5';
+        const pc = (v.profit_delta  || 0) >= 0 ? '#86efac' : '#fca5a5';
+        return `
+        <div class="d-flex align-items-start gap-3 py-2" style="border-bottom:1px solid rgba(255,255,255,0.05);">
+            <div class="text-white small fw-medium flex-grow-1">${escapeHtml(v.name || '?')}</div>
+            <div class="small" style="color:${rc};white-space:nowrap;">${rdSign}₹${Math.abs(v.revenue_delta||0).toLocaleString('en-IN')} rev</div>
+            <div class="small" style="color:${pc};white-space:nowrap;">${pdSign}₹${Math.abs(v.profit_delta||0).toLocaleString('en-IN')} profit</div>
+        </div>
+        <div class="text-white-50" style="font-size:0.75rem;padding-left:0;padding-bottom:4px;">${escapeHtml(v.impact || '')}</div>`;
+    }).join('');
+
+    // Risks
+    const risks = (d.key_risks || []).map(r =>
+        `<div style="padding-left:8px;border-left:2px solid rgba(239,68,68,0.4);margin-bottom:6px;font-size:0.78rem;color:rgba(255,255,255,0.6);">${escapeHtml(r)}</div>`
+    ).join('');
+
+    // Recommendations
+    const recs = (d.recommendations || []).map(r =>
+        `<div style="padding-left:8px;border-left:2px solid rgba(34,197,94,0.4);margin-bottom:6px;font-size:0.78rem;color:rgba(255,255,255,0.7);">${escapeHtml(r)}</div>`
+    ).join('');
+
+    output.innerHTML = `
+    <div class="p-3 rounded-3" style="background:${severityBg[sev]};border:1px solid ${severityBorder[sev]};">
+        <!-- Header -->
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="text-white small fw-medium">${escapeHtml(d.scenario_summary || d.scenario || '')}</div>
+            <span class="badge" style="background:${severityBg[sev]};border:1px solid ${severityBorder[sev]};color:${impactColor[imp]};font-size:0.65rem;text-transform:uppercase;">
+                ${imp} impact · ${sev} severity
+            </span>
+        </div>
+        <!-- Projected totals -->
+        <div class="d-flex gap-3 mb-3">
+            <div class="glass-card p-2 px-3 flex-fill text-center">
+                <div class="text-white-50" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:.05em;">Revenue Change</div>
+                <div class="fw-semibold" style="color:${revColor};">${revSign}${(d.projected_revenue_change_pct||0).toFixed(1)}%</div>
+            </div>
+            <div class="glass-card p-2 px-3 flex-fill text-center">
+                <div class="text-white-50" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:.05em;">Profit Change</div>
+                <div class="fw-semibold" style="color:${prfColor};">${prfSign}${(d.projected_profit_change_pct||0).toFixed(1)}%</div>
+            </div>
+        </div>
+        <!-- Venture breakdown -->
+        ${ventureRows ? `<div class="mb-3"><div class="text-white-50 mb-1" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:.05em;">Venture Impact</div>${ventureRows}</div>` : ''}
+        <!-- Risks -->
+        ${risks ? `<div class="mb-3"><div class="text-white-50 mb-2" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:.05em;">⚠ Key Risks</div>${risks}</div>` : ''}
+        <!-- Recommendations -->
+        ${recs ? `<div><div class="text-white-50 mb-2" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:.05em;">✓ Recommendations</div>${recs}</div>` : ''}
+    </div>`;
+}
+
+
+// ─────────────────────────────────────────────────────────────────
+// TAB 3: GOAL TRACKER
+// ─────────────────────────────────────────────────────────────────
+
+const GOAL_STORAGE_KEY = 'aether_biz_goals';
+
+/** Restore saved goals from localStorage on tab open */
+function loadSavedGoals() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(GOAL_STORAGE_KEY) || '{}');
+        if (saved.revenue) document.getElementById('biz-goal-revenue').value = saved.revenue;
+        if (saved.profit)  document.getElementById('biz-goal-profit').value  = saved.profit;
+        if (saved.months)  document.getElementById('biz-goal-months').value  = saved.months;
+    } catch (_) {}
+}
+
+// Load goals whenever the predictive engine tab is activated
+const _origSwitch = window.switchBizAILabTab;
+window.switchBizAILabTab = function (tabName) {
+    _origSwitch(tabName);
+    if (tabName === 'biz-coming-soon') {
+        setTimeout(loadSavedGoals, 50);
+    }
+};
+
+window.runBizGoalAnalysis = async function () {
+    const revEl    = document.getElementById('biz-goal-revenue');
+    const prfEl    = document.getElementById('biz-goal-profit');
+    const mthEl    = document.getElementById('biz-goal-months');
+    const output   = document.getElementById('biz-goal-output');
+    const btn      = document.getElementById('biz-goal-btn');
+
+    const revGoal = parseFloat(revEl?.value || 0);
+    const prfGoal = parseFloat(prfEl?.value || 0);
+    const months  = parseInt(mthEl?.value  || 12);
+
+    if (!revGoal && !prfGoal) {
+        output.innerHTML = `<div class="text-warning small py-2">Please enter at least one goal (revenue or profit).</div>`;
+        return;
+    }
+
+    // Persist goals
+    localStorage.setItem(GOAL_STORAGE_KEY, JSON.stringify({ revenue: revGoal, profit: prfGoal, months }));
+
+    btn.disabled = true;
+    output.innerHTML = `
+        <div class="d-flex align-items-center gap-2 py-3 text-white-50 small">
+            <div class="spinner-border spinner-border-sm" style="width:14px;height:14px;"></div>
+            Groq is analysing your goal progress…
+        </div>`;
+
+    try {
+        const token = localStorage.getItem('access_token');
+        const res = await fetch(`${API_BASE_URL}/business/ai/goals`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ revenue_goal: revGoal, profit_goal: prfGoal, months }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        renderGoalResult(data);
+    } catch (err) {
+        output.innerHTML = `<div class="text-danger small py-2">Error: ${err.message}</div>`;
+    } finally {
+        btn.disabled = false;
+    }
+};
+
+function renderGoalResult(d) {
+    const output = document.getElementById('biz-goal-output');
+    if (!output) return;
+
+    const statusColor = { on_track: '#86efac', at_risk: '#fcd34d', off_track: '#fca5a5' };
+    const statusBg    = { on_track: 'rgba(34,197,94,0.08)', at_risk: 'rgba(245,158,11,0.08)', off_track: 'rgba(239,68,68,0.08)' };
+    const statusLabel = { on_track: '✓ On Track', at_risk: '⚠ At Risk', off_track: '✗ Off Track' };
+    const ost = d.overall_status || 'at_risk';
+
+    function progressBar(pct, status) {
+        const clampedPct = Math.min(Math.max(pct || 0, 0), 100);
+        const color = statusColor[status] || '#fcd34d';
+        return `
+        <div style="background:rgba(255,255,255,0.06);border-radius:99px;height:6px;overflow:hidden;margin-top:6px;">
+            <div style="width:${clampedPct}%;height:100%;background:${color};border-radius:99px;transition:width 0.8s ease;"></div>
+        </div>`;
+    }
+
+    function fmtRs(v) {
+        if (!v && v !== 0) return '—';
+        const abs = Math.abs(v);
+        const sign = v < 0 ? '-' : '';
+        if (abs >= 1e7) return `${sign}₹${(abs/1e7).toFixed(2)} Cr`;
+        if (abs >= 1e5) return `${sign}₹${(abs/1e5).toFixed(2)} L`;
+        return `${sign}₹${abs.toLocaleString('en-IN')}`;
+    }
+
+    const actions = (d.top_actions || []).map((a, i) =>
+        `<div class="d-flex gap-2 align-items-start mb-2">
+            <span style="min-width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,0.1);font-size:0.65rem;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.6);flex-shrink:0;margin-top:1px;">${i+1}</span>
+            <span class="small" style="color:rgba(255,255,255,0.7);line-height:1.4;">${escapeHtml(a)}</span>
+        </div>`
+    ).join('');
+
+    const etaText = d.months_to_goal_at_current_rate != null
+        ? `${Math.round(d.months_to_goal_at_current_rate)} months at current rate`
+        : 'Not achievable at current rate';
+
+    output.innerHTML = `
+    <div class="p-3 rounded-3" style="background:${statusBg[ost]};border:1px solid ${statusColor[ost]}33;">
+        <!-- Overall badge -->
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="text-white small fw-medium">Goal Progress Analysis</div>
+            <span class="badge" style="background:${statusBg[ost]};border:1px solid ${statusColor[ost]}55;color:${statusColor[ost]};font-size:0.65rem;">${statusLabel[ost]}</span>
+        </div>
+
+        <!-- Revenue progress -->
+        ${d.revenue_goal ? `
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-white-50 small" style="font-size:0.72rem;">Revenue — ${fmtRs(d.current_revenue)} of ${fmtRs(d.revenue_goal)}</span>
+                <span class="small fw-medium" style="color:${statusColor[d.revenue_status||ost]};">${(d.revenue_progress_pct||0).toFixed(1)}%</span>
+            </div>
+            ${progressBar(d.revenue_progress_pct, d.revenue_status || ost)}
+            ${d.revenue_gap > 0 ? `<div class="text-white-50 mt-1" style="font-size:0.7rem;">Gap: ${fmtRs(d.revenue_gap)} to go</div>` : ''}
+        </div>` : ''}
+
+        <!-- Profit progress -->
+        ${d.profit_goal ? `
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-white-50 small" style="font-size:0.72rem;">Profit — ${fmtRs(d.current_profit)} of ${fmtRs(d.profit_goal)}</span>
+                <span class="small fw-medium" style="color:${statusColor[d.profit_status||ost]};">${(d.profit_progress_pct||0).toFixed(1)}%</span>
+            </div>
+            ${progressBar(d.profit_progress_pct, d.profit_status || ost)}
+            ${d.profit_gap > 0 ? `<div class="text-white-50 mt-1" style="font-size:0.7rem;">Gap: ${fmtRs(d.profit_gap)} to go</div>` : ''}
+        </div>` : ''}
+
+        <!-- AI Summary -->
+        <div class="p-2 rounded-2 mb-3" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+            <div class="text-white-50 small" style="font-size:0.78rem;line-height:1.5;">${escapeHtml(d.summary || '')}</div>
+        </div>
+
+        <!-- ETA -->
+        <div class="text-white-50 small mb-3" style="font-size:0.72rem;">⏱ Estimated time to goal: <span style="color:rgba(255,255,255,0.7);">${etaText}</span></div>
+
+        <!-- Actions -->
+        ${actions ? `<div><div class="text-white-50 mb-2" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:.05em;">Top Actions</div>${actions}</div>` : ''}
+    </div>`;
+}
+
