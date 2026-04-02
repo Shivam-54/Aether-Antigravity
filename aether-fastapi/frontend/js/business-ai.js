@@ -65,7 +65,7 @@ window.runBizFinancialAnalysis = async function () {
     outputEl.innerHTML = `
         <div class="glass-card p-5 text-center" style="min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
             <div class="spinner-border text-primary" role="status" style="width:2rem;height:2rem;"></div>
-            <div class="text-white-50 small">Gemini is analysing your business data…</div>
+            <div class="text-white-50 small">Groq is analysing your business data…</div>
         </div>`;
 
     try {
@@ -182,6 +182,162 @@ function fmtCr(val) {
     if (abs >= 1e5) return `${sign}${(abs / 1e5).toFixed(2)} L`;
     return `${sign}${abs.toLocaleString('en-IN')}`;
 }
+
+
+// ─────────────────────────────────────────────────────────────────
+// TAB 1: BREAK-EVEN ANALYSIS
+// ─────────────────────────────────────────────────────────────────
+
+async function loadBreakEvenAnalysis() {
+    const section = document.getElementById('biz-breakeven-section');
+    const output  = document.getElementById('biz-breakeven-output');
+    if (!section || !output) return;
+
+    try {
+        const token = localStorage.getItem('access_token');
+        const res = await fetch(`${API_BASE_URL}/business/ai/break-even`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        if (!data.ventures || data.ventures.length === 0) {
+            section.style.display = 'none';
+            return;
+        }
+
+        section.style.display = 'block';
+
+        const statusLabel = { broken_even: '✓ Recovered', in_progress: 'In Progress', not_profitable: '✗ No Profit', no_investment: '—' };
+        const statusColor = { broken_even: '#86efac', in_progress: '#fcd34d', not_profitable: '#fca5a5', no_investment: '#e2e8f0' };
+
+        function fmtVal(v) {
+            if (!v && v !== 0) return '—';
+            const abs = Math.abs(v);
+            if (abs >= 1e7) return `₹${(abs/1e7).toFixed(2)} Cr`;
+            if (abs >= 1e5) return `₹${(abs/1e5).toFixed(2)} L`;
+            return `₹${abs.toLocaleString('en-IN')}`;
+        }
+
+        output.innerHTML = data.ventures.map(v => {
+            const color = statusColor[v.status] || '#e2e8f0';
+            const label = statusLabel[v.status] || v.status;
+            const pct = Math.min(Math.max(v.progress_pct || 0, 0), 100);
+            const monthsText = v.months_to_breakeven != null ? `${v.months_to_breakeven} months total` : '—';
+
+            return `
+            <div class="mb-3 p-3 rounded-3" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-white small fw-medium">${v.name}</span>
+                    <span class="badge" style="background:rgba(255,255,255,0.05);color:${color};font-size:0.65rem;">${label}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-white-50" style="font-size:0.72rem;">Investment: ${fmtVal(v.valuation)} · Monthly profit: ${fmtVal(v.monthly_profit)}</span>
+                    <span class="small fw-medium" style="color:${color};">${pct.toFixed(1)}%</span>
+                </div>
+                <div style="background:rgba(255,255,255,0.06);border-radius:99px;height:6px;overflow:hidden;">
+                    <div style="width:${pct}%;height:100%;background:${color};border-radius:99px;transition:width 0.8s ease;"></div>
+                </div>
+                <div class="text-white-50 mt-1" style="font-size:0.68rem;">Break-even in: ${monthsText}</div>
+            </div>`;
+        }).join('');
+    } catch (err) {
+        if (section) section.style.display = 'none';
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────
+// TAB 1: EXPENSE HEATMAP
+// ─────────────────────────────────────────────────────────────────
+
+async function loadExpenseHeatmap() {
+    const section = document.getElementById('biz-heatmap-section');
+    const output  = document.getElementById('biz-heatmap-output');
+    if (!section || !output) return;
+
+    try {
+        const token = localStorage.getItem('access_token');
+        const res = await fetch(`${API_BASE_URL}/business/ai/expense-heatmap`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        if (!data.months || data.months.length === 0) {
+            section.style.display = 'none';
+            return;
+        }
+
+        section.style.display = 'block';
+
+        const { months, categories, matrix } = data;
+
+        // Find max value for colour intensity scaling
+        let maxVal = 0;
+        months.forEach(m => categories.forEach(c => {
+            const v = (matrix[m] || {})[c] || 0;
+            if (v > maxVal) maxVal = v;
+        }));
+
+        function cellColor(val) {
+            if (!val || maxVal === 0) return 'rgba(255,255,255,0.02)';
+            const intensity = Math.min(val / maxVal, 1);
+            // Red-based gradient for expenses
+            const r = Math.round(239 * intensity + 30 * (1 - intensity));
+            const g = Math.round(68 * intensity + 30 * (1 - intensity));
+            const b = Math.round(68 * intensity + 50 * (1 - intensity));
+            return `rgba(${r},${g},${b},${0.1 + intensity * 0.5})`;
+        }
+
+        function fmtShort(v) {
+            if (!v) return '—';
+            if (v >= 1e5) return `${(v/1e5).toFixed(1)}L`;
+            if (v >= 1e3) return `${(v/1e3).toFixed(1)}K`;
+            return v.toFixed(0);
+        }
+
+        // Month labels: "Jan '26" etc
+        const monthLabels = months.map(m => {
+            const [y, mo] = m.split('-');
+            const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            return `${names[parseInt(mo)-1]} '${y.slice(2)}`;
+        });
+
+        const cols = months.length + 1;
+
+        let html = `<div style="display:grid;grid-template-columns:120px repeat(${months.length}, 1fr);gap:2px;font-size:0.7rem;">`;
+
+        // Header row
+        html += `<div style="padding:6px 4px;color:rgba(255,255,255,0.3);"></div>`;
+        monthLabels.forEach(l => {
+            html += `<div style="padding:6px 4px;text-align:center;color:rgba(255,255,255,0.4);">${l}</div>`;
+        });
+
+        // Data rows
+        categories.forEach(cat => {
+            html += `<div style="padding:6px 4px;color:rgba(255,255,255,0.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${cat}">${cat}</div>`;
+            months.forEach(m => {
+                const val = (matrix[m] || {})[cat] || 0;
+                html += `<div style="padding:6px 4px;text-align:center;color:rgba(255,255,255,0.7);background:${cellColor(val)};border-radius:4px;" title="₹${val.toLocaleString('en-IN')}">${val ? fmtShort(val) : '—'}</div>`;
+            });
+        });
+
+        html += '</div>';
+        output.innerHTML = html;
+    } catch (err) {
+        if (section) section.style.display = 'none';
+    }
+}
+
+// Auto-load break-even and heatmap when Financial Analyst tab is opened
+document.addEventListener('DOMContentLoaded', function() {
+    // Load on initial page if tab is active
+    setTimeout(() => {
+        loadBreakEvenAnalysis();
+        loadExpenseHeatmap();
+    }, 1000);
+});
 
 
 // ─────────────────────────────────────────────────────────────────

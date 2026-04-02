@@ -330,6 +330,111 @@ async def business_ai_goals(
         raise HTTPException(status_code=500, detail=f"Goal analysis error: {str(e)}")
 
 
+@router.get("/ai/break-even")
+async def business_break_even(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Break-even analysis per venture — pure math, no AI.
+    Calculates months to break-even based on valuation (investment) vs monthly profit.
+    """
+    businesses = db.query(Business).filter(Business.user_id == current_user.id).all()
+    if not businesses:
+        return {"ventures": [], "message": "No ventures found"}
+
+    ventures = []
+    for b in businesses:
+        valuation = float(b.valuation or 0)
+        monthly_profit = float(b.monthly_profit or 0)
+        annual_profit = float(b.annual_profit or 0)
+
+        # Use monthly_profit if available, else derive from annual
+        effective_monthly = monthly_profit if monthly_profit > 0 else (annual_profit / 12)
+
+        if valuation <= 0:
+            status = "no_investment"
+            months_to_breakeven = 0
+            progress_pct = 100
+        elif effective_monthly <= 0:
+            status = "not_profitable"
+            months_to_breakeven = None
+            progress_pct = 0
+        else:
+            months_to_breakeven = round(valuation / effective_monthly, 1)
+            # Assume venture has been running since founded
+            months_running = 0
+            if b.founded:
+                from datetime import date as date_type
+                delta = date.today() - b.founded
+                months_running = max(delta.days / 30.44, 0)
+
+            cumulative_earned = effective_monthly * months_running
+            progress_pct = min(round((cumulative_earned / valuation) * 100, 1), 100)
+            status = "broken_even" if progress_pct >= 100 else "in_progress"
+
+        ventures.append({
+            "name": b.name,
+            "industry": b.industry,
+            "valuation": valuation,
+            "monthly_profit": round(effective_monthly, 2),
+            "months_to_breakeven": months_to_breakeven,
+            "progress_pct": progress_pct,
+            "status": status,
+        })
+
+    return {"ventures": ventures}
+
+
+@router.get("/ai/expense-heatmap")
+async def business_expense_heatmap(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Expense heatmap — groups expense transactions by month × category.
+    Returns a matrix suitable for frontend rendering.
+    """
+    transactions = (
+        db.query(BusinessTransaction)
+        .filter(
+            BusinessTransaction.user_id == current_user.id,
+            BusinessTransaction.type == "Expense",
+        )
+        .all()
+    )
+
+    if not transactions:
+        return {"months": [], "categories": [], "matrix": {}, "message": "No expense data"}
+
+    from collections import defaultdict
+    matrix = defaultdict(lambda: defaultdict(float))
+    categories_set = set()
+    months_set = set()
+
+    for t in transactions:
+        if not t.date or not t.amount:
+            continue
+        month_key = t.date.strftime("%Y-%m")
+        cat = t.category or "Uncategorised"
+        matrix[month_key][cat] += float(t.amount or 0)
+        categories_set.add(cat)
+        months_set.add(month_key)
+
+    months_sorted = sorted(months_set)
+    categories_sorted = sorted(categories_set)
+
+    # Convert to serialisable dict
+    result_matrix = {}
+    for m in months_sorted:
+        result_matrix[m] = {c: round(matrix[m][c], 2) for c in categories_sorted}
+
+    return {
+        "months": months_sorted,
+        "categories": categories_sorted,
+        "matrix": result_matrix,
+    }
+
 
 @router.get("/{business_id}", response_model=BusinessResponse)
 def get_business(business_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

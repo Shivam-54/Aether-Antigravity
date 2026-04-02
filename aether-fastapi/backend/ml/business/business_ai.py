@@ -17,14 +17,17 @@ from typing import List, Dict, Any, Optional
 class BusinessFinancialAnalyst:
     """
     AI Financial Analyst for the Business Portfolio.
-    Generates structured P&L, cash flow, and risk insights using Google Gemini.
+    Generates structured P&L, cash flow, and risk insights using Groq.
     """
 
+    MODEL = "llama-3.3-70b-versatile"
+
     def __init__(self) -> None:
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
-            raise ValueError("GEMINI_API_KEY not found in environment")
-        self.client = genai.Client(api_key=api_key)
+            raise ValueError("GROQ_API_KEY not found in environment")
+        from groq import Groq
+        self.client = Groq(api_key=api_key)
 
     def generate_analysis(
         self,
@@ -75,10 +78,17 @@ class BusinessFinancialAnalyst:
         prompt = self._build_prompt(snapshot, biz_summary, period_months, focus)
 
         try:
-            response = self.client.models.generate_content(
-                model="gemini-2.0-flash", contents=prompt
+            response = self.client.chat.completions.create(
+                model=self.MODEL,
+                messages=[
+                    {"role": "system", "content": "You are a senior CFO-level financial advisor. Return ONLY valid JSON arrays, no markdown, no extra text."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.4,
+                max_tokens=1500,
             )
-            insights = self._parse_insights(response.text or "")
+            raw_text = str(response.choices[0].message.content or "")
+            insights = self._parse_insights(raw_text)
         except Exception:
             insights = self._fallback_insights(businesses, focus)
 
@@ -169,24 +179,11 @@ JSON format for each insight:
                     "severity": str(item.get("severity", "medium")),
                     "icon":     str(item.get("icon", "◈")),
                 })
-            error_text = str(text)
-            if len(error_text) > 200:
-                short_text = ""
-                for char in error_text:
-                    if len(short_text) >= 200:
-                        break
-                    short_text += char
-                error_text = short_text
-            return [{"category": "overview", "title": "Analysis ready", "content": error_text, "severity": "low", "icon": "◈"}]
+            if final_insights:
+                return final_insights
+            return [{"category": "overview", "title": "No insights generated", "content": "The AI returned an empty result set.", "severity": "low", "icon": "◈"}]
         except Exception:
-            error_text = str(text)
-            if len(error_text) > 200:
-                short_text = ""
-                for char in error_text:
-                    if len(short_text) >= 200:
-                        break
-                    short_text += char
-                error_text = short_text
+            error_text = str(text)[:200]
             return [{"category": "overview", "title": "Analysis ready", "content": error_text, "severity": "low", "icon": "◈"}]
 
     def _fallback_insights(self, businesses: List[Dict[str, Any]], focus: str) -> List[Dict[str, Any]]:
