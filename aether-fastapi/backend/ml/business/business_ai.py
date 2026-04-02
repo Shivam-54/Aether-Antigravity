@@ -382,7 +382,8 @@ class BusinessScenarioPlanner:
             '  "key_risks": ["risk 1", "risk 2"],\n'
             '  "recommendations": ["action 1", "action 2", "action 3"]\n'
             "}\n"
-            "Use ₹ for all monetary values. Be precise and data-driven."
+            "CRITICAL: ALL numeric fields (revenue_delta, profit_delta, projected_*_pct) must be "
+            "plain numbers WITHOUT currency symbols. Use ₹ only in string fields like impact text."
         )
 
         response = self.client.chat.completions.create(
@@ -401,6 +402,9 @@ class BusinessScenarioPlanner:
         if raw.startswith("```"):
             lines = raw.split("\n")
             raw = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+
+        # Strip currency symbols that break JSON number parsing
+        raw = raw.replace('₹', '')
 
         try:
             result: Dict[str, Any] = json.loads(raw)
@@ -491,7 +495,8 @@ class BusinessGoalAnalyser:
             '  "top_actions": ["specific action 1", "specific action 2", "specific action 3"],\n'
             '  "months_to_goal_at_current_rate": <number or null if unreachable>\n'
             "}\n"
-            "Be specific, reference actual numbers, use ₹ for currency."
+            "CRITICAL: ALL numeric fields must be plain numbers WITHOUT currency symbols. "
+            "Use ₹ only in string fields like summary text. Be specific and reference actual numbers."
         )
 
         response = self.client.chat.completions.create(
@@ -508,6 +513,9 @@ class BusinessGoalAnalyser:
         if raw.startswith("```"):
             lines = raw.split("\n")
             raw = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+
+        # Strip currency symbols that break JSON number parsing
+        raw = raw.replace('₹', '')
 
         try:
             result: Dict[str, Any] = json.loads(raw)
