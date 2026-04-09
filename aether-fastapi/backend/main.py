@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -10,14 +11,22 @@ app = FastAPI(
 
 # CORS middleware to allow frontend to call backend
 # Allow file:// origin (null) and localhost for local development
+_allowed_origins = [
+    "http://localhost:8000",
+    "http://localhost:3000",
+    "http://127.0.0.1:8000",
+    "null"  # Allow file:// protocol
+]
+
+# Add Vercel frontend URL when deployed
+_frontend_url = os.getenv("FRONTEND_URL")
+if _frontend_url:
+    _allowed_origins.append(_frontend_url)
+    _allowed_origins.append(_frontend_url.rstrip("/"))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8000",
-        "http://localhost:3000",
-        "http://127.0.0.1:8000",
-        "null"  # Allow file:// protocol
-    ],
+    allow_origins=_allowed_origins,
     allow_credentials=False,  # Must be False when using "null" origin
     allow_methods=["*"],
     allow_headers=["*"],
@@ -66,10 +75,14 @@ def health_check():
     return {"status": "healthy"}
 
 # Mount frontend - catch all - MUST BE LAST
-import os
-app.mount("/", StaticFiles(directory="../frontend", html=True), name="frontend")
+# Only mount static frontend in local development (not when deployed)
+if not os.getenv("DEPLOY_MODE"):
+    _frontend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend")
+    if os.path.isdir(_frontend_dir):
+        app.mount("/", StaticFiles(directory=_frontend_dir, html=True), name="frontend")
 
 # Trigger reload
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    _port = int(os.getenv("PORT", "8000"))
+    uvicorn.run("main:app", host="0.0.0.0", port=_port, reload=True)

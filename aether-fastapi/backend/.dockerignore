@@ -1,0 +1,32 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.env.example
+.DS_Store
+*.log
+*.db
+*.bak
+backend.log
+uvicorn_test.log
+aether.db
+
+# Test files
+test_*.py
+check_*.py
+debug_*.py
+verify_*.py
+
+# Migration/seed scripts (not needed at runtime)
+*_migration.py
+seed_*.py
+recreate_*.py
+insert_*.py
+create_tables.py
+
+# Training scripts (models are pre-trained)
+ml/train_*.py
+
+# Backup files
+*.patch
