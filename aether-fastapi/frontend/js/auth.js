@@ -3,8 +3,7 @@
  * Handles login, signup, and token management
  */
 
-const API_BASE = 'http://3.110.83.241';
-
+const API_BASE = '/api';
 // Helper function to show error messages
 function showError(elementId, message) {
     const errorEl = document.getElementById(elementId);
