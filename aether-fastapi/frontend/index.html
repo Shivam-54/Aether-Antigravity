@@ -1440,9 +1440,10 @@
                         const timeoutId = setTimeout(() => controller.abort(), 15000);
 
                         fetch('http://3.110.83.241:8000/api/auth/login', {
-                            body: formData,
-                            signal: controller.signal
-                        })
+                                method: 'POST',
+                                body: formData,
+                                signal: controller.signal
+                          })
                             .then(async response => {
                                 clearTimeout(timeoutId);
                                 if (!response.ok) {
