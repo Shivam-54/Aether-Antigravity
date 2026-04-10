@@ -5,7 +5,7 @@ to improve diversification across city, type, and yield.
 """
 
 from datetime import datetime
-from google import genai
+import google.generativeai as genai
 import os
 import json
 
@@ -27,7 +27,8 @@ class RERebalancingAdvisor:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise ValueError("GEMINI_API_KEY not found in environment")
-        self.client = genai.Client(api_key=api_key)
+        genai.configure(api_key=api_key)
+        self.client = genai
 
     def analyze(self, properties: list) -> dict:
         if not properties:

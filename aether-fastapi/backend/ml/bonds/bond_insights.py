@@ -3,7 +3,7 @@ AI-Powered Bond Portfolio Insights Generator using Google Gemini
 Generates real, actionable insights based on the user's actual bond holdings
 """
 
-from google import genai
+import google.generativeai as genai
 import os
 import json
 from datetime import datetime, date
@@ -18,7 +18,8 @@ class BondInsightsGenerator:
         if not api_key:
             raise ValueError("GEMINI_API_KEY not found in environment")
 
-        self.client = genai.Client(api_key=api_key)
+        genai.configure(api_key=api_key)
+        self.client = genai
 
     def build_portfolio_context(self, bonds: List[Dict]) -> Dict[str, Any]:
         """Derive key portfolio-level metrics from raw bond data"""

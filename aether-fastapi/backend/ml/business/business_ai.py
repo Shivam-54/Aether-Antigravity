@@ -7,7 +7,7 @@ Groq + Gemini powered AI for the Business module:
   - BusinessGoalAnalyser       (Groq  — goal tracking + gap analysis)
 """
 
-from google import genai  # type: ignore
+import google.generativeai as genai  # type: ignore
 import os
 import json
 from datetime import datetime
