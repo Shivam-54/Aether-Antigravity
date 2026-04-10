@@ -244,7 +244,7 @@ let currentSource = 'home'; // Start at home, not a specific source
 let currentSection = null; // No section when on home
 
 // API Configuration
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = 'http://3.110.83.241:8000/api';
 
 // ==================== NETWORK CORRELATION ANIMATION ====================
 // Living constellation visualization with floating nodes, parallax, and glow
@@ -10421,7 +10421,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.textContent = 'Updating...';
                 btn.disabled = true;
 
-                const response = await fetch('http://localhost:8000/api/auth/change-password', {
+                const response = await fetch('http://3.110.83.241:8000/api/auth/change-password', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,

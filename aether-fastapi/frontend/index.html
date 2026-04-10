@@ -1439,8 +1439,7 @@
                         const controller = new AbortController();
                         const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-                        fetch('http://localhost:8000/api/auth/login', {
-                            method: 'POST',
+                        fetch('http://3.110.83.241:8000/api/auth/login', {
                             body: formData,
                             signal: controller.signal
                         })
@@ -1588,7 +1587,7 @@
                         submitBtn.textContent = 'CREATING ACCOUNT...';
                         submitBtn.disabled = true;
 
-                        fetch('http://localhost:8000/api/auth/signup', {
+                        fetch('http://3.110.83.241:8000/api/auth/signup', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -1613,7 +1612,7 @@
                                 formData.append('username', inputs.email.value);
                                 formData.append('password', inputs.authKey.value);
 
-                                return fetch('http://localhost:8000/api/auth/login', {
+                                return fetch('http://3.110.83.241:8000/api/auth/login', {
                                     method: 'POST',
                                     body: formData
                                 });
