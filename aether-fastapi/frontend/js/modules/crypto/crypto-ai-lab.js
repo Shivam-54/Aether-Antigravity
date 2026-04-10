@@ -5,7 +5,7 @@ class CryptoAILab {
     constructor() {
         this.currentTab = 'predictions-risk';
         this.charts = {};
-        this.apiBaseUrl = 'http://localhost:8000/api/ml';
+        this.apiBaseUrl = '/api/ml';
     }
 
     async init() {
@@ -1111,7 +1111,7 @@ class CryptoAILab {
             let portfolioValue = null;
 
             try {
-                const _aiLabApiBase = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:8000/api';
+                const _aiLabApiBase = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : '/api';
                 const holdingsResponse = await fetch(`${_aiLabApiBase}/crypto/holdings`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
                 });

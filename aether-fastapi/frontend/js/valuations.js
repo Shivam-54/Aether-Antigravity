@@ -3,7 +3,7 @@
  * Handles folder-based property management with documents and valuations
  */
 
-const VALUATIONS_API_BASE_URL = 'http://localhost:8000';
+const VALUATIONS_API_BASE_URL = '';
 
 // Global state
 let currentPropertyForDetail = null;
