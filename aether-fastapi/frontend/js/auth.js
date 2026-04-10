@@ -3,7 +3,7 @@
  * Handles login, signup, and token management
  */
 
-const API_BASE = '/api';
+const API_BASE = '';
 // Helper function to show error messages
 function showError(elementId, message) {
     const errorEl = document.getElementById(elementId);

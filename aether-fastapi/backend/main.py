@@ -15,7 +15,9 @@ _allowed_origins = [
     "http://localhost:8000",
     "http://localhost:3000",
     "http://127.0.0.1:8000",
-    "null"  # Allow file:// protocol
+    "null",  # Allow file:// protocol
+    "https://aether-isle.vercel.app",
+    "http://3.110.83.241",
 ]
 
 # Add Vercel frontend URL when deployed
@@ -27,7 +29,7 @@ if _frontend_url:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
-    allow_credentials=False,  # Must be False when using "null" origin
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"]
